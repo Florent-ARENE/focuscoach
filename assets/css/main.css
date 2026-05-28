@@ -496,3 +496,14 @@ h1, h2, h3, h4, h5, h6 {
         padding: 0.75rem 0.5rem;
     }
 }
+
+/* ============================================
+   Placeholder champ légal non renseigné (cfgField)
+   ============================================ */
+.cfg-missing {
+    color: var(--red);
+    background: var(--red-light);
+    padding: 0.1em 0.4em;
+    border-radius: var(--radius-sm);
+    font-size: 0.85em;
+}

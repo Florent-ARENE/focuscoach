@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.4.0  
-**Dernière mise à jour:** 13 février 2026
+**Version:** 2.4.1  
+**Dernière mise à jour:** 28 mai 2026
 
 ---
 
@@ -23,6 +23,11 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 28/05/2026 | 2.4.1 | 🧹 Marque | `admin/index.php` — logos login + sidebar passent à `brandWordmark()` (suppression du `<span>Performance</span>` codé en dur, dernier résidu « Renaud Performance ») |
+| 28/05/2026 | 2.4.1 | ⚙️ Settings | Nouveau champ paramétrable `admin_activity` (Activité / Profession) → remplace l'activité codée en dur dans `confidentialite.php` |
+| 28/05/2026 | 2.4.1 | 🎨 CSS | Refacto anti-inline : extraction de **tout le CSS décoratif** vers les fichiers (`manage.css`, `booking.css`, `admin.css`, `main.css`). Plus aucun `style=` décoratif ni `<style>` inline ; seuls subsistent les `display:none` fonctionnels pilotés par JS |
+| 28/05/2026 | 2.4.1 | 🎨 CSS | `cfgField()` → `<span class="cfg-missing">` ; `admin.js`/`manage.js` → classes au lieu de styles injectés ; hex en dur `#fef3c7/#059669/#f59e0b` → tokens `var(--warning-light/--green/--warning)` |
+| 28/05/2026 | 2.4.1 | 📄 Nouveau | `sql/migration-2.4.1.sql` — clé `admin_activity` |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Refonte « Focus Coach » : charte navy/orange + Playfair Display, appliquée à TOUT le site |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Re-skin auto booking/admin/manage via remap des tokens `:root` (aucun markup touché) |
 | 28/05/2026 | 2.4.0 | 📄 Nouveau | `index.php` — page d'accueil dynamique (remplace `index.html` statique) |
@@ -305,44 +310,51 @@ require_once __DIR__ . '/../includes/init.php';
 
 ## 🎨 CSS Design System
 
-### Variables CSS (`:root` dans main.css)
+### 🔒 Règle d'or CSS (NE PAS DÉROGER)
+
+> **Tout le style passe par des fichiers `.css` et des classes.** Aucun
+> `style="…"` inline décoratif, aucun bloc `<style>` dans le HTML/PHP,
+> aucune couleur hexadécimale codée en dur (toujours un token `var(--…)`).
+>
+> **Source unique des tokens :** le bloc `:root` de `main.css`. Les autres
+> feuilles (`home.css`, `booking.css`, `admin.css`, `manage.css`) ne font
+> que **consommer** ces variables — pas de second `:root`.
+>
+> **Seules exceptions tolérées :**
+> 1. Les icônes Lucide en `<svg>` inline (`stroke="currentColor"`, `width`/`height`, `viewBox`) ;
+> 2. Les `style="display:none"` **fonctionnels** que JS bascule via `element.style.display` (panneaux, modales). Tout le reste de leur style est dans une classe.
+
+### Variables CSS (`:root` dans `main.css`) — charte « Focus Coach »
 
 ```css
-/* Couleurs */
---primary: #1a2744;        /* Navy - couleur principale */
---secondary: #c9a227;      /* Or - accents */
---bg-light: #faf8f5;       /* Fond clair */
---bg-cream: #f5f1eb;       /* Fond crème */
---text-dark: #1a2744;      /* Texte principal */
---text-light: #6b7280;     /* Texte secondaire */
---gray-100 à --gray-900;   /* Échelle de gris */
---green: #059669;          /* Succès */
---green-light: #d1fae5;
---red: #dc2626;            /* Erreur/Danger */
---orange: #f59e0b;         /* Warning/Pending */
+/* Couleurs de marque */
+--navy-900: #2E2A5E;   --navy-800: #4A4580;   --navy-700: #6B66B0;
+--gold: #F0A500;       --gold-light: #ffb92e; --copper: #c96d22;
+--cream: #F7F5F0;      --cream-dark: #ECEAE3; --white: #ffffff;
 
-/* Typographie */
---font-serif: 'Playfair Display', serif;    /* Titres */
---font-sans: 'DM Sans', sans-serif;         /* Corps */
+/* Alias sémantiques (home.css) : --navy, --blue, --orange, --sand… */
 
-/* Espacements */
---spacing-xs: 0.25rem;
---spacing-sm: 0.5rem;
---spacing-md: 1rem;
---spacing-lg: 1.5rem;
---spacing-xl: 2rem;
+/* États fonctionnels */
+--green: #10b981;  --green-light: #d1fae5;
+--red: #ef4444;    --red-light: #fee2e2;
+--warning: #f59e0b; --warning-light: #fef3c7;
 
-/* Rayons */
---radius-sm: 4px;
---radius-md: 8px;
---radius-lg: 12px;
---radius-full: 9999px;
-
-/* Ombres */
---shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
---shadow-md: 0 4px 6px rgba(0,0,0,0.1);
---shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+/* Gris : --gray-100/200/400/500/600/700 */
+/* Typo : --font-serif (Playfair), --font-sans (DM Sans) */
+/* Rayons : --radius-sm/md/lg/pill · Ombres : --shadow-sm/md/lg/card */
 ```
+
+### Classes ajoutées en v2.4.1 (extraction de l'inline)
+
+| Classe | Fichier | Rôle |
+|--------|---------|------|
+| `.cfg-missing` | main.css | Placeholder rouge des champs légaux non renseignés (`cfgField()`) |
+| `.settings-grid-2` | admin.css | Grille 2 colonnes (prénom/nom) des paramètres |
+| `.reschedule-current` / `.reschedule-warning` | admin.css | Bloc rappel + avertissement du formulaire de déplacement (injecté par `admin.js`) |
+| `.rgpd-notice` / `.rgpd-notice__text` / `.rgpd-notice__link` | booking.css | Mention RGPD sous le formulaire de réservation |
+| `.rgpd-section` `.rgpd-details` `.rgpd-toggle` `.rgpd-shield` `.rgpd-chevron` `.rgpd-panel(-text)` `.rgpd-delete-btn` | manage.css | Bloc « Protection des données » (accordéon + chevron) |
+| `.rgpd-modal` + `.rgpd-modal__box/title/text/list/note/field/label/input/actions` | manage.css | Modale de confirmation de suppression RGPD |
+| `.rgpd-success` + `.rgpd-success__icon/title/text` | manage.css | Écran « Données supprimées » (injecté par `manage.js`) |
 
 ### Classes utilitaires
 
@@ -489,6 +501,7 @@ dur** dans les pages.
 | Adresse | `admin_address` | /admin → Paramètres |
 | SIRET | `admin_siret` | /admin → Paramètres |
 | Statut juridique | `legal_status` | /admin → Paramètres |
+| Activité / Profession | `admin_activity` | /admin → Paramètres |
 
 Helpers associés :
 - `siteConfig()` → tableau fusionnant BDD + fallbacks `config.php` (+ champs dérivés `full_name`, `logo_name`).
@@ -511,4 +524,4 @@ Helpers associés :
 
 ---
 
-**Dernière mise à jour : 28/05/2026 - v2.4.0**
+**Dernière mise à jour : 28/05/2026 - v2.4.1**

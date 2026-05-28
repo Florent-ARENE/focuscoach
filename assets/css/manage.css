@@ -415,3 +415,162 @@
         width: 100%;
     }
 }
+
+/* ============================================
+   RGPD — suppression des données (art. 17)
+   ============================================ */
+.rgpd-section {
+    margin: 2.5rem 1.5rem 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--gray-200);
+}
+
+.rgpd-details {
+    cursor: pointer;
+}
+
+.rgpd-toggle {
+    font-size: 0.8rem;
+    color: var(--gray-400);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+.rgpd-toggle::-webkit-details-marker { display: none; }
+.rgpd-toggle::marker { content: ''; }
+
+.rgpd-shield {
+    flex-shrink: 0;
+    color: var(--gold);
+}
+
+.rgpd-chevron {
+    flex-shrink: 0;
+    margin-left: auto;
+    transition: transform 0.2s ease;
+}
+
+.rgpd-details[open] .rgpd-chevron {
+    transform: rotate(180deg);
+}
+
+.rgpd-panel {
+    margin-top: 0.75rem;
+    padding: 1.25rem;
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--gold);
+}
+
+.rgpd-panel-text {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    line-height: 1.7;
+    margin: 0 0 1rem 0;
+}
+
+.rgpd-delete-btn {
+    color: var(--red);
+    border: 1px solid var(--red-light);
+    background: var(--red-light);
+    font-size: 0.8rem;
+    padding: 0.4rem 0.75rem;
+}
+
+/* Modale de confirmation (display:none/flex piloté par manage.js) */
+.rgpd-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.rgpd-modal__box {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    margin: auto;
+}
+
+.rgpd-modal__title {
+    color: var(--navy-900);
+    margin-bottom: 1rem;
+}
+
+.rgpd-modal__text {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 0.5rem;
+}
+
+.rgpd-modal__list {
+    color: var(--gray-600);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    padding-left: 1.25rem;
+}
+
+.rgpd-modal__note {
+    color: var(--gray-500);
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.rgpd-modal__field {
+    margin-bottom: 1rem;
+}
+
+.rgpd-modal__label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--navy-800);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.rgpd-modal__input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-family: var(--font-sans);
+}
+
+.rgpd-modal__actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Écran "Données supprimées" injecté par manage.js */
+.rgpd-success {
+    text-align: center;
+    padding: 3rem 1.5rem;
+}
+
+.rgpd-success__icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.rgpd-success__title {
+    color: var(--navy-900);
+    margin-bottom: 1rem;
+}
+
+.rgpd-success__text {
+    color: var(--gray-600);
+    line-height: 1.6;
+    max-width: 500px;
+    margin: 0 auto 2rem;
+}

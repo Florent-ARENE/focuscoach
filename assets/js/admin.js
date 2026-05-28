@@ -222,7 +222,7 @@ const AdminApp = {
         
         document.getElementById('modal-body').innerHTML = `
             <h3>Déplacer le rendez-vous</h3>
-            <p style="margin-bottom: 1rem; color: var(--gray-600);">
+            <p class="reschedule-current">
                 RDV actuel : ${this.escapeHtml(booking.formatted_date)} à ${this.escapeHtml(booking.formatted_time)}
             </p>
             
@@ -240,7 +240,7 @@ const AdminApp = {
                 </select>
             </div>
             
-            <div id="reschedule-warning" style="display:none; padding: 1rem; background: #fef3c7; border-radius: 8px; margin-top: 1rem;">
+            <div id="reschedule-warning" class="reschedule-warning" style="display:none;">
                 <strong>⚠️ Attention :</strong> Le visiteur sera informé du changement par email.
             </div>
         `;
@@ -422,7 +422,8 @@ const AdminApp = {
             admin_phone: document.getElementById('admin_phone')?.value || '',
             admin_address: document.getElementById('admin_address')?.value || '',
             admin_siret: document.getElementById('admin_siret')?.value || '',
-            legal_status: document.getElementById('legal_status')?.value || ''
+            legal_status: document.getElementById('legal_status')?.value || '',
+            admin_activity: document.getElementById('admin_activity')?.value || ''
         };
         
         try {

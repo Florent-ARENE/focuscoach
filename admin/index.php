@@ -57,7 +57,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
     <!-- Écran de connexion -->
     <div class="login-container">
         <div class="login-box">
-            <h1 class="login-logo"><?= Helpers::escape(siteConfig()['logo_name']) ?> <span>Performance</span></h1>
+            <h1 class="login-logo"><?= brandWordmark() ?></h1>
             <p class="login-subtitle">Administration</p>
             
             <?php if ($loginError): ?>
@@ -80,7 +80,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <a href="#" class="sidebar-logo"><?= Helpers::escape(siteConfig()['logo_name']) ?> <span>Performance</span></a>
+            <a href="#" class="sidebar-logo"><?= brandWordmark() ?></a>
             <p class="sidebar-subtitle">Administration</p>
             
             <nav class="sidebar-nav">
@@ -269,21 +269,29 @@ $currentPage = $_GET['page'] ?? 'bookings';
                             <small class="form-help">Utilisé dans les titres de page et les emails</small>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="settings-grid-2">
                             <div class="form-group">
                                 <label class="form-label" for="admin_name">Prénom</label>
-                                <input type="text" class="form-input" id="admin_name" 
+                                <input type="text" class="form-input" id="admin_name"
                                        value="<?= Helpers::escape($currentSettings['admin_name'] ?? ADMIN_NAME) ?>"
                                        placeholder="Renaud">
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="admin_lastname">Nom de famille</label>
-                                <input type="text" class="form-input" id="admin_lastname" 
+                                <input type="text" class="form-input" id="admin_lastname"
                                        value="<?= Helpers::escape($currentSettings['admin_lastname'] ?? '') ?>"
                                        placeholder="Dupont">
                             </div>
                         </div>
-                        
+
+                        <div class="form-group">
+                            <label class="form-label" for="admin_activity">Activité / Profession</label>
+                            <input type="text" class="form-input" id="admin_activity"
+                                   value="<?= Helpers::escape($currentSettings['admin_activity'] ?? '') ?>"
+                                   placeholder="Coach, préparateur mental et formateur">
+                            <small class="form-help">Affichée dans la politique de confidentialité (responsable du traitement)</small>
+                        </div>
+
                         <div class="form-group">
                             <label class="form-label" for="admin_email">Email de notification</label>
                             <input type="email" class="form-input" id="admin_email" 
@@ -310,7 +318,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                         <h3 class="card-title">⚖️ Informations légales</h3>
                     </div>
                     <div class="card-body">
-                        <p class="settings-description" style="margin-bottom: 1.5rem;">
+                        <p class="settings-description">
                             Ces informations sont utilisées automatiquement dans les pages 
                             <strong>Mentions légales</strong> et <strong>Politique de confidentialité</strong>.
                         </p>

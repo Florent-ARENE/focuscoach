@@ -71,6 +71,7 @@ function siteConfig(): array
         'admin_address'   => '',
         'admin_siret'     => '',
         'legal_status'    => '',
+        'admin_activity'  => '',
     ];
     
     try {
@@ -97,7 +98,7 @@ function cfgField(string $value, string $placeholder = 'À compléter dans Param
     if (!empty($value)) {
         return \App\Helpers::escape($value);
     }
-    return '<span style="color:#ef4444;background:#fee2e2;padding:0.1em 0.4em;border-radius:3px;font-size:0.85em;">[' . $placeholder . ']</span>';
+    return '<span class="cfg-missing">[' . \App\Helpers::escape($placeholder) . ']</span>';
 }
 
 /**
