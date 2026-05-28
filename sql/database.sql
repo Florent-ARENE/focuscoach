@@ -1,8 +1,12 @@
 -- ============================================
--- BASE DE DONNÉES : RENAUD BOOKING SYSTEM
+-- BASE DE DONNÉES : FOCUS COACH BOOKING SYSTEM
 -- ============================================
--- Version : 1.0.0
--- Description : Système de réservation avec validation manuelle
+-- Version : 2.4.1
+-- Description : Schéma COMPLET (réimport propre from scratch).
+--   Intègre toutes les migrations : manage_token (2.2.0), tables RGPD
+--   rgpd_deletion_log + purge_stats (2.3.0), seed identité Focus Coach
+--   (2.4.0) et clé admin_activity (2.4.1). Les fichiers migration-*.sql
+--   ne servent qu'aux bases DÉJÀ déployées.
 -- ============================================
 
 CREATE DATABASE IF NOT EXISTS virtualburenaud 
@@ -18,6 +22,8 @@ DROP TABLE IF EXISTS bookings;
 DROP TABLE IF EXISTS available_slots;
 DROP TABLE IF EXISTS blocked_dates;
 DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS rgpd_deletion_log;
+DROP TABLE IF EXISTS purge_stats;
 
 -- ============================================
 -- TABLE : bookings
@@ -115,7 +121,51 @@ CREATE TABLE settings (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
     UNIQUE INDEX idx_setting_key (setting_key)
-    
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABLE : rgpd_deletion_log
+-- Trace des demandes d'effacement (accountability, art. 24)
+-- Conserve un hash de l'email — jamais l'email en clair
+-- ============================================
+CREATE TABLE rgpd_deletion_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    booking_id INT DEFAULT NULL COMMENT 'ID de la réservation supprimée',
+    visitor_email_hash VARCHAR(64) NOT NULL COMMENT 'SHA-256 de l''email (pas l''email en clair)',
+    deletion_type ENUM('client_request', 'admin_request', 'auto_purge', 'right_to_erasure') NOT NULL,
+    data_deleted TEXT DEFAULT NULL COMMENT 'Liste des champs supprimés',
+    data_retained TEXT DEFAULT NULL COMMENT 'Liste des champs conservés (ex: facturation)',
+
+    requested_by ENUM('client', 'admin', 'cron') NOT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL COMMENT 'IP du demandeur (si client)',
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_email_hash (visitor_email_hash),
+    INDEX idx_created_at (created_at)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABLE : purge_stats
+-- Métriques anonymisées des purges automatiques (cron RGPD)
+-- ============================================
+CREATE TABLE purge_stats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    purge_date DATE NOT NULL,
+    bookings_deleted INT DEFAULT 0,
+    ips_truncated INT DEFAULT 0,
+    ips_deleted INT DEFAULT 0,
+    period_start DATE DEFAULT NULL,
+    period_end DATE DEFAULT NULL,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE INDEX idx_purge_date (purge_date)
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
