@@ -27,7 +27,7 @@
 | 28/05/2026 | 2.4.1 | ⚙️ Settings | Nouveau champ paramétrable `admin_activity` (Activité / Profession) → remplace l'activité codée en dur dans `confidentialite.php` |
 | 28/05/2026 | 2.4.1 | 🎨 CSS | Refacto anti-inline : extraction de **tout le CSS décoratif** vers les fichiers (`manage.css`, `booking.css`, `admin.css`, `main.css`). Plus aucun `style=` décoratif ni `<style>` inline ; seuls subsistent les `display:none` fonctionnels pilotés par JS |
 | 28/05/2026 | 2.4.1 | 🎨 CSS | `cfgField()` → `<span class="cfg-missing">` ; `admin.js`/`manage.js` → classes au lieu de styles injectés ; hex en dur `#fef3c7/#059669/#f59e0b` → tokens `var(--warning-light/--green/--warning)` |
-| 28/05/2026 | 2.4.1 | 📄 Nouveau | `sql/migration-2.4.1.sql` — clé `admin_activity` |
+| 28/05/2026 | 2.4.1 | 📄 Nouveau | `sql/migration-2.4.1.sql` — clé `admin_activity` (bases existantes) ; seed `admin_activity` ajouté à `sql/database.sql` (réimport propre) |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Refonte « Focus Coach » : charte navy/orange + Playfair Display, appliquée à TOUT le site |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Re-skin auto booking/admin/manage via remap des tokens `:root` (aucun markup touché) |
 | 28/05/2026 | 2.4.0 | 📄 Nouveau | `index.php` — page d'accueil dynamique (remplace `index.html` statique) |

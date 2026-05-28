@@ -131,6 +131,7 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('admin_address', 'Bordeaux, Nouvelle-Aquitaine'),
 ('admin_siret', '799 008 313 00022'),
 ('legal_status', 'Entrepreneur individuel — profession libérale non réglementée'),
+('admin_activity', 'Coach, accompagnateur de transformations, préparateur mental et formateur'),
 ('site_name', 'Focus Coach');
 
 -- ============================================
