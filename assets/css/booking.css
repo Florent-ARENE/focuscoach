@@ -1,0 +1,525 @@
+/**
+ * ============================================
+ * STYLES - MODULE RÉSERVATION (VISITEUR)
+ * ============================================
+ */
+
+/* Header */
+.booking-header {
+    background: var(--navy-900);
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.booking-header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.booking-logo {
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+    text-decoration: none;
+}
+
+.booking-logo span {
+    color: var(--gold);
+}
+
+.back-link {
+    color: var(--cream);
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+}
+
+.back-link:hover {
+    color: var(--gold);
+}
+
+/* Main */
+.booking-main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+}
+
+/* Container */
+.booking-container {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+/* Steps */
+.booking-steps {
+    display: flex;
+    background: var(--navy-800);
+    padding: 1rem;
+}
+
+.step {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--gray-400);
+    font-size: 0.9rem;
+}
+
+.step.active {
+    color: var(--white);
+}
+
+.step.completed {
+    color: var(--green);
+}
+
+.step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--navy-700);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.step.active .step-number {
+    background: var(--gold);
+    color: var(--navy-900);
+}
+
+.step.completed .step-number {
+    background: var(--green);
+    color: var(--white);
+}
+
+/* Panels */
+.booking-content {
+    padding: 2rem;
+}
+
+.booking-panel {
+    display: none;
+}
+
+.booking-panel.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Calendar */
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.calendar-title {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.calendar-nav {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.calendar-nav button {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.calendar-nav button:hover {
+    background: var(--cream);
+    border-color: var(--gold);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day-header {
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    text-transform: uppercase;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    padding: 4px;
+}
+
+.day-number {
+    font-size: 0.9rem;
+}
+
+.calendar-day.other-month {
+    color: var(--gray-400);
+}
+
+.calendar-day.disabled {
+    color: var(--gray-400);
+    cursor: not-allowed;
+    background: var(--gray-100);
+}
+
+.calendar-day.available {
+    background: var(--green-light);
+    color: var(--navy-900);
+    font-weight: 500;
+}
+
+.calendar-day.available:hover {
+    background: var(--green);
+    color: var(--white);
+}
+
+.calendar-day.selected {
+    background: var(--gold) !important;
+    color: var(--navy-900) !important;
+    font-weight: 600;
+}
+
+.calendar-day.today::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--gold);
+}
+
+/* Indicateurs de réservations sur les cases */
+.day-indicators {
+    display: flex;
+    gap: 2px;
+    margin-top: 2px;
+}
+
+.day-indicators .indicator {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 8px;
+    line-height: 1.2;
+}
+
+.day-indicators .indicator.confirmed {
+    background: #059669;
+    color: white;
+}
+
+.day-indicators .indicator.pending {
+    background: #f59e0b;
+    color: white;
+}
+
+/* Slots */
+.slots-container {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+.slots-title {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+}
+
+.slot-btn {
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--gray-200);
+    background: var(--white);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.slot-btn:hover {
+    border-color: var(--gold);
+    background: var(--cream);
+}
+
+.slot-btn.selected {
+    border-color: var(--gold);
+    background: var(--gold);
+    color: var(--navy-900);
+    font-weight: 600;
+}
+
+.no-slots {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-600);
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+}
+
+/* Form */
+.booking-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.booking-form .full-width {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+    .booking-form {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Selected slot summary */
+.selected-slot-summary {
+    background: var(--cream);
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.selected-slot-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.selected-slot-info {
+    flex: 1;
+}
+
+.selected-slot-date {
+    font-weight: 600;
+    color: var(--navy-900);
+}
+
+.selected-slot-time {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+.change-slot-btn {
+    color: var(--gold);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.9rem;
+    background: none;
+    border: none;
+    font-family: var(--font-sans);
+}
+
+/* Actions */
+.booking-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+/* Success */
+.success-panel {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--green-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin: 0 auto 1.5rem;
+}
+
+.success-title {
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+}
+
+.success-message {
+    color: var(--gray-600);
+    max-width: 400px;
+    margin: 0 auto 2rem;
+}
+
+.booking-summary {
+    background: var(--cream);
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.booking-summary h4 {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.booking-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.booking-summary-row:last-child {
+    border-bottom: none;
+}
+
+.booking-summary-label {
+    color: var(--gray-600);
+}
+
+.booking-summary-value {
+    font-weight: 500;
+}
+
+/* Footer */
+.booking-footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+/* Légende du calendrier */
+.calendar-legend {
+    max-width: 800px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--gray-600);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.legend-dot.available {
+    background: var(--green-light);
+    border: 1px solid var(--green);
+}
+
+.legend-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 8px;
+    color: white;
+}
+
+.legend-badge.confirmed {
+    background: #059669;
+}
+
+.legend-badge.pending {
+    background: #f59e0b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .booking-steps {
+        flex-wrap: wrap;
+    }
+    
+    .step {
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+    
+    .step-label {
+        display: none;
+    }
+}
