@@ -148,11 +148,11 @@ const ManageApp = {
                 
                 if (data.success) {
                     document.getElementById('manage-app').innerHTML = `
-                        <div style="text-align:center; padding:3rem 1.5rem;">
-                            <div style="font-size:3rem; margin-bottom:1rem;">✓</div>
-                            <h2 style="color:var(--navy-900); margin-bottom:1rem;">Données supprimées</h2>
-                            <p style="color:var(--gray-600); line-height:1.6; max-width:500px; margin:0 auto 2rem;">
-                                Vos données personnelles ont été supprimées conformément à votre demande. 
+                        <div class="rgpd-success">
+                            <div class="rgpd-success__icon">✓</div>
+                            <h2 class="rgpd-success__title">Données supprimées</h2>
+                            <p class="rgpd-success__text">
+                                Vos données personnelles ont été supprimées conformément à votre demande.
                                 Un email de confirmation vous a été envoyé.
                             </p>
                             <a href="../" class="btn btn-primary">Retour au site</a>

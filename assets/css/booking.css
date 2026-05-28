@@ -255,12 +255,12 @@
 }
 
 .day-indicators .indicator.confirmed {
-    background: #059669;
+    background: var(--green);
     color: white;
 }
 
 .day-indicators .indicator.pending {
-    background: #f59e0b;
+    background: var(--warning);
     color: white;
 }
 
@@ -501,11 +501,11 @@
 }
 
 .legend-badge.confirmed {
-    background: #059669;
+    background: var(--green);
 }
 
 .legend-badge.pending {
-    background: #f59e0b;
+    background: var(--warning);
 }
 
 /* Responsive */
@@ -522,4 +522,27 @@
     .step-label {
         display: none;
     }
+}
+
+/* ============================================
+   Mention RGPD sous formulaire (art. 13)
+   ============================================ */
+.rgpd-notice {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--gold);
+}
+
+.rgpd-notice__text {
+    font-size: 0.8rem;
+    color: var(--gray-600);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.rgpd-notice__link {
+    color: var(--gold);
+    text-decoration: underline;
 }

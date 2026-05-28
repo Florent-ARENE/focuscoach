@@ -55,7 +55,7 @@ $lastUpdate = '13 février 2026';
         </p>
         <ul>
             <li><strong>Nom :</strong> <?= cfgField($cfg['full_name']) ?></li>
-            <li><strong>Activité :</strong> Qualiticien — Performance des Systèmes Collectifs de Travail</li>
+            <li><strong>Activité :</strong> <?= cfgField($cfg['admin_activity'], 'Activité à compléter') ?></li>
             <li><strong>Adresse :</strong> <?= cfgField($cfg['admin_address']) ?></li>
             <li><strong>Email :</strong> <?= Helpers::escape($cfg['admin_email']) ?></li>
             <li><strong>SIRET :</strong> <?= cfgField($cfg['admin_siret']) ?></li>

@@ -513,3 +513,31 @@
 .toast.error {
     background: var(--red);
 }
+
+/* ============================================
+   PARAMÈTRES — grille & formulaires
+   ============================================ */
+.settings-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+/* Formulaire de déplacement injecté (admin.js) */
+.reschedule-current {
+    margin-bottom: 1rem;
+    color: var(--gray-600);
+}
+
+.reschedule-warning {
+    padding: 1rem;
+    background: var(--warning-light);
+    border-radius: var(--radius-md);
+    margin-top: 1rem;
+}
+
+@media (max-width: 480px) {
+    .settings-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}

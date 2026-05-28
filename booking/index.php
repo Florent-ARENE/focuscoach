@@ -182,12 +182,12 @@ $pageTitle = 'Prendre rendez-vous';
                     </form>
                     
                     <!-- Mention RGPD (art. 13 — transparence, niveau 1) -->
-                    <div class="rgpd-notice" style="margin-top: 1.5rem; padding: 1rem 1.25rem; background: var(--gray-100); border-radius: var(--radius-md); border-left: 3px solid var(--gold);">
-                        <p style="font-size: 0.8rem; color: var(--gray-600); line-height: 1.6; margin: 0;">
-                            En soumettant ce formulaire, vous demandez à être recontacté(e) dans le cadre de votre demande de rendez-vous. 
-                            Vos données sont traitées par <?= Helpers::escape(siteConfig()['full_name'] ?: siteConfig()['logo_name']) ?> pour la gestion de votre demande, sur la base de l'exécution de mesures 
-                            précontractuelles (art. 6.1.b RGPD). Elles sont conservées 365 jours. 
-                            Pour en savoir plus, consultez notre <a href="../confidentialite.php" target="_blank" style="color: var(--gold); text-decoration: underline;">Politique de confidentialité</a>.
+                    <div class="rgpd-notice">
+                        <p class="rgpd-notice__text">
+                            En soumettant ce formulaire, vous demandez à être recontacté(e) dans le cadre de votre demande de rendez-vous.
+                            Vos données sont traitées par <?= Helpers::escape(siteConfig()['full_name'] ?: siteConfig()['logo_name']) ?> pour la gestion de votre demande, sur la base de l'exécution de mesures
+                            précontractuelles (art. 6.1.b RGPD). Elles sont conservées 365 jours.
+                            Pour en savoir plus, consultez notre <a href="../confidentialite.php" class="rgpd-notice__link" target="_blank">Politique de confidentialité</a>.
                         </p>
                     </div>
                     
