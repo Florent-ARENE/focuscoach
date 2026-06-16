@@ -9,7 +9,7 @@ Point d'entrée Claude Code — committé à la racine. Décrit **(1)** l'état 
 
 ---
 
-## 📦 État courant — v2.4.6
+## 📦 État courant — v2.4.7
 
 Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tout le changelog.
 
@@ -20,7 +20,7 @@ Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tou
 - **Header mobile** : seul le CTA « Prendre RDV » reste visible (`.nav-cta-item`), les autres liens réapparaissent à 768px+.
 - **Légales** : `mentions-legales.php` + `confidentialite.php` en pages PHP dédiées, grille de cartes responsive.
 - **PWA** : `manifest.json` + `sw.js` (network-first HTML/PHP, cache-first assets, exclusion `/api/`) + icônes 192/512 maskables + `theme-color`. Helpers `pwaHead()` / `pwaRegister()` dans `init.php`.
-- **DB** : migrations jusqu'à `migration-2.4.1.sql` appliquées en prod.
+- **DB** : source unique = `sql/schema.sql` (structure) + `sql/seed.sql` (défauts). Migrations incrémentales jusqu'à `migration-2.4.5.sql` (à appliquer une par une sur bases déjà déployées). Anciennement `database.sql` (supprimé en v2.4.7).
 
 ---
 
@@ -54,6 +54,7 @@ Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tou
 - [ ] Test visuel des pages clés en 3 tailles (375 / 768 / 1280).
 - [ ] `siteConfig()` partout : aucun littéral identité en dur.
 - [ ] `config.local.php` non touché.
+- [ ] **SQL aligné** : si schéma touché → `sql/schema.sql` modifié dans le commit. Si nouvelle clé `settings` utilisée par le code → `sql/seed.sql` modifié dans le commit.
 - [ ] `README_TECHNIQUE.md` et `README.md` à jour.
 
 ---
@@ -110,7 +111,7 @@ Communes à tous les projets, instanciées ici pour Focus Coach.
 ### 8. Documentation
 1. **`README_TECHNIQUE.md`** = mémoire vivante. MAJ à chaque itération : changelog daté, arborescence, relations entre fichiers, carte des fonctions, section CSS si nouveaux tokens.
 2. **`README.md`** = orientation utilisateur. MAJ si impact fonctionnel visible.
-3. **Migrations SQL** — un fichier par phase `sql/migration-vX.Y.Z.sql`. Le schéma de référence reste complet (`CREATE TABLE IF NOT EXISTS`).
+3. **SQL — source unique** : `sql/schema.sql` (structure, `CREATE TABLE IF NOT EXISTS`, zéro données) + `sql/seed.sql` (paramètres + créneaux par défaut, idempotent). **À tenir à jour dans le même commit qu'une modif de schéma** : ajout d'une table → `schema.sql`, ajout d'une clé `settings` consommée par le code → `seed.sql`. Les `sql/migration-vX.Y.Z.sql` restent l'historique incrémental pour les bases déjà déployées (chaque migration livrée doit aussi se retrouver dans `schema.sql` et, si elle ajoute des défauts, dans `seed.sql`).
 
 ### 9. Process
 1. Avant toute modif : **(a)** lire `README_TECHNIQUE.md`, **(b)** `grep` anti-duplication, **(c)** identifier les helpers existants.

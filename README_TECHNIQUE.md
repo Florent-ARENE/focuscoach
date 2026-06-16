@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.4.6  
-**Dernière mise à jour:** 16 juin 2026 — Lot 4 v2.4.6 (échappement systématique)
+**Version:** 2.4.7  
+**Dernière mise à jour:** 16 juin 2026 — v2.4.7 (SQL : schema.sql + seed.sql)
 
 ---
 
@@ -23,6 +23,9 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 16/06/2026 | 2.4.7 | 🗄️ SQL | **Source unique du schéma**. `sql/database.sql` (qui mélangeait DDL + seed + `CREATE DATABASE` + `DROP TABLE`) supprimé. Remplacé par : `sql/schema.sql` (structure pure, `CREATE TABLE IF NOT EXISTS`, idempotent, zéro données, prérequis MySQL ≥ 5.7.6 ou MariaDB ≥ 10.2 pour `active_key STORED`) + `sql/seed.sql` (paramètres `settings` par défaut via `ON DUPLICATE KEY UPDATE setting_value = setting_value` non destructif + créneaux Lu-Ve 9-17 via `INSERT IGNORE`). Installation fraîche : `mysql < schema.sql && mysql < seed.sql`. Les `sql/migration-vX.Y.Z.sql` restent l'historique incrémental pour bases déjà déployées. |
+| 16/06/2026 | 2.4.7 | 🧰 Outil/Web | `scripts/hash-password.php` mode WEB ajouté (en plus du CLI existant) : formulaire HTML pour générer `ADMIN_PASSWORD_HASH` quand SSH indisponible (VM de test, OVH mutualisé). Headers `Cache-Control: no-store` + `X-Robots-Tag: noindex`. Mot de passe effacé côté serveur dès le hash retourné. Bandeau « À SUPPRIMER après usage » bien visible. |
+| 16/06/2026 | 2.4.7 | 📘 Règle | CLAUDE.md §8.3 réécrite : SQL = source unique (`schema.sql` + `seed.sql`) à tenir à jour dans le même commit qu'une modif de schéma ou un ajout de clé `settings`. Checklist anti-régression : nouvelle ligne « SQL aligné ». |
 | 16/06/2026 | 2.4.6 | 🔒 Sécurité | **Lot 4 — Échappement systématique**. 5 `<title>` (admin/booking/manage/légales) : `$pageTitle` + `siteConfig()['site_name']` passent par `Helpers::escape()`. Tous les `<?= $var ?>` bruts (h1, footer site_name, option SERVICE_TYPES, status badge, info-value, error, token data-attr) : `Helpers::escape()`. `htmlspecialchars(...)` → `Helpers::escape(...)` (cohérence — un seul helper). `<a href="tel:<?= preg_replace(...) ?>">` enveloppé dans `escape()` (defense-in-depth). |
 | 16/06/2026 | 2.4.6 | 🛡️ AD-8 | **Garde-fou pre-commit Lot 4** : tout `<?= ... ?>` doit débuter par une fonction allowlistée — `Helpers::escape`, `brandWordmark`, `Icons::svg`, `cfgField`, `pwaHead`, `pwaRegister`, `appVersion`, `cacheVersion`, `Helpers::csrfMeta`, `Helpers::csrfField`, `date(`. Hors allowlist = rouge bloquant. Cible : pages templates publiques + admin (Mailer / GoogleCalendarSync hors scope — pas de `<?=`). |
 | 16/06/2026 | 2.4.6 | 🧹 AD-5 | Emojis 3-bytes résiduels (`❌`, `⏳`, `✓`) remplacés par `Icons::svg('circle-x'\|'hourglass'\|'check')` dans `booking/manage.php` + `booking/index.php`. Le hook AD-5 ne flagait que les 4-bytes (`[\xF0-\xF4]`) — gap couvert au passage côté code (le hook reste, mais le DOM est déjà propre). |
