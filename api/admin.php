@@ -363,6 +363,7 @@ switch ($action) {
                 'admin_address',
                 'admin_siret',
                 'legal_status',
+                'admin_activity',
                 'site_name'
             ];
             

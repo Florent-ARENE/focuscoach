@@ -3,7 +3,7 @@
 > **Document de conformité** — Article 6.1.f du RGPD  
 > **Traitement concerné :** Journalisation technique (IP et user agent)  
 > **Date de réalisation :** 13 février 2026  
-> **Responsable :** Renaud [NOM]
+> **Responsable :** Renaud Heitz
 
 ---
 
