@@ -13,6 +13,62 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.4.5] — 2026-06-16 — Lot 3 : Intégrité
+
+### 🧱 Race double-booking
+- **Colonne générée `bookings.active_key` + `UNIQUE KEY`** :
+  `CASE WHEN status IN ('pending','confirmed') THEN
+   CONCAT(slot_date,'_',slot_time_start) ELSE NULL END`. L'unicité
+  d'un créneau actif est désormais arbitrée côté SQL — deux requêtes
+  qui passent en même temps `isSlotTaken()` ne peuvent plus toutes les
+  deux insérer : la loser tombe sur SQLSTATE 23000. NULL pour
+  `cancelled`/`completed` (InnoDB autorise plusieurs NULL sur UNIQUE),
+  donc un créneau libéré peut être re-réservé.
+- **`Booking::create()` trap 23000** : retour « Ce créneau vient
+  d'être réservé. Veuillez en choisir un autre. » au lieu d'une
+  erreur générique. Le code de race coexiste avec la vérif PHP en
+  amont — la vérif filtre 99 % des cas, l'UNIQUE attrape les 1 % de
+  concurrence pure.
+- Migration `sql/migration-2.4.5.sql` + intégration au schéma de
+  référence `sql/database.sql`.
+
+### 🧱 Idempotence reschedule
+- **`Booking::reschedule()` + `Booking::clientReschedule()`** :
+  early return `unchanged:true` si `slot_date` et `slot_time_start`
+  et `slot_time_end` (comparés sur 5 chars `HH:MM`) sont identiques
+  à la valeur en BDD. Le drapeau permet à l'API de skipper la sync
+  Google Calendar et les notifications email.
+- **`api/admin.php` et `api/manage.php`** consomment `unchanged` —
+  double POST / re-clic → plus de double mail, plus de PATCH Google
+  Calendar inutile.
+
+### 🧱 Timeouts cURL Google bornés
+- **`GoogleCalendarSync`** : constantes `CURL_CONNECT_TIMEOUT=5s` et
+  `CURL_TOTAL_TIMEOUT=15s` appliquées au endpoint token et à chaque
+  `apiRequest()`. Avant : `CURLOPT_TIMEOUT=30s` sans
+  `CONNECTTIMEOUT` — une connexion qui rame pouvait monopoliser
+  l'essentiel du budget Apache 60 s. Désormais : au-delà du budget,
+  on log et on rend la main. La BDD locale reste source de vérité,
+  la sync repasse au prochain événement (création/mise à jour
+  suivante).
+
+### 🧱 `SET time_zone` MySQL ↔ PHP
+- **`Database::getInstance()`** exécute
+  `SET time_zone = '<date('P')>'` après `new PDO()`. `date('P')`
+  produit l'offset numérique courant (`+01:00` ou `+02:00` avec
+  DST), accepté tel quel par MySQL — pas besoin du nom de fuseau ni
+  de la table `mysql.time_zone_name` (souvent absente sur OVH
+  mutualisé). Aligne `NOW()` SQL et `DateTime` PHP : fin des
+  décalages d'1 ou 2 h sur `created_at`, `confirmed_at`, comparaisons
+  de créneaux.
+
+### ✅ Non-régression (AD-9)
+- `tests/smoke.php` : +5 cas Lot 3 (format `date('P')` `±HH:MM`,
+  longueur `active_key` ≤ 20 chars, équivalence `HH:MM` qui ignore
+  les secondes, minute différente → change détecté). La race UNIQUE
+  et les timeouts cURL sont des tests d'intégration BDD/réseau —
+  hors smoke unitaire.
+
 ## [2.4.4] — 2026-06-16 — Lot 2 : Auth admin durcie
 
 ### 🔒 Sécurité

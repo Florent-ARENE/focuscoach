@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.4.4  
-**Dernière mise à jour:** 16 juin 2026 — Lot 2 v2.4.4 (auth admin durcie)
+**Version:** 2.4.5  
+**Dernière mise à jour:** 16 juin 2026 — Lot 3 v2.4.5 (intégrité)
 
 ---
 
@@ -23,6 +23,11 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 16/06/2026 | 2.4.5 | 🧱 Intégrité | **Lot 3 — race double-booking fermée**. Colonne générée `bookings.active_key = CONCAT(slot_date,'_',slot_time_start)` quand status ∈ (`pending`,`confirmed`), NULL sinon, + `UNIQUE KEY uq_active_slot`. L'arbitrage passe côté SQL : deux requêtes concurrentes peuvent franchir `isSlotTaken()`, l'INSERT loser tombe sur 23000. `Booking::create()` trap le 23000 et renvoie « Ce créneau vient d'être réservé ». Migration `sql/migration-2.4.5.sql` + intégration `sql/database.sql`. |
+| 16/06/2026 | 2.4.5 | 🧱 Intégrité | **Idempotence reschedule**. `Booking::reschedule()` + `Booking::clientReschedule()` : early return `unchanged:true` si `slot_date` ET `slot_time_start[0..5]` ET `slot_time_end[0..5]` identiques à la valeur en base. `api/admin.php` + `api/manage.php` skippent alors la sync Google Calendar et `Mailer::notifyReschedule()`/`notifyClientRescheduleRequest()` — fin du double mail sur double POST. |
+| 16/06/2026 | 2.4.5 | 🧱 Intégrité | **Timeouts cURL Google bornés** (`GoogleCalendarSync`). Constantes `CURL_CONNECT_TIMEOUT=5s` + `CURL_TOTAL_TIMEOUT=15s` appliquées au token endpoint et à chaque `apiRequest()`. Au-delà : log + retour `null`, on rend la main avant les 60 s du budget Apache. La BDD locale reste cohérente, la sync repasse au prochain événement. |
+| 16/06/2026 | 2.4.5 | 🧱 Intégrité | **`SET time_zone` MySQL aligné sur PHP**. `Database::getInstance()` exécute `SET time_zone = '<date(\'P\')>'` après `new PDO()` — offset numérique (`+01:00` / `+02:00` avec DST). Élimine les décalages d'1 ou 2 h entre `NOW()` SQL et `DateTime` PHP (visibles dans `created_at`, `confirmed_at`, comparaisons de créneaux). |
+| 16/06/2026 | 2.4.5 | ✅ AD-9 | `tests/smoke.php` étend de 5 cas Lot 3 (format `date('P')`, longueur `active_key` ≤ 20, équivalence HH:MM ignorant les secondes, minute différente = change). Race UNIQUE + timeouts cURL = tests d'intégration BDD/réseau, hors smoke unitaire. |
 | 16/06/2026 | 2.4.4 | 🔒 Sécurité | **Lot 2 — Auth admin durcie**. `admin/index.php` bascule sur `password_verify(ADMIN_PASSWORD_HASH)` strict ; `define('ADMIN_PASSWORD', 'renaud2026')` supprimé de `config/config.php`. Rate limit 5 essais / 15 min par IP (table `admin_login_attempts`). Cookies session : `HttpOnly`/`SameSite=Lax`/`Secure` conditionnel HTTPS. `session_regenerate_id(true)` après login (anti-fixation). Logout efface session + cookie. |
 | 16/06/2026 | 2.4.4 | 🧰 Helper | `Helpers::clientIp()`, `Helpers::isLoginLocked($ip)`, `Helpers::recordLoginAttempt($ip, $success)` + constantes `LOGIN_MAX_ATTEMPTS=5` / `LOGIN_WINDOW_MIN=15`. Succès purge les échecs antérieurs (relâche le verrou). Fail-open BDD pour ne pas lock-out sur panne. |
 | 16/06/2026 | 2.4.4 | 🗄️ Migration | `sql/migration-2.4.4.sql` + `sql/database.sql` : nouvelle table `admin_login_attempts (ip_address, success, attempted_at)` avec index composite `(ip_address, attempted_at)`. |

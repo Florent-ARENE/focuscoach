@@ -95,8 +95,15 @@ switch ($action) {
         
         // Effectuer le déplacement
         $result = $booking->clientReschedule($token, $newDate, $newTimeStart, $newTimeEnd);
-        
+
         if ($result['success']) {
+            // Idempotence : créneau identique → pas de sync, pas de mail.
+            if (!empty($result['unchanged'])) {
+                Helpers::jsonResponse([
+                    'success' => true,
+                    'message' => $result['message']
+                ]);
+            }
             // Mettre à jour Google Calendar si activé
             try {
                 $gcal = new GoogleCalendarSync();

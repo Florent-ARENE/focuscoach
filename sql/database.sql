@@ -68,13 +68,24 @@ CREATE TABLE bookings (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     confirmed_at DATETIME DEFAULT NULL,
     cancelled_at DATETIME DEFAULT NULL,
-    
+
+    -- Clé d'unicité créneau actif (race double-booking)
+    -- NULL si annulé/terminé → InnoDB autorise plusieurs NULL sur UNIQUE,
+    -- donc un créneau libéré peut être re-réservé.
+    active_key VARCHAR(20) GENERATED ALWAYS AS (
+        CASE WHEN status IN ('pending','confirmed')
+             THEN CONCAT(slot_date, '_', slot_time_start)
+             ELSE NULL
+        END
+    ) STORED,
+
     -- Index
     INDEX idx_status (status),
     INDEX idx_slot_date (slot_date),
     INDEX idx_visitor_email (visitor_email),
-    UNIQUE INDEX idx_manage_token (manage_token)
-    
+    UNIQUE INDEX idx_manage_token (manage_token),
+    UNIQUE KEY uq_active_slot (active_key)
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================

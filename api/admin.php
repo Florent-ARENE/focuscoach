@@ -265,8 +265,17 @@ switch ($action) {
         $bookingData = $booking->getById($id);
         
         $result = $booking->reschedule($id, $newDate, $newTimeStart, $newTimeEnd);
-        
+
         if ($result['success']) {
+            // Idempotence : si la BDD n'a pas bougé, on saute les notifs
+            // et la sync Google Calendar (pas de double mail, pas de PATCH inutile).
+            if (!empty($result['unchanged'])) {
+                Helpers::jsonResponse([
+                    'success' => true,
+                    'message' => $result['message'],
+                    'details' => $result
+                ]);
+            }
             // Mettre à jour l'événement Google Calendar
             try {
                 $gcal = new GoogleCalendarSync();
