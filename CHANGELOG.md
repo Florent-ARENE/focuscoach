@@ -53,11 +53,17 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 - **`sql/seed.sql`** — valeurs par défaut, idempotent.
   - `settings` : 11 clés (`site_name`, `admin_name`/`lastname`/
     `activity`/`email`/`phone`/`address`/`siret`, `legal_status`,
-    `google_calendar_enabled`/`id`) en `INSERT ... ON DUPLICATE KEY
-    UPDATE setting_value = setting_value` — **ne touche pas** aux
-    valeurs déjà personnalisées en admin.
+    `google_calendar_enabled`/`id`) en `INSERT IGNORE` — **ne touche
+    pas** aux valeurs déjà personnalisées en admin (la clé unique
+    `idx_setting_key` arbitre côté MySQL).
   - `available_slots` : Lundi-Vendredi, 9h-12h et 14h-17h, par tranches
     de 30 min, en `INSERT IGNORE`.
+  - Note : la version finalement committée (après revue) utilise
+    `INSERT IGNORE` partout pour la lisibilité, et non le
+    `ON DUPLICATE KEY UPDATE setting_value = setting_value` initial
+    (sémantiquement équivalent, mais c'était un no-op explicite
+    déguisé). Cf. commit suivant « refactor(sql): adopter la version
+    revue par Renaud ».
 
 ### 📘 Règle « à tenir à jour »
 - **CLAUDE.md §8.3** réécrite : SQL = source unique. À chaque modif
