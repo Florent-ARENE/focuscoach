@@ -57,7 +57,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
     <!-- Écran de connexion -->
     <div class="login-container">
         <div class="login-box">
-            <h1 class="login-logo"><?= Helpers::escape(siteConfig()['logo_name']) ?> <span>Performance</span></h1>
+            <h1 class="login-logo"><?= brandWordmark() ?></h1>
             <p class="login-subtitle">Administration</p>
             
             <?php if ($loginError): ?>
@@ -80,7 +80,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <a href="#" class="sidebar-logo"><?= Helpers::escape(siteConfig()['logo_name']) ?> <span>Performance</span></a>
+            <a href="#" class="sidebar-logo"><?= brandWordmark() ?></a>
             <p class="sidebar-subtitle">Administration</p>
             
             <nav class="sidebar-nav">
