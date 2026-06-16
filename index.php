@@ -39,7 +39,7 @@ $cfg = siteConfig();
             <li><a href="#philosophie">Philosophie</a></li>
             <li><a href="#about">À propos</a></li>
             <li><a href="#parcours">Parcours</a></li>
-            <li><a href="booking/" class="nav-cta">Prendre RDV <?= Icons::svg('zap', 16, 'icon-cta') ?></a></li>
+            <li class="nav-cta-item"><a href="booking/" class="nav-cta">Prendre RDV <?= Icons::svg('zap', 16, 'icon-cta') ?></a></li>
         </ul>
     </nav>
 
