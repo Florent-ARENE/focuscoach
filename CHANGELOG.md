@@ -13,6 +13,49 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.4.7] — 2026-06-16 — SQL : schema.sql + seed.sql + outils
+
+### 🗄️ SQL — source unique
+- **`sql/database.sql` supprimé**. Mélangeait DDL + données + `CREATE
+  DATABASE` + `DROP TABLE` → impossible à ré-exécuter sur une base
+  existante sans tout effacer.
+- **`sql/schema.sql`** — structure pure (`CREATE TABLE IF NOT EXISTS`),
+  idempotent, zéro données, zéro `CREATE DATABASE`. Inclut toutes les
+  tables : `bookings` (avec `active_key STORED` du Lot 3), `available_slots`,
+  `blocked_dates`, `settings`, `rgpd_deletion_log`, `purge_stats`,
+  `admin_login_attempts` (Lot 2).
+  Prérequis : MySQL ≥ 5.7.6 ou MariaDB ≥ 10.2 (pour la colonne générée).
+- **`sql/seed.sql`** — valeurs par défaut, idempotent.
+  - `settings` : 11 clés (`site_name`, `admin_name`/`lastname`/
+    `activity`/`email`/`phone`/`address`/`siret`, `legal_status`,
+    `google_calendar_enabled`/`id`) en `INSERT ... ON DUPLICATE KEY
+    UPDATE setting_value = setting_value` — **ne touche pas** aux
+    valeurs déjà personnalisées en admin.
+  - `available_slots` : Lundi-Vendredi, 9h-12h et 14h-17h, par tranches
+    de 30 min, en `INSERT IGNORE`.
+
+### 📘 Règle « à tenir à jour »
+- **CLAUDE.md §8.3** réécrite : SQL = source unique. À chaque modif
+  de schéma → `schema.sql` MAJ dans le même commit. À chaque ajout
+  d'une clé `settings` consommée par le code → `seed.sql` MAJ dans
+  le même commit. Les `migration-vX.Y.Z.sql` restent l'historique
+  incrémental pour les bases déjà déployées (chaque migration livrée
+  se retrouve aussi dans `schema.sql`/`seed.sql`).
+- **Checklist anti-régression** : nouvelle ligne « SQL aligné ».
+- **État courant** : section DB mise à jour.
+
+### 🧰 hash-password.php — mode WEB
+- Ajout d'un mode WEB en plus du CLI existant : formulaire HTML
+  accessible depuis le navigateur pour générer `ADMIN_PASSWORD_HASH`
+  quand SSH n'est pas dispo (VM de test, OVH mutualisé).
+- Détection automatique du SAPI : CLI → comportement d'origine,
+  Web → formulaire.
+- Headers `Cache-Control: no-store, no-cache` + `X-Robots-Tag:
+  noindex, nofollow` → le hash n'est ni indexé ni mis en cache.
+- Le mot de passe est effacé (`$password = ''; unset($_POST[...])`)
+  dès qu'on n'en a plus besoin — pas de log, pas de stockage.
+- Bandeau rouge « À SUPPRIMER après usage » en tête de page.
+
 ## [2.4.6] — 2026-06-16 — Lot 4 : Échappement systématique
 
 ### 🔒 Sécurité
