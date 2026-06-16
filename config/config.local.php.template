@@ -1,0 +1,89 @@
+<?php
+/**
+ * ============================================
+ * CONFIGURATION LOCALE — TEMPLATE
+ * ============================================
+ * Copier ce fichier en `config.local.php`, puis renseigner les valeurs réelles.
+ *
+ *   cp config.local.php.template config.local.php
+ *
+ * - `config.local.php` n'est JAMAIS versionné (cf. .gitignore) ni écrasé en MAJ.
+ * - Ce template, LUI, est versionné : il documente les clés attendues.
+ * - NE JAMAIS committer de vraie valeur (mot de passe, clé Stripe, hash) ici.
+ * - Dossier protégé par .htaccess (Require all denied) : aucun accès HTTP direct.
+ */
+
+// ──────────────────────────────────────────────
+//  Base de données (OVH mutualisé)
+// ──────────────────────────────────────────────
+define('DB_HOST',    'xxxxxxxx.mysql.db');   // serveur MySQL OVH
+define('DB_NAME',    'xxxxxxxx');
+define('DB_USER',    'xxxxxxxx');
+define('DB_PASS',    'xxxxxxxx');
+define('DB_CHARSET', 'utf8mb4');             // utf8mb4 obligatoire (accents, emojis)
+define('DB_PORT',    3306);
+
+// ──────────────────────────────────────────────
+//  Accès admin
+// ──────────────────────────────────────────────
+// Hash bcrypt généré UNE fois en local — ne jamais stocker le mot de passe en clair.
+// Générer le hash :
+//   php -r "echo password_hash('VOTRE_NOUVEAU_MDP', PASSWORD_DEFAULT), PHP_EOL;"
+// puis coller le résultat ci-dessous. Choisir un mot de passe NEUF
+// (ne pas réutiliser l'ancien mot de passe en clair, considéré comme compromis).
+define('ADMIN_PASSWORD_HASH', '$2y$10$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+
+// ──────────────────────────────────────────────
+//  Stripe — paiement des séances
+// ──────────────────────────────────────────────
+// Clés : dashboard.stripe.com > Développeurs > Clés API
+// Utiliser sk_test_ / pk_test_ en recette, sk_live_ / pk_live_ en production.
+// Format attendu : sk_live_... (prod) ou sk_test_... (recette) — coller la clé réelle.
+define('STRIPE_SECRET_KEY',      'REPLACE_WITH_STRIPE_SECRET_KEY');
+// Format attendu : pk_live_... (prod) ou pk_test_... (recette).
+define('STRIPE_PUBLISHABLE_KEY', 'REPLACE_WITH_STRIPE_PUBLISHABLE_KEY');
+
+// Secret de signature du endpoint webhook (Développeurs > Webhooks > votre endpoint).
+// Format attendu : whsec_... — sert à vérifier l'authenticité des événements Stripe.
+define('STRIPE_WEBHOOK_SECRET',  'REPLACE_WITH_STRIPE_WEBHOOK_SECRET');
+
+// ──────────────────────────────────────────────
+//  Tarifs Stripe par offre
+// ──────────────────────────────────────────────
+// Chaque offre PAYANTE = un objet Price créé dans le dashboard Stripe
+// (Catalogue de produits > Ajouter un produit > prix unique en EUR).
+// Coller ici le price_id (format price_xxx). Les test/live ont des IDs différents.
+//
+// Hors liste, donc PAS de price_id ici :
+//   - Séance découverte (gratuite) → créneau réservable sans paiement
+//   - Club / pro sportif (sur devis) → traité hors Stripe
+//
+// Les libellés, durées et segments des offres ne vivent PAS ici : ce sont du
+// contenu applicatif (BDD `settings` ou config.php). Les commentaires ci-dessous
+// ne servent qu'au repérage.
+define('STRIPE_PRICES', [
+
+    // ── Sportifs — préparation mentale ──
+    'sport_flash'    => 'price_xxxxxxxxxxxxxx',  // Sport Flash — 45 min — 80 €
+    'sport_seance'   => 'price_xxxxxxxxxxxxxx',  // Préparation Mentale — 1h — 100 €
+    'sport_forfait5' => 'price_xxxxxxxxxxxxxx',  // Forfait Performance — 5 séances — 420 €
+
+    // ── Dirigeants — executive ──
+    'dir_decision'   => 'price_xxxxxxxxxxxxxx',  // Décision Express — 45 min — 200 €
+    'dir_miroir'     => 'price_xxxxxxxxxxxxxx',  // Manager Miroir — 1h — 250 €
+    'dir_fondateur'  => 'price_xxxxxxxxxxxxxx',  // Coaching Fondateur — 1h — 280 €
+    'dir_duo'        => 'price_xxxxxxxxxxxxxx',  // Duo Aligné — 1h30 — 350 €
+    'dir_parcours6'  => 'price_xxxxxxxxxxxxxx',  // Parcours Dirigeant — 6 séances — 1 500 €
+
+    // ── Particuliers — vie / transition ──
+    'part_declic'    => 'price_xxxxxxxxxxxxxx',  // Déclic 30 — 30 min — 70 €
+    'part_reset'     => 'price_xxxxxxxxxxxxxx',  // Reset Mental — 1h — 100 €
+    'part_rebond'    => 'price_xxxxxxxxxxxxxx',  // Rebond — 1h — 100 €
+    'part_forfait5'  => 'price_xxxxxxxxxxxxxx',  // Forfait Élan — 5 séances — 420 €
+]);
+
+// ──────────────────────────────────────────────
+//  Google Calendar (optionnel — si la sync est activée)
+// ──────────────────────────────────────────────
+// Fichier de credentials du Service Account, hors webroot, protégé .htaccess.
+// define('GOOGLE_CREDENTIALS_PATH', __DIR__ . '/google-credentials.json');

@@ -1,0 +1,28 @@
+# ============================================
+# Secrets & config locale — JAMAIS versionnés
+# ============================================
+config/config.local.php
+config/google-credentials.json
+config/google-token.json
+
+# ============================================
+# Dumps SQL à la racine (export ponctuel, peut contenir des données)
+# Les SQL versionnés vivent dans sql/ (schéma + migrations).
+# ============================================
+/*.sql
+
+# ============================================
+# Système / éditeurs
+# ============================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# ============================================
+# Logs
+# ============================================
+*.log
+logs/
