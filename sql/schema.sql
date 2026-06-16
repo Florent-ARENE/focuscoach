@@ -109,7 +109,10 @@ CREATE TABLE IF NOT EXISTS available_slots (
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    INDEX idx_day_active (day_of_week, is_active)
+    INDEX idx_day_active (day_of_week, is_active),
+    -- Unicité (jour, début, fin) : rend le seed idempotent et empêche
+    -- les doublons silencieux si quelqu'un rejoue `seed.sql` par erreur.
+    UNIQUE KEY uq_slot (day_of_week, time_start, time_end)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

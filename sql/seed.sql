@@ -6,8 +6,9 @@
 -- - settings    : idempotent (`INSERT IGNORE`, clé unique sur setting_key).
 --                 Rejouable sans risque ; ne réécrit pas une valeur déjà posée.
 -- - available_slots : motif par défaut (Lun-Ven, 9h-12h / 14h-17h, 30 min).
---                 PAS de clé unique sur (day, time) → ne pas rejouer sur une
---                 base déjà seedée (sinon doublons). Réservé au fresh install.
+--                 idempotent depuis v2.4.8 (UNIQUE KEY `uq_slot` sur
+--                 (day, time_start, time_end) + `INSERT IGNORE`). Rejouable
+--                 sans risque de doublons.
 --
 -- Identité : valeurs réelles Focus Coach. Si tu préfères le flux
 -- « tout via l'admin », laisse-les vides — `cfgField()` affichera alors
@@ -30,9 +31,7 @@ INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
 
 -- ── Créneaux hebdomadaires par défaut ──
 -- Lundi(1) → Vendredi(5), matin 09:00-12:00 + après-midi 14:00-17:00, pas de 30 min.
--- ⚠️ Reconstruit depuis le motif documenté — diffé contre l'ancien database.sql
---    avant commit (je n'avais que le lundi à l'œil lors de la rédaction).
-INSERT INTO available_slots (day_of_week, time_start, time_end) VALUES
+INSERT IGNORE INTO available_slots (day_of_week, time_start, time_end) VALUES
 -- Lundi
 (1,'09:00:00','09:30:00'),(1,'09:30:00','10:00:00'),(1,'10:00:00','10:30:00'),
 (1,'10:30:00','11:00:00'),(1,'11:00:00','11:30:00'),(1,'11:30:00','12:00:00'),

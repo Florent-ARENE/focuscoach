@@ -9,7 +9,7 @@ Point d'entrée Claude Code — committé à la racine. Décrit **(1)** l'état 
 
 ---
 
-## 📦 État courant — v2.4.7
+## 📦 État courant — v2.4.8
 
 Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tout le changelog.
 
@@ -20,7 +20,7 @@ Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tou
 - **Header mobile** : seul le CTA « Prendre RDV » reste visible (`.nav-cta-item`), les autres liens réapparaissent à 768px+.
 - **Légales** : `mentions-legales.php` + `confidentialite.php` en pages PHP dédiées, grille de cartes responsive.
 - **PWA** : `manifest.json` + `sw.js` (network-first HTML/PHP, cache-first assets, exclusion `/api/`) + icônes 192/512 maskables + `theme-color`. Helpers `pwaHead()` / `pwaRegister()` dans `init.php`.
-- **DB** : source unique = `sql/schema.sql` (structure) + `sql/seed.sql` (défauts). Migrations incrémentales jusqu'à `migration-2.4.5.sql` (à appliquer une par une sur bases déjà déployées). Anciennement `database.sql` (supprimé en v2.4.7).
+- **DB** : source unique = `sql/schema.sql` (structure) + `sql/seed.sql` (défauts, idempotent). Migrations incrémentales jusqu'à `migration-2.4.8.sql` (à appliquer une par une sur bases déjà déployées). Anciennement `database.sql` (supprimé en v2.4.7).
 
 ---
 
