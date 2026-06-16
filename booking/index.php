@@ -17,7 +17,7 @@ $pageTitle = 'Prendre rendez-vous';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?= Helpers::csrfMeta() ?>
-    <title><?= $pageTitle ?> | <?= siteConfig()['site_name'] ?></title>
+    <title><?= Helpers::escape($pageTitle) ?> | <?= Helpers::escape(siteConfig()['site_name']) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -41,7 +41,7 @@ $pageTitle = 'Prendre rendez-vous';
     
     <!-- Main -->
     <main class="booking-main">
-        <h1 class="page-title text-center"><?= $pageTitle ?></h1>
+        <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
         <p class="page-subtitle text-center">Choisissez un créneau et je vous recontacte pour confirmer notre entretien</p>
         
         <!-- Légende du calendrier -->
@@ -168,7 +168,7 @@ $pageTitle = 'Prendre rendez-vous';
                             <label class="form-label" for="service_type">Type de prestation</label>
                             <select class="form-select" id="service_type" name="service_type">
                                 <?php foreach (SERVICE_TYPES as $key => $label): ?>
-                                <option value="<?= $key ?>"><?= $label ?></option>
+                                <option value="<?= Helpers::escape($key) ?>"><?= Helpers::escape($label) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -213,7 +213,7 @@ $pageTitle = 'Prendre rendez-vous';
                 <!-- Panel 3: Success -->
                 <div class="booking-panel" id="panel-3">
                     <div class="success-panel">
-                        <div class="success-icon">✓</div>
+                        <div class="success-icon"><?= Icons::svg('check', 32) ?></div>
                         <h2 class="success-title">Demande envoyée !</h2>
                         <p class="success-message">
                             Votre demande de rendez-vous a été enregistrée. Vous recevrez un email de confirmation dès que votre créneau sera validé.
@@ -248,7 +248,7 @@ $pageTitle = 'Prendre rendez-vous';
     
     <!-- Footer -->
     <footer class="booking-footer">
-        <p>© <?= date('Y') ?> <?= siteConfig()['site_name'] ?></p>
+        <p>© <?= date('Y') ?> <?= Helpers::escape(siteConfig()['site_name']) ?></p>
     </footer>
     
     <script src="../assets/js/icons.js"></script>

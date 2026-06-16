@@ -9,7 +9,7 @@ Point d'entrée Claude Code — committé à la racine. Décrit **(1)** l'état 
 
 ---
 
-## 📦 État courant — v2.4.5
+## 📦 État courant — v2.4.6
 
 Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tout le changelog.
 

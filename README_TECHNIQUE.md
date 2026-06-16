@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.4.5  
-**Dernière mise à jour:** 16 juin 2026 — Lot 3 v2.4.5 (intégrité)
+**Version:** 2.4.6  
+**Dernière mise à jour:** 16 juin 2026 — Lot 4 v2.4.6 (échappement systématique)
 
 ---
 
@@ -23,6 +23,9 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 16/06/2026 | 2.4.6 | 🔒 Sécurité | **Lot 4 — Échappement systématique**. 5 `<title>` (admin/booking/manage/légales) : `$pageTitle` + `siteConfig()['site_name']` passent par `Helpers::escape()`. Tous les `<?= $var ?>` bruts (h1, footer site_name, option SERVICE_TYPES, status badge, info-value, error, token data-attr) : `Helpers::escape()`. `htmlspecialchars(...)` → `Helpers::escape(...)` (cohérence — un seul helper). `<a href="tel:<?= preg_replace(...) ?>">` enveloppé dans `escape()` (defense-in-depth). |
+| 16/06/2026 | 2.4.6 | 🛡️ AD-8 | **Garde-fou pre-commit Lot 4** : tout `<?= ... ?>` doit débuter par une fonction allowlistée — `Helpers::escape`, `brandWordmark`, `Icons::svg`, `cfgField`, `pwaHead`, `pwaRegister`, `appVersion`, `cacheVersion`, `Helpers::csrfMeta`, `Helpers::csrfField`, `date(`. Hors allowlist = rouge bloquant. Cible : pages templates publiques + admin (Mailer / GoogleCalendarSync hors scope — pas de `<?=`). |
+| 16/06/2026 | 2.4.6 | 🧹 AD-5 | Emojis 3-bytes résiduels (`❌`, `⏳`, `✓`) remplacés par `Icons::svg('circle-x'\|'hourglass'\|'check')` dans `booking/manage.php` + `booking/index.php`. Le hook AD-5 ne flagait que les 4-bytes (`[\xF0-\xF4]`) — gap couvert au passage côté code (le hook reste, mais le DOM est déjà propre). |
 | 16/06/2026 | 2.4.5 | 🧱 Intégrité | **Lot 3 — race double-booking fermée**. Colonne générée `bookings.active_key = CONCAT(slot_date,'_',slot_time_start)` quand status ∈ (`pending`,`confirmed`), NULL sinon, + `UNIQUE KEY uq_active_slot`. L'arbitrage passe côté SQL : deux requêtes concurrentes peuvent franchir `isSlotTaken()`, l'INSERT loser tombe sur 23000. `Booking::create()` trap le 23000 et renvoie « Ce créneau vient d'être réservé ». Migration `sql/migration-2.4.5.sql` + intégration `sql/database.sql`. |
 | 16/06/2026 | 2.4.5 | 🧱 Intégrité | **Idempotence reschedule**. `Booking::reschedule()` + `Booking::clientReschedule()` : early return `unchanged:true` si `slot_date` ET `slot_time_start[0..5]` ET `slot_time_end[0..5]` identiques à la valeur en base. `api/admin.php` + `api/manage.php` skippent alors la sync Google Calendar et `Mailer::notifyReschedule()`/`notifyClientRescheduleRequest()` — fin du double mail sur double POST. |
 | 16/06/2026 | 2.4.5 | 🧱 Intégrité | **Timeouts cURL Google bornés** (`GoogleCalendarSync`). Constantes `CURL_CONNECT_TIMEOUT=5s` + `CURL_TOTAL_TIMEOUT=15s` appliquées au token endpoint et à chaque `apiRequest()`. Au-delà : log + retour `null`, on rend la main avant les 60 s du budget Apache. La BDD locale reste cohérente, la sync repasse au prochain événement. |

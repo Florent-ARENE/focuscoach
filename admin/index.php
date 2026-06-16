@@ -65,7 +65,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?= Helpers::csrfMeta() ?>
-    <title><?= $pageTitle ?> | <?= siteConfig()['site_name'] ?></title>
+    <title><?= Helpers::escape($pageTitle) ?> | <?= Helpers::escape(siteConfig()['site_name']) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -104,12 +104,12 @@ $currentPage = $_GET['page'] ?? 'bookings';
             <p class="sidebar-subtitle">Administration</p>
             
             <nav class="sidebar-nav">
-                <a href="?page=bookings" class="nav-item <?= $currentPage === 'bookings' ? 'active' : '' ?>">
+                <a href="?page=bookings" class="nav-item <?= Helpers::escape($currentPage === 'bookings' ? 'active' : '') ?>">
                     <span><?= Icons::svg('calendar', 18) ?></span>
                     Réservations
                     <span class="nav-badge" id="pending-count">0</span>
                 </a>
-                <a href="?page=settings" class="nav-item <?= $currentPage === 'settings' ? 'active' : '' ?>">
+                <a href="?page=settings" class="nav-item <?= Helpers::escape($currentPage === 'settings' ? 'active' : '') ?>">
                     <span><?= Icons::svg('settings', 18) ?></span>
                     Paramètres
                 </a>
@@ -238,11 +238,11 @@ $currentPage = $_GET['page'] ?? 'bookings';
                             <div class="toggle-container">
                                 <label class="toggle">
                                     <input type="checkbox" id="google_calendar_enabled" 
-                                           <?= ($currentSettings['google_calendar_enabled'] ?? '0') === '1' ? 'checked' : '' ?>>
+                                           <?= Helpers::escape(($currentSettings['google_calendar_enabled'] ?? '0') === '1' ? 'checked' : '') ?>>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <span class="toggle-label" id="sync-status">
-                                    <?= ($currentSettings['google_calendar_enabled'] ?? '0') === '1' ? 'Activée' : 'Désactivée' ?>
+                                    <?= Helpers::escape(($currentSettings['google_calendar_enabled'] ?? '0') === '1' ? 'Activée' : 'Désactivée') ?>
                                 </span>
                             </div>
                         </div>

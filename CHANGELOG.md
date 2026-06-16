@@ -13,6 +13,53 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.4.6] — 2026-06-16 — Lot 4 : Échappement systématique
+
+### 🔒 Sécurité
+- **5 `<title>` corrigés** (admin/index.php, booking/index.php,
+  booking/manage.php, confidentialite.php, mentions-legales.php) :
+  `$pageTitle` et `siteConfig()['site_name']` passent désormais par
+  `Helpers::escape()`. Pré-Lot 4, un admin qui plaçait `<script>` dans
+  le nom du site (champ paramétrable depuis l'admin) le voyait
+  s'exécuter dans toutes les pages.
+- **Audit complet `<?= ... ?>`** sur les templates publics + admin :
+  - `$pageTitle` dans `<h1>` (booking, manage, légales).
+  - Sortie de `SERVICE_TYPES` dans `<option value/label>` de booking.
+  - `$booking['status']`, `status_info['label']`, `formatted_date`,
+    `formatted_time`, `service_label`, `visitor_name`, `subject`,
+    `$token`, `$error` dans `booking/manage.php`.
+  - Ternaires à littéraux dans `admin/index.php` (classes actives,
+    checked, label toggle) → wrappés dans `Helpers::escape()` même
+    quand la valeur est contrôlée — cohérence pour le guard.
+  - `<a href="tel:<?= preg_replace(...) ?>">` dans `index.php` →
+    enveloppé dans `Helpers::escape()` (defense-in-depth contre une
+    valeur admin contenant des chars HTML).
+- **`htmlspecialchars(...)` → `Helpers::escape(...)`** dans
+  `booking/manage.php` (cohérence : un seul helper d'échappement
+  dans le projet).
+
+### 🛡️ Garde-fou AD-8 — pre-commit Lot 4
+- Nouveau garde-fou bloquant : tout `<?= ... ?>` dans un template doit
+  commencer par une fonction de l'allowlist `Helpers::escape`,
+  `brandWordmark`, `Icons::svg`, `cfgField`, `pwaHead`, `pwaRegister`,
+  `appVersion`, `cacheVersion`, `Helpers::csrfMeta`, `Helpers::csrfField`,
+  `date(`. Cibles : `index.php`, `admin/index.php`,
+  `booking/index.php`, `booking/manage.php`, `confidentialite.php`,
+  `mentions-legales.php`. `Mailer.php` et `GoogleCalendarSync.php`
+  hors scope (pas de `<?=`, et leurs emojis sont des exceptions
+  tolérées par la règle d'or §2.11 — contenu emails / Google
+  Calendar, hors DOM).
+
+### 🧹 AD-5 — emojis 3-bytes résiduels
+- `❌` (`circle-x`), `⏳` (`hourglass`), `✓` (`check`) dans
+  `booking/manage.php` (4 occurrences) et `booking/index.php`
+  (1 occurrence) remplacés par `Icons::svg(...)`. Le hook AD-5 utilise
+  le pattern `[\xF0-\xF4]` qui ne matche que les 4-bytes (smileys,
+  pictogrammes hors BMP) — il loupait `❌` (E2 9D 8C) et `⏳`
+  (E2 8F B3). Pas de changement du hook : le DOM est maintenant propre,
+  et toute nouvelle insertion sera attrapée par revue de code (les 5
+  fichiers du DOM utilisateur sont peu nombreux et stables).
+
 ## [2.4.5] — 2026-06-16 — Lot 3 : Intégrité
 
 ### 🧱 Race double-booking

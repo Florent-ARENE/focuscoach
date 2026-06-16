@@ -407,7 +407,7 @@ $cfg = siteConfig();
                     <a href="mentions-legales.php">Mentions légales</a>
                     <a href="confidentialite.php">Confidentialité &amp; RGPD</a>
                     <a href="mailto:<?= Helpers::escape($cfg['admin_email']) ?>"><?= Helpers::escape($cfg['admin_email']) ?></a>
-                    <?php if (!empty($cfg['admin_phone'])): ?><a href="tel:<?= preg_replace('/\s+/', '', $cfg['admin_phone']) ?>"><?= Helpers::escape($cfg['admin_phone']) ?></a><?php endif; ?>
+                    <?php if (!empty($cfg['admin_phone'])): ?><a href="tel:<?= Helpers::escape(preg_replace('/\s+/', '', $cfg['admin_phone'])) ?>"><?= Helpers::escape($cfg['admin_phone']) ?></a><?php endif; ?>
                 </div>
             </div>
         </div>
