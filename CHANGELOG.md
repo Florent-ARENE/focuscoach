@@ -13,6 +13,31 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.4.8] — 2026-06-16 — `available_slots` idempotent
+
+### 🗄️ SQL
+- **`schema.sql`** — ajout `UNIQUE KEY uq_slot (day_of_week, time_start,
+  time_end)` sur `available_slots`. Empêche les doublons silencieux si
+  quelqu'un rejoue `seed.sql` par erreur.
+- **`seed.sql`** — créneaux passent de `INSERT` sec à `INSERT IGNORE`.
+  Désormais idempotent : rejouable sans risque, sans warning.
+- **`sql/migration-2.4.8.sql`** — pour les bases déjà déployées :
+  1. `DELETE` auto-join de dédoublonnage sur
+     `(day_of_week, time_start, time_end)` qui garde l'id le plus
+     ancien par groupe. Safe : ne supprime rien si la table était
+     déjà propre.
+  2. `ALTER TABLE ... ADD UNIQUE KEY uq_slot`. Si cet ALTER échoue
+     avec « Duplicate entry », c'est qu'il reste des doublons que
+     l'étape 1 n'a pas couverts → la requête de diagnostic est
+     fournie en commentaire.
+
+### Contexte
+- Renaud avait re-seedé 3 fois → 180 lignes (3 occurrences par
+  créneau) au lieu de 60. Dédoublonnage manuel via le DELETE
+  auto-join (-120 lignes → 60).
+- Le `seed.sql` v2.4.7 documentait l'usage « ne pas rejouer » mais
+  ne l'empêchait pas techniquement. v2.4.8 industrialise la garantie.
+
 ## [2.4.7] — 2026-06-16 — SQL : schema.sql + seed.sql + outils
 
 ### 🗄️ SQL — source unique
