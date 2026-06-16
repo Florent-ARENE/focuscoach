@@ -87,8 +87,18 @@ nav.home-nav {
 .home-footer .brand-half-b,
 .legal-header .brand-half-b { color: var(--white); }
 
-/* mobile first : nav-links cachés (re-affichés à 768px) */
-.home-nav .nav-links { display: none; gap: 2rem; list-style: none; margin: 0; padding: 0; }
+/* mobile first : seul le CTA "Prendre RDV" reste visible dans le header.
+   Les autres liens sont cachés et restaurés à partir de 768px. */
+.home-nav .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.home-nav .nav-links li { display: none; }
+.home-nav .nav-links .nav-cta-item { display: block; }
 .home-nav .nav-links a {
     font-size: 0.82rem; font-weight: 400;
     text-transform: uppercase; letter-spacing: 0.12em;
@@ -428,7 +438,7 @@ nav.home-nav {
    ============================================ */
 @media (min-width: 768px) {
     .home-nav { padding: 0 var(--section-pad-x); }
-    .home-nav .nav-links { display: flex; }
+    .home-nav .nav-links li { display: block; }
 
     .hero { grid-template-columns: 1fr 1fr; padding-top: 100px; }
     .hero-right { display: block; }
