@@ -1,128 +1,135 @@
 # CLAUDE.md — Focus Coach
 
-Point d'entrée Claude Code — committé à la racine. Décrit (1) la mission en cours et (2) les règles d'or immuables qui s'appliquent à toutes les itérations.
+Point d'entrée Claude Code — committé à la racine. Décrit **(1)** l'état courant du projet, **(2)** la mission en cours et **(3)** les règles d'or immuables qui s'appliquent à toutes les itérations.
 
-> **Avant toute modification** : lire `README_TECHNIQUE.md` (arborescence, carte des fonctions, design system) et faire un `grep` pour vérifier qu'on ne duplique pas. Mettre à jour `README_TECHNIQUE.md` à la fin de chaque itération avec un changelog daté.
+> **Avant toute modification** : lire `README_TECHNIQUE.md` (arborescence, carte des fonctions, design system) puis `grep` pour vérifier qu'on ne duplique pas. **À la fin de chaque itération** : mettre à jour `README_TECHNIQUE.md` (changelog daté, arborescence, carte des fonctions, section CSS si nouveaux tokens) et `README.md` si l'impact utilisateur est visible.
 
 ---
 
-## 🎯 Mission en cours — v2.4.2
+## 📦 État courant — v2.4.2
 
-### Chantier 1 — Tokens sémantiques de statut (zéro hex en module)
+Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tout le changelog.
 
-Les badges `.status-badge.*` (`manage.css`) et `.alert-info` (`admin.css`) utilisent encore des hex en dur. Plus, d'autres résidus :
-`booking.css:258/263/504/508` (#059669 / #f59e0b) et `manage.css:146/151/246/371/376` (#fef3c7 / #fee2e2 / #fecaca).
+- **Marque** : rebrand « Focus Coach » appliqué de façon cohérente sur toutes les pages (accueil, booking, admin, manage, légales).
+- **CSS** : zéro hex en dur dans les modules — tokens sémantiques de statut (`--status-*`, `--info-*`, `--success`, `--red-*`) centralisés dans `main.css :root`. Refacto **mobile-first** intégrale (toutes les media queries en `min-width`).
+- **Identité** : tout passe par `siteConfig()` / `Settings::get()` (nom, contact, légal, SIRET). Wordmark bicolore via `brandWordmark()` (split par milieu de caractères, snap espace ±2 → `.brand-half-a/b`).
+- **Icônes** : zéro emoji décoratif. SVG Lucide inline via `App\Icons::svg($name, $size, $class)` (PHP) et `Icons.svg(name, size, class)` (JS). ~32 icônes embarquées, `stroke="currentColor"` (couleur héritée). Classes CSS `.lucide`, `.icon-inline`, `.icon-cta`.
+- **Header mobile** : seul le CTA « Prendre RDV » reste visible (`.nav-cta-item`), les autres liens réapparaissent à 768px+.
+- **Légales** : `mentions-legales.php` + `confidentialite.php` en pages PHP dédiées, grille de cartes responsive.
+- **PWA** : `manifest.json` + `sw.js` (network-first HTML/PHP, cache-first assets, exclusion `/api/`) + icônes 192/512 maskables + `theme-color`. Helpers `pwaHead()` / `pwaRegister()` dans `init.php`.
+- **DB** : migrations jusqu'à `migration-2.4.1.sql` appliquées en prod.
 
-À faire :
-1. Ajouter dans `main.css :root` les tokens `--status-{pending,confirmed,cancelled,completed}-{bg,text}` et `--info-{bg,border,text}`.
-2. Substituer tous les hex des modules par `var(--token)` (y compris ceux non listés dans la première spec).
-3. Vérification : `grep -nE '#[0-9a-fA-F]{3,6}\b' assets/css/{booking,manage,admin,home}.css` doit retourner vide.
+---
 
-### Chantier 2 — Harmoniser le wordmark sur l'admin
+## 🎯 Mission en cours
 
-`.sidebar-logo` et `.login-logo` (admin.css) sont en Playfair serif sans uppercase → incohérent avec `.nav-brand-text` (home) et `.booking-logo` (booking) qui sont en DM Sans uppercase avec `letter-spacing: 0.08em`.
+> _v2.4.2 livrée. Renseigner ci-dessous la prochaine mission avant de lancer une itération._
 
-À faire : aligner sur le même traitement, ajuster la taille pour rester lisible en sidebar.
+### Chantier — _(titre)_
 
-### Chantier 3 — Helper bicolore `brandWordmark()`
+**Contexte :** _(quel résidu / besoin / bug, fichiers et lignes concernés)_
 
-Remplacer le `brandWordmark()` actuel (split par mot, `.accent`) par un split **par milieu de caractères** avec snap sur espace ±2.
-
-Algorithme :
-1. `$len = mb_strlen($name)`
-2. `$mid = round($len / 2)`
-3. Snap : si un espace existe à ±2 chars du milieu, couper là.
-4. Émettre `<span class="brand-half-a">…</span><span class="brand-half-b">…</span>`.
-5. Fallback si vide ou ≤1 char.
-
-CSS (`home.css`) : `.brand-half-a { color: var(--orange); }`, `.brand-half-b { color: var(--navy); }`. Contextes sombres (footer accueil, headers booking/legal, sidebar admin, login-logo) → `.brand-half-b { color: var(--white); }`.
-
-Nettoyage obligatoire : `.nav-brand-text .accent`, `.brand-accent`, `.footer-bottom .accent`, `.booking-logo span`, `.sidebar-logo span`, `.login-logo span` → supprimer, remplacés par `.brand-half-a/b`.
-
-### Chantier 4 — Nettoyer `api/test-gcal.php`
-
-Supprimer le bloc `<style>` inline et les `style="background:#…"`. Extraire vers `.diag-*` dans `main.css`.
-
-### Chantier 5 — Mobile-first (refacto media queries)
-
-Inverser `max-width` → `min-width`. Breakpoints : 768px (tablette+), 1024px (desktop+). Documenter en commentaire au-dessus du `:root` de `main.css`. Approche : **diff produit en dry-run** avant commit.
-
-### Chantier 6 — PWA
-
-`manifest.json` + `sw.js` (network-first HTML, cache-first assets) + icônes 192/512 maskables + `theme-color` + `apple-touch-icon`. Helper JS `pwaHead()` ou inclusion mutualisée. `.htaccess` : MIME type manifest. Cible : Lighthouse PWA ≥ 90.
+**À faire :**
+1. …
+2. …
 
 ### Livrables attendus
-
-- Fichiers modifiés/créés ci-dessus.
-- Pas de `sql/migration-2.4.2.sql` (aucune clé settings nouvelle).
-- `README_TECHNIQUE.md` : changelog v2.4.2 + section CSS (mobile-first, tokens statut, helper bicolore) + arborescence (`manifest.json`, `sw.js`, icônes).
-- `README.md` : mention PWA.
+- Fichiers modifiés/créés.
+- Migration SQL `sql/migration-vX.Y.Z.sql` **uniquement** si nouvelles clés `settings` ou schéma modifié.
+- `README_TECHNIQUE.md` : changelog daté + sections impactées (CSS, arborescence, carte des fonctions).
+- `README.md` si impact fonctionnel visible.
 
 ### Checklist anti-régression avant commit
-
 - [ ] `php -l` propre sur tous les `.php`.
 - [ ] `grep -nE '#[0-9a-fA-F]{3,6}\b' assets/css/{booking,manage,admin,home}.css` → vide.
+- [ ] `grep -rnP '[\xF0-\xF4]' --include='*.php' --include='*.js' index.php admin/ booking/ confidentialite.php mentions-legales.php assets/js/{admin,booking,manage,summary-module,home,icons}.js` → vide (aucun emoji dans le DOM).
+- [ ] `<script src=".../icons.js">` chargé **avant** tout autre module JS appelant `Icons.svg()`.
 - [ ] `grep -rn 'style="' --include='*.php' --include='*.html' .` → uniquement `display:none` fonctionnels.
 - [ ] `grep -rln '<style>' --include='*.php' --include='*.html' .` → vide.
-- [ ] Wordmark identique visuellement sur accueil / booking / admin / mentions / confidentialité.
-- [ ] Score Lighthouse PWA ≥ 90 sur mobile, accessibilité ≥ 90.
-- [ ] Test visuel des 6 pages clés en 3 tailles (375 / 768 / 1280).
-- [ ] `siteConfig()` utilisé partout : aucun littéral identité en dur.
+- [ ] Wordmark identique sur accueil / booking / admin / mentions / confidentialité.
+- [ ] Lighthouse mobile : PWA ≥ 90, accessibilité ≥ 90.
+- [ ] Test visuel des pages clés en 3 tailles (375 / 768 / 1280).
+- [ ] `siteConfig()` partout : aucun littéral identité en dur.
+- [ ] `config.local.php` non touché.
 - [ ] `README_TECHNIQUE.md` et `README.md` à jour.
 
 ---
 
 ## 🚨 RÈGLES D'OR — Immuables
 
-### Architecture & code
-1. **Zéro duplication** PHP/JS. Avant d'écrire une fonction : grep + `README_TECHNIQUE.md` carte des fonctions.
-2. **Helpers partagés** — `includes/init.php`, `classes/Helpers.php`, `assets/js/api.js`.
+Communes à tous les projets, instanciées ici pour Focus Coach.
+
+### 1. Architecture & code
+1. **Zéro duplication** PHP/JS. Avant d'écrire une fonction : `grep` + carte des fonctions du `README_TECHNIQUE.md`. Si un équivalent existe → réutiliser ou étendre, jamais recréer.
+2. **Helpers partagés mutualisés** — `includes/init.php`, `classes/Helpers.php`, `classes/Icons.php`, `assets/js/api.js`, `assets/js/icons.js`. Toute logique commune (formatage, API, modales, identité, icônes) y est centralisée.
 3. **Fonctions courtes**, responsabilité unique (~40 lignes max).
-4. **Code en anglais, commentaires/UI en français**.
-5. **API JSON uniforme** : `{success: bool, data: …, error: …}`.
+4. **Code en anglais, commentaires + UI en français**, de façon uniforme.
+5. **API JSON uniforme** : `{ success: bool, data: …, error: … }`. Point d'entrée centralisé par domaine, raccourcis dans `api.js` (un seul fichier à toucher si une URL change).
+6. **Architecture modulaire** — chaque fonctionnalité autonome, activable/désactivable sans casser l'ensemble.
 
-### CSS & design
-1. **Zéro hex en dur dans les modules** — uniquement dans `main.css :root`. Statuts = tokens (`--status-*`, `--info-*`).
-2. **Zéro `style=` décoratif, zéro `<style>` inline** — seuls les `display:none` fonctionnels pilotés par JS sont tolérés.
-3. **Un seul design system** — `main.css` point d'entrée. Modules chargés via `<link>` par page.
-4. **Cohérence absolue** — avant de créer une classe, vérifier qu'aucune existante ne couvre déjà le besoin.
-5. **Mobile-first** — règles de base = mobile, `min-width` pour enrichir.
-6. **Breakpoints uniques** — 768px (tablette), 1024px (desktop), documentés au-dessus du `:root` de `main.css`.
+### 2. CSS & design
+1. **Zéro hex en dur dans les modules** — couleurs et tokens uniquement dans `main.css :root`. Statuts = tokens sémantiques (`--status-*`, `--info-*`, `--success`, `--red-*`).
+2. **Zéro `style=` décoratif, zéro `<style>` inline** — seuls les `display:none` fonctionnels pilotés par JS sont tolérés. Tout style inline récurrent (3+) devient une classe utilitaire.
+3. **Un seul design system** — `main.css` point d'entrée unique. Modules CSS chargés par page (`main.css` + module spécifique de la page).
+4. **Cohérence absolue** — avant de créer une classe, vérifier qu'aucune existante ne couvre déjà le besoin (section CSS du `README_TECHNIQUE`).
+5. **Mobile-first** — règles de base = mobile, `min-width` pour enrichir. Jamais de `max-width`.
+6. **Breakpoints uniques** — 768px (tablette+), 1024px (desktop+), documentés en commentaire au-dessus du `:root` de `main.css`. Mêmes seuils partout.
 7. **Cohérence PC ↔ mobile** — un seul design system, jamais deux UI parallèles.
-8. **Media queries centralisées** — globales en fin de `main.css`, spécifiques en fin du module. Pas de doublon.
+8. **Media queries centralisées** — globales en fin de `main.css`, spécifiques en fin de module. Jamais de doublon (ex : `.grid-2/.grid-3` ont déjà leur collapse → ne pas le refaire).
 9. **Wordmark / identité visuelle** — toujours via `brandWordmark()`. Aucun mot de marque en dur.
+10. **Modales** — tailles standardisées (`.modal-sm/md/lg/xl`), un seul système dans tout le projet, pas de `max-width` inline.
+11. **Zéro emoji décoratif dans le DOM utilisateur** — toute icône passe par `App\Icons::svg()` (PHP) ou `Icons.svg()` (JS), qui rendent du SVG Lucide inline. Ajout d'une nouvelle icône : copier le path Lucide officiel dans `classes/Icons.php` **et** dans `assets/js/icons.js` (deux miroirs synchronisés). Exceptions tolérées : contenu des emails (`classes/Mailer.php`) et descriptions Google Calendar (`classes/GoogleCalendarSync.php`) — hors DOM.
 
-### PWA (toujours)
-1. **PWA obligatoire** — manifest, sw, icônes 192+512 maskables, theme-color. Lighthouse PWA ≥ 90.
-2. **Service worker minimaliste** — network-first HTML dynamique, cache-first assets statiques.
+### 3. PWA (toujours)
+1. **PWA obligatoire** — `manifest.json` + `sw.js` + icônes 192/512 **maskables** (safe-zone : contenu visible dans un cercle de rayon = `size * 0.4` autour du centre) + `theme-color` + `apple-touch-icon`. Cible Lighthouse PWA ≥ 90 sur mobile.
+2. **Service worker minimaliste** — network-first pour HTML/PHP (données fraîches), cache-first pour assets statiques, exclusion des `/api/`. Bumper `CACHE_VERSION` à chaque release CSS/JS.
+3. **Inclusion mutualisée** — `pwaHead()` dans le `<head>`, `pwaRegister()` en fin de `<body>`. `.htaccess` : MIME `application/manifest+json` + `Service-Worker-Allowed: /` + `no-cache` sur `sw.js`.
 
-### Paramétrage & contenu
-1. **Tout contenu répétitif** = paramétrable via `settings` + `siteConfig()`. Aucune valeur identité en dur.
-2. **`cfgField($value, $placeholder)`** affiche valeur ou badge `.cfg-missing`.
-3. **`brandWordmark()`** pour le rendu graphique du nom.
+### 4. Paramétrage & contenu
+1. **Tout contenu répétitif** (nom, contact, légal, SIRET, emails…) = paramétrable via la table `settings` + `siteConfig()`. **Aucune valeur d'identité en dur** dans les templates.
+2. **`cfgField($value, $placeholder)`** — affiche la valeur échappée ou un badge `.cfg-missing` `[À compléter dans Paramètres]` si vide.
+3. **`brandWordmark()`** — rendu graphique bicolore du nom de marque. Retourne du **HTML déjà safe** (`<span class="brand-half-*">` + valeur échappée) : à injecter avec `<?= ?>` sans escape supplémentaire.
+4. Propagation automatique : un réglage modifié dans `/admin` se répercute partout (logos, footers, emails, pages légales) sans édition manuelle.
 
-### Sécurité & données
-1. **`config.local.php`** = secrets. Jamais versionné, jamais écrasé. Protégé `.htaccess`.
-2. **Validation/sanitisation systématique** côté PHP (`Helpers::sanitize`, `Helpers::escape`).
-3. **Zéros préfixes préservés** (VARCHAR pas INT) pour codes (postal, département, etc.).
+### 5. Sécurité & données
+1. **`config.local.php`** = secrets (BDD, clés API, tokens). Jamais versionné, jamais écrasé, protégé `.htaccess` (`Require all denied`). `google-credentials.json` et `*.sql` idem.
+2. **Validation / sanitisation systématique** côté PHP (`Helpers::sanitize`, `Helpers::escape`) sur toute entrée utilisateur.
+3. **Zéros préfixes préservés** — champs code en `VARCHAR`, jamais castés en `INT`/`float` (ni PHP, ni JS, ni SQL). Vrai pour code postal, département, SIRET, etc.
+4. **Pas d'exécution PHP** dans `/uploads/` (`php_flag engine off`). `.htaccess` sur tous les dossiers sensibles.
 
-### Documentation
-1. **`README_TECHNIQUE.md`** = mémoire vivante. MAJ à chaque itération : changelog daté, arborescence, carte des fonctions, section CSS si nouveaux tokens.
+### 6. Import / export (le cas échéant)
+1. **Import Excel** — zéros préfixes préservés (traiter les codes comme chaînes), apostrophes Excel strippées, détection auto encodage + séparateur, prévisualisation avant confirmation.
+2. **Export CSV (France)** — séparateur `;`, encodage **UTF-8 BOM** (`\xEF\xBB\xBF`), zéros préfixes maintenus en format texte.
+
+### 7. RGPD
+- **Base légale du projet : mesures précontractuelles (Art. 6.1.b)**, pas le consentement — ce qui simplifie les obligations. Suppression de données via lien à token. Six champs d'identité configurables côté admin.
+
+### 8. Documentation
+1. **`README_TECHNIQUE.md`** = mémoire vivante. MAJ à chaque itération : changelog daté, arborescence, relations entre fichiers, carte des fonctions, section CSS si nouveaux tokens.
 2. **`README.md`** = orientation utilisateur. MAJ si impact fonctionnel visible.
-3. **Migrations SQL** — un fichier par phase `migration-vX.Y.Z.sql`. `database.sql` reste référence complète.
+3. **Migrations SQL** — un fichier par phase `sql/migration-vX.Y.Z.sql`. Le schéma de référence reste complet (`CREATE TABLE IF NOT EXISTS`).
 
-### Process
-1. Avant toute modification : (a) lire `README_TECHNIQUE.md`, (b) grep contre duplication, (c) identifier helpers existants.
-2. **Pas de fichier inutile** — pas de JS/CSS orphelin. Si on remplace, on supprime l'ancien.
-3. **Compatible OVH mutualisé** — PHP 7.4+ vanilla, JS natif, MySQL. Pas de Node, pas de SSH.
-4. **Test avant push** — `php -l`, ouverture des pages affectées, vérif visuelle desktop + mobile.
+### 9. Process
+1. Avant toute modif : **(a)** lire `README_TECHNIQUE.md`, **(b)** `grep` anti-duplication, **(c)** identifier les helpers existants.
+2. **Pas de fichier orphelin** — pas de JS/CSS mort. Si on remplace, on supprime l'ancien.
+3. **Compatible OVH mutualisé** — PHP 7.4+ vanilla, JS natif, MySQL. Pas de Node serveur, pas de SSH.
+4. **Test avant push** — `php -l`, ouverture des pages affectées, vérif visuelle desktop + mobile. Lighthouse mobile (PWA + accessibilité ≥ 90) **avant chaque PR taggée release** (pas à chaque commit).
+
+### 10. Pièges connus
+- Les `use` (imports de namespace) d'un fichier parent **ne sont pas hérités** par un fichier `require`'d : chaque fichier inclus déclare ses propres `use`.
+- Reskins : auditer **tout le repo** avant de supposer qu'une chose est à construire — la paramétrisation admin et de nombreux helpers existent déjà.
+- **PWA bouton « Installer »** : Chrome/Edge ne l'exposent qu'en HTTPS (ou `localhost`). En HTTP simple, manifest et SW se chargent correctement mais le bouton n'apparaît jamais. Tester en local avec `php -S` puis tunnel HTTPS (ngrok), ou directement sur l'OVH déployé.
+- **`Icons::svg()`** : retourne du HTML brut, à injecter avec `<?= ?>` **sans** `htmlspecialchars` (sinon le SVG s'affiche en texte). Pas de risque XSS : `$name` est validé contre une liste blanche interne (`LIBRARY`), `$class` est échappée. Même logique que `brandWordmark()`.
+- **`config/config.php` `BOOKING_STATUS['icon']`** : champ emoji conservé pour compat, plus consommé par aucune vue (à supprimer à la prochaine refacto majeure).
+- **`:has()` ? Non** : la nav mobile utilise `.nav-cta-item` plutôt que `li:has(.nav-cta)` pour la compat (Safari 15.4+ seulement). Standard projet : classer explicitement plutôt que recourir à des sélecteurs CSS modernes non polyfillables.
 
 ---
 
-## Stack & constantes de référence
+## 🧱 Stack & constantes de référence
 
 - **Stack** : PHP 7.4+ vanilla / MySQL / JS natif / OVH mutualisé.
 - **Cible PWA Lighthouse** : ≥ 90 sur mobile.
 - **Breakpoints** : 768px (tablette+), 1024px (desktop+) — mobile-first.
-- **Polices** : DM Sans (body) / Playfair Display (display).
+- **Polices** : DM Sans (body / wordmark uppercase `letter-spacing: 0.08em`) — Playfair Display (display).
 - **Palette** : `--navy-deep #2E2A5E`, `--navy #4A4580`, `--orange #F0A500`, `--sand #F7F5F0`.
+- **Fichiers clés** : `includes/init.php` (helpers + `siteConfig()` + `pwaHead/Register`), `classes/Helpers.php`, `classes/Icons.php`, `assets/js/api.js`, `assets/js/icons.js`, `assets/css/main.css`, `sql/`, `manifest.json`, `sw.js`, `scripts/generate-pwa-icons.php`.
