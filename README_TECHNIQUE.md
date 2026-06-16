@@ -3,7 +3,7 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.4.2  
+**Version:** 2.4.3  
 **Dernière mise à jour:** 16 juin 2026
 
 ---
@@ -23,6 +23,13 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 16/06/2026 | 2.4.3 | 🔒 Sécurité | **Lot 1 — CSRF obligatoire**. `api/admin.php` (POST update/delete/reschedule/blocked_dates/settings) et `api/booking.php` exigent maintenant un token CSRF valide ; 403 immédiat sinon. Vérif lue via header `X-CSRF-Token` (priorité) ou body `csrf_token` (fallback). |
+| 16/06/2026 | 2.4.3 | 🧰 Helper | `Helpers::verifyCsrfFromRequest()`, `Helpers::csrfFailure()`, `Helpers::csrfMeta()` (injecte `<meta name="csrf-token">` dans le `<head>`). `Helpers::getJsonInput()` passe en cache statique (lit `php://input` une seule fois). |
+| 16/06/2026 | 2.4.3 | 🎨 Client | `admin.js` + `booking.js` : helper `csrfHeaders()` qui lit le meta et le fusionne dans tous les fetch POST. `admin/index.php` + `booking/index.php` : `<?= Helpers::csrfMeta() ?>` dans le `<head>`. |
+| 16/06/2026 | 2.4.3 | ✅ AD-9 | `tests/smoke.php` créé : 7 cas CSRF (header OK, body OK, $_POST OK, absent rejeté, invalide rejeté, header bidon+body valide rejeté, vide rejeté). Câblé au pre-commit — un rouge bloque tout commit. |
+| 16/06/2026 | 2.4.3 | 🧰 Outil | `scripts/bump-version.php` propage `VERSION` → stamps `.md` + `sw.js` CACHE_VERSION. `version.php` racine expose `appVersion()` / `cacheVersion()` lus depuis `VERSION` (AD-1). |
+| 16/06/2026 | 2.4.3 | 🛡️ AD-8 | `.git/hooks/pre-commit` : 5 garde-fous bloquants (php-l staged, hex modules CSS, emojis DOM, stamps version VERSION ↔ .md/sw.js, smoke tests). |
+| 16/06/2026 | 2.4.3 | 📘 Cadrage | `cadrage/CADRAGE_UNIVERSEL.md` + `INSTRUCTIONS_DEMARRAGE_SESSION_UNIVERSEL.md` posés dans le repo en SOURCE (mono-source AD-2, en-tête « ne pas re-copier »). `CHANGELOG.md` initialisé (Keep a Changelog). |
 | 16/06/2026 | 2.4.2 | 📘 Doc | `CLAUDE.md` racine — mission v2.4.2 + règles d'or projet (architecture, CSS, PWA, sécurité) |
 | 16/06/2026 | 2.4.2 | 🔧 Fix | `admin/index.php` — résidu « Performance » en dur supprimé, remplacé par `brandWordmark()` partout (cohérence avec accueil/booking/légales) |
 | 16/06/2026 | 2.4.2 | 🎨 Design | `brandWordmark()` réécrit : split bicolore par milieu de chars (snap sur espace ±2), classes `.brand-half-a/b` — remplace l'ancien `.accent` |

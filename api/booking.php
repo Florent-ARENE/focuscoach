@@ -36,6 +36,11 @@ if (empty($input)) {
     $input = $_POST;
 }
 
+// CSRF obligatoire (AD §4 — socle). Avant toute logique métier.
+if (!Helpers::verifyCsrfFromRequest($input)) {
+    Helpers::csrfFailure();
+}
+
 // Validation
 $errors = [];
 
@@ -56,11 +61,6 @@ if (!empty($input['slot_date']) && !Helpers::isValidDate($input['slot_date'])) {
 
 if (!empty($input['slot_time_start']) && !Helpers::isValidTime($input['slot_time_start'])) {
     $errors['slot_time_start'] = 'Format d\'heure invalide';
-}
-
-// CSRF (si présent)
-if (!empty($input['csrf_token']) && !Helpers::verifyCsrfToken($input['csrf_token'])) {
-    $errors['csrf'] = 'Token de sécurité invalide';
 }
 
 if (!empty($errors)) {

@@ -5,6 +5,14 @@
  * Utilise CalendarModule pour le calendrier
  */
 
+/**
+ * Headers CSRF lus depuis <meta name="csrf-token"> — voir Helpers::csrfMeta().
+ */
+function csrfHeaders() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? { 'X-CSRF-Token': meta.content } : {};
+}
+
 const BookingApp = {
     // Instance du calendrier
     calendar: null,
@@ -145,7 +153,7 @@ const BookingApp = {
         try {
             const response = await fetch('../api/booking.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
                 body: JSON.stringify(data)
             });
             

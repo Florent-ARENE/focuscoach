@@ -60,11 +60,49 @@ class Helpers
     }
     
     /**
+     * Vérifier le token CSRF d'une requête (header X-CSRF-Token > body csrf_token).
+     * Retourne true si valide, false sinon. Préfère le header pour les requêtes
+     * JSON ; le body est gardé comme fallback pour les forms multipart.
+     */
+    public static function verifyCsrfFromRequest(array $body = []): bool
+    {
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN']
+              ?? $body['csrf_token']
+              ?? $_POST['csrf_token']
+              ?? '';
+        if (!is_string($token) || $token === '') {
+            return false;
+        }
+        return self::verifyCsrfToken($token);
+    }
+
+    /**
+     * Renvoie un 403 JSON et exit (à appeler quand verifyCsrfFromRequest = false).
+     */
+    public static function csrfFailure(): void
+    {
+        self::jsonResponse([
+            'success' => false,
+            'error'   => 'CSRF token invalide ou absent',
+            'code'    => 'CSRF_INVALID'
+        ], 403);
+    }
+
+    /**
      * Générer un champ hidden CSRF
      */
     public static function csrfField(): string
     {
         return '<input type="hidden" name="csrf_token" value="' . self::generateCsrfToken() . '">';
+    }
+
+    /**
+     * Meta tag CSRF pour le <head> — lu côté JS par les helpers fetch.
+     * Usage : <?= Helpers::csrfMeta() ?>
+     */
+    public static function csrfMeta(): string
+    {
+        return '<meta name="csrf-token" content="' . self::generateCsrfToken() . '">';
     }
     
     /**
@@ -101,12 +139,18 @@ class Helpers
     }
     
     /**
-     * Récupérer les données JSON d'une requête
+     * Récupérer les données JSON d'une requête (cache statique : `php://input`
+     * peut être lu plusieurs fois en PHP ≥ 5.6, mais on évite l'I/O répété).
      */
     public static function getJsonInput(): array
     {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
         $input = file_get_contents('php://input');
-        return json_decode($input, true) ?? [];
+        $cached = json_decode((string) $input, true) ?? [];
+        return $cached;
     }
     
     /**
