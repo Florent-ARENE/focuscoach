@@ -520,6 +520,31 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================
+   ICONS — Lucide SVG inline (App\Icons / window.Icons)
+   .lucide = classe par défaut. Variantes contextuelles ci-dessous.
+   ============================================ */
+.lucide {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+.icon-inline {
+    display: inline-block;
+    vertical-align: -0.15em;
+    margin-right: 0.4em;
+}
+.icon-cta {
+    display: inline-block;
+    vertical-align: -0.15em;
+    margin-left: 0.35em;
+    transition: transform 0.2s ease;
+}
+a:hover .icon-cta,
+button:hover .icon-cta {
+    transform: translateX(2px);
+}
+
+/* ============================================
    PAGES DE DIAGNOSTIC (/api/test-*.php)
    ============================================ */
 .diag {

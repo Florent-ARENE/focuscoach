@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../includes/init.php';
 
 use App\Helpers;
+use App\Icons;
 
 $pageTitle = 'Prendre rendez-vous';
 ?>
@@ -124,7 +125,7 @@ $pageTitle = 'Prendre rendez-vous';
                 <!-- Panel 2: Form -->
                 <div class="booking-panel" id="panel-2">
                     <div class="selected-slot-summary">
-                        <div class="selected-slot-icon">📅</div>
+                        <div class="selected-slot-icon"><?= Icons::svg('calendar', 24) ?></div>
                         <div class="selected-slot-info">
                             <div class="selected-slot-date" id="summary-date">-</div>
                             <div class="selected-slot-time" id="summary-time">-</div>
@@ -230,7 +231,7 @@ $pageTitle = 'Prendre rendez-vous';
                             <div class="booking-summary-row">
                                 <span class="booking-summary-label">Statut</span>
                                 <span class="booking-summary-value">
-                                    <span class="status-badge pending">🟡 En attente</span>
+                                    <span class="status-badge pending"><?= Icons::svg('hourglass', 14, 'icon-inline') ?>En attente</span>
                                 </span>
                             </div>
                         </div>
@@ -249,6 +250,7 @@ $pageTitle = 'Prendre rendez-vous';
         <p>© <?= date('Y') ?> <?= siteConfig()['site_name'] ?></p>
     </footer>
     
+    <script src="../assets/js/icons.js"></script>
     <script src="../assets/js/calendar-module.js"></script>
     <script src="../assets/js/booking.js"></script>
     <?= pwaRegister() ?>
