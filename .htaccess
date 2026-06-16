@@ -1,0 +1,33 @@
+# ============================================
+# FOCUS COACH — Apache config racine (OVH mutualisé)
+# ============================================
+
+# Priorité à index.php (page d'accueil dynamique)
+DirectoryIndex index.php index.html
+
+# Encodage par défaut
+AddDefaultCharset UTF-8
+
+# MIME types
+<IfModule mod_mime.c>
+    # PWA Web App Manifest
+    AddType application/manifest+json .json
+    AddType application/manifest+json .webmanifest
+    # Service Worker scope (autorise sw.js à contrôler /)
+</IfModule>
+
+# Service Worker : scope racine, pas de cache navigateur sur sw.js
+# (sinon les mises à jour de cache_version ne se propagent jamais)
+<IfModule mod_headers.c>
+    <FilesMatch "sw\.js$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+        Header set Service-Worker-Allowed "/"
+    </FilesMatch>
+</IfModule>
+
+# Sécurité : empêcher l'accès direct aux fichiers sensibles
+<FilesMatch "^(config\.local\.php|google-credentials\.json|.*\.sql)$">
+    Require all denied
+</FilesMatch>

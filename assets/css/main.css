@@ -6,6 +6,14 @@
 
 /* ============================================
    VARIABLES CSS
+   --------------------------------------------
+   Approche : MOBILE-FIRST.
+   Les règles de base ciblent le mobile. Les media queries enrichissent
+   progressivement à `min-width` :
+     - 768px : tablette+
+     - 1024px : desktop+
+   Aucun module ne doit utiliser `max-width`. Aucun hex en dur dans
+   les modules : tout passe par var(--token).
    ============================================ */
 :root {
     /* ----------------------------------------------------------------
@@ -54,8 +62,26 @@
     --green-light: #d1fae5;
     --red: #ef4444;
     --red-light: #fee2e2;
+    --red-strong: #991b1b;
+    --red-soft: #fecaca;
     --warning: #f59e0b;
     --warning-light: #fef3c7;
+    --success: #059669;
+
+    /* Statuts de réservation (couples bg/text — accessibles AA) */
+    --status-pending-bg:   #fef3c7;
+    --status-pending-text: #92400e;
+    --status-confirmed-bg:   #d1fae5;
+    --status-confirmed-text: #065f46;
+    --status-cancelled-bg:   #fee2e2;
+    --status-cancelled-text: #991b1b;
+    --status-completed-bg:   #dbeafe;
+    --status-completed-text: #1e40af;
+
+    /* Bandeau d'information (alert-info) */
+    --info-bg:     #e0f2fe;
+    --info-border: #7dd3fc;
+    --info-text:   #0369a1;
 
     /* Typographie */
     --font-serif: 'Playfair Display', Georgia, serif;
@@ -137,7 +163,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .page-title {
-    font-size: 2.5rem;
+    font-size: 2rem;
     color: var(--navy-900);
     margin-bottom: 0.5rem;
 }
@@ -333,11 +359,12 @@ h1, h2, h3, h4, h5, h6 {
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 0.85rem;
 }
 
 .data-table th,
 .data-table td {
-    padding: 1rem;
+    padding: 0.75rem 0.5rem;
     text-align: left;
     border-bottom: 1px solid var(--gray-200);
 }
@@ -480,25 +507,8 @@ h1, h2, h3, h4, h5, h6 {
 .hidden { display: none !important; }
 
 /* ============================================
-   RESPONSIVE
-   ============================================ */
-@media (max-width: 768px) {
-    .page-title {
-        font-size: 2rem;
-    }
-    
-    .data-table {
-        font-size: 0.85rem;
-    }
-    
-    .data-table th,
-    .data-table td {
-        padding: 0.75rem 0.5rem;
-    }
-}
-
-/* ============================================
-   Placeholder champ légal non renseigné (cfgField)
+   CONFIG FIELD MISSING — placeholder rouge
+   utilisé par cfgField() (init.php)
    ============================================ */
 .cfg-missing {
     color: var(--red);
@@ -506,4 +516,95 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0.1em 0.4em;
     border-radius: var(--radius-sm);
     font-size: 0.85em;
+    font-weight: 500;
+}
+
+/* ============================================
+   PAGES DE DIAGNOSTIC (/api/test-*.php)
+   ============================================ */
+.diag {
+    font-family: var(--font-sans);
+    max-width: 800px;
+    margin: 2.5rem auto;
+    padding: 1.25rem;
+    color: var(--text-dark);
+}
+.diag h2 {
+    color: var(--navy-deep);
+    border-bottom: 2px solid var(--gold);
+    padding-bottom: 0.625rem;
+}
+.diag h3 {
+    color: var(--navy-deep);
+    margin-top: 1.875rem;
+}
+.diag .success { color: var(--success); }
+.diag .error   { color: var(--red); }
+.diag .warning { color: var(--warning); }
+.diag .info    { color: var(--info-text); }
+.diag pre {
+    background: var(--gray-100);
+    padding: 0.9375rem;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+}
+.diag .box {
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin: 1.25rem 0;
+}
+.diag .btn {
+    display: inline-block;
+    background: var(--gold);
+    color: var(--navy-deep);
+    padding: 0.625rem 1.25rem;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    margin: 0.625rem 0.3125rem 0.625rem 0;
+}
+.diag .btn:hover { background: var(--gold-light); }
+.diag .btn-danger {
+    background: var(--red);
+    color: var(--white);
+}
+.diag table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.9375rem 0;
+}
+.diag th, .diag td {
+    text-align: left;
+    padding: 0.625rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+.diag th { background: var(--gray-100); }
+.diag .code-email {
+    background: var(--status-completed-bg);
+    padding: 0.3125rem 0.625rem;
+    border-radius: var(--radius-sm);
+}
+.diag hr { margin: 2.5rem 0; border: 0; border-top: 1px solid var(--gray-200); }
+
+/* ============================================
+   RESPONSIVE — mobile-first
+   Breakpoints : 768px (tablette+), 1024px (desktop+).
+   Les règles de base ciblent le mobile ; les @media min-width
+   enrichissent progressivement.
+   ============================================ */
+@media (min-width: 768px) {
+    .page-title {
+        font-size: 2.5rem;
+    }
+
+    .data-table {
+        font-size: 1rem;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 1rem;
+    }
 }

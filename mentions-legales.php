@@ -25,6 +25,7 @@ $pageTitle = 'Mentions légales';
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/home.css">
+    <?= pwaHead() ?>
     <!-- Réutilise les styles de confidentialite.php -->
 </head>
 <body class="legal-page">
@@ -99,5 +100,6 @@ $pageTitle = 'Mentions légales';
     <footer class="legal-footer">
         <p>&copy; <?= date('Y') ?> <?= Helpers::escape($cfg['site_name']) ?> &bull; <a href="confidentialite.php">Politique de confidentialité</a></p>
     </footer>
+    <?= pwaRegister() ?>
 </body>
 </html>

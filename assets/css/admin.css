@@ -7,35 +7,37 @@
 /* Layout */
 .admin-layout {
     display: flex;
+    flex-direction: column;
     min-height: 100vh;
 }
 
-/* Sidebar */
+/* Sidebar — mobile first (full width, statique) */
 .sidebar {
-    width: 260px;
+    width: 100%;
     background: var(--navy-900);
     color: var(--white);
-    padding: 1.5rem;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
-    position: fixed;
-    height: 100vh;
+    position: relative;
+    height: auto;
     overflow-y: auto;
 }
 
 .sidebar-logo {
-    font-family: var(--font-serif);
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    font-weight: 500;
     color: var(--white);
     text-decoration: none;
     margin-bottom: 0.5rem;
     display: block;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
-.sidebar-logo span {
-    color: var(--gold);
-}
+/* Contexte sombre — la 2e moitié du wordmark doit rester lisible */
+.sidebar-logo .brand-half-b { color: var(--white); }
 
 .sidebar-subtitle {
     font-size: 0.75rem;
@@ -45,6 +47,10 @@
 
 .sidebar-nav {
     flex: 1;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
 }
 
 .nav-item {
@@ -57,6 +63,8 @@
     border-radius: var(--radius-md);
     margin-bottom: 0.25rem;
     transition: var(--transition);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nav-item:hover,
@@ -104,11 +112,11 @@
     color: var(--red);
 }
 
-/* Main content */
+/* Main content — mobile first (pas de marge sidebar) */
 .admin-main {
     flex: 1;
-    margin-left: 260px;
-    padding: 2rem;
+    margin-left: 0;
+    padding: 1rem;
     background: var(--gray-100);
     min-height: 100vh;
 }
@@ -309,14 +317,12 @@
 }
 
 .login-logo {
-    font-family: var(--font-serif);
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-family: var(--font-body);
+    font-size: 1.35rem;
+    font-weight: 500;
     margin-bottom: 0.5rem;
-}
-
-.login-logo span {
-    color: var(--gold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .login-subtitle {
@@ -337,34 +343,34 @@
     width: 100%;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        position: relative;
-        height: auto;
-        padding: 1rem;
-    }
-    
-    .sidebar-nav {
-        display: flex;
-        gap: 0.5rem;
-        overflow-x: auto;
-        padding-bottom: 0.5rem;
-    }
-    
-    .nav-item {
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    
-    .admin-main {
-        margin-left: 0;
-        padding: 1rem;
-    }
-    
+/* Responsive — mobile-first ; à partir de 768px, sidebar fixe à gauche */
+@media (min-width: 768px) {
     .admin-layout {
-        flex-direction: column;
+        flex-direction: row;
+    }
+
+    .sidebar {
+        width: 260px;
+        padding: 1.5rem;
+        position: fixed;
+        height: 100vh;
+    }
+
+    .sidebar-nav {
+        display: block;
+        gap: 0;
+        overflow-x: visible;
+        padding-bottom: 0;
+    }
+
+    .nav-item {
+        white-space: normal;
+        flex-shrink: 1;
+    }
+
+    .admin-main {
+        margin-left: 260px;
+        padding: 2rem;
     }
 }
 
@@ -466,9 +472,9 @@
 }
 
 .alert-info {
-    background: #e0f2fe;
-    border: 1px solid #7dd3fc;
-    color: #0369a1;
+    background: var(--info-bg);
+    border: 1px solid var(--info-border);
+    color: var(--info-text);
 }
 
 .alert ol {
@@ -515,29 +521,29 @@
 }
 
 /* ============================================
-   PARAMÈTRES — grille & formulaires
+   PARAMÈTRES — utilitaires
    ============================================ */
 .settings-grid-2 {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 1rem;
 }
-
-/* Formulaire de déplacement injecté (admin.js) */
-.reschedule-current {
-    margin-bottom: 1rem;
-    color: var(--gray-600);
+@media (min-width: 768px) {
+    .settings-grid-2 { grid-template-columns: 1fr 1fr; }
 }
+.settings-description--lg { margin-bottom: 1.5rem; }
 
+/* ============================================
+   AVERTISSEMENT DE DÉPLACEMENT (modale admin)
+   ============================================ */
 .reschedule-warning {
     padding: 1rem;
     background: var(--warning-light);
+    color: var(--warning);
     border-radius: var(--radius-md);
     margin-top: 1rem;
 }
-
-@media (max-width: 480px) {
-    .settings-grid-2 {
-        grid-template-columns: 1fr;
-    }
+.reschedule-current {
+    margin-bottom: 1rem;
+    color: var(--gray-600);
 }

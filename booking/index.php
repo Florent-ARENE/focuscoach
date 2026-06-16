@@ -21,6 +21,7 @@ $pageTitle = 'Prendre rendez-vous';
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/main.css">
     <link rel="stylesheet" href="../assets/css/booking.css">
+    <?= pwaHead() ?>
 </head>
 <body>
     <!-- Header -->
@@ -183,11 +184,11 @@ $pageTitle = 'Prendre rendez-vous';
                     
                     <!-- Mention RGPD (art. 13 — transparence, niveau 1) -->
                     <div class="rgpd-notice">
-                        <p class="rgpd-notice__text">
+                        <p>
                             En soumettant ce formulaire, vous demandez à être recontacté(e) dans le cadre de votre demande de rendez-vous.
                             Vos données sont traitées par <?= Helpers::escape(siteConfig()['full_name'] ?: siteConfig()['logo_name']) ?> pour la gestion de votre demande, sur la base de l'exécution de mesures
                             précontractuelles (art. 6.1.b RGPD). Elles sont conservées 365 jours.
-                            Pour en savoir plus, consultez notre <a href="../confidentialite.php" class="rgpd-notice__link" target="_blank">Politique de confidentialité</a>.
+                            Pour en savoir plus, consultez notre <a href="../confidentialite.php" target="_blank">Politique de confidentialité</a>.
                         </p>
                     </div>
                     
@@ -250,5 +251,6 @@ $pageTitle = 'Prendre rendez-vous';
     
     <script src="../assets/js/calendar-module.js"></script>
     <script src="../assets/js/booking.js"></script>
+    <?= pwaRegister() ?>
 </body>
 </html>

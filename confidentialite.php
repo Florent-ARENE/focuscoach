@@ -27,6 +27,7 @@ $lastUpdate = '13 février 2026';
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/home.css">
+    <?= pwaHead() ?>
 </head>
 <body class="legal-page">
     <!-- Header -->
@@ -316,5 +317,6 @@ $lastUpdate = '13 février 2026';
     <footer class="legal-footer">
         <p>&copy; <?= date('Y') ?> <?= Helpers::escape($cfg['site_name']) ?> &bull; <a href="mentions-legales.php">Mentions légales</a></p>
     </footer>
+    <?= pwaRegister() ?>
 </body>
 </html>

@@ -31,9 +31,8 @@
     text-decoration: none;
 }
 
-.booking-logo span {
-    color: var(--gold);
-}
+/* Contexte sombre — la 2e moitié du wordmark doit rester lisible */
+.booking-header .brand-half-b { color: var(--white); }
 
 .back-link {
     color: var(--cream);
@@ -64,21 +63,27 @@
     overflow: hidden;
 }
 
-/* Steps */
+/* Steps — mobile first (wrap, label caché) */
 .booking-steps {
     display: flex;
+    flex-wrap: wrap;
     background: var(--navy-800);
     padding: 1rem;
 }
 
 .step {
-    flex: 1;
+    flex: 1 1 100%;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
     color: var(--gray-400);
     font-size: 0.9rem;
+}
+
+.step-label {
+    display: none;
 }
 
 .step.active {
@@ -255,13 +260,13 @@
 }
 
 .day-indicators .indicator.confirmed {
-    background: var(--green);
-    color: white;
+    background: var(--success);
+    color: var(--white);
 }
 
 .day-indicators .indicator.pending {
     background: var(--warning);
-    color: white;
+    color: var(--white);
 }
 
 /* Slots */
@@ -316,21 +321,15 @@
     border-radius: var(--radius-md);
 }
 
-/* Form */
+/* Form — mobile first (1 colonne) */
 .booking-form {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 1.5rem;
 }
 
 .booking-form .full-width {
     grid-column: 1 / -1;
-}
-
-@media (max-width: 600px) {
-    .booking-form {
-        grid-template-columns: 1fr;
-    }
 }
 
 /* Selected slot summary */
@@ -501,31 +500,15 @@
 }
 
 .legend-badge.confirmed {
-    background: var(--green);
+    background: var(--success);
 }
 
 .legend-badge.pending {
     background: var(--warning);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .booking-steps {
-        flex-wrap: wrap;
-    }
-    
-    .step {
-        flex: 1 1 100%;
-        justify-content: center;
-    }
-    
-    .step-label {
-        display: none;
-    }
-}
-
 /* ============================================
-   Mention RGPD sous formulaire (art. 13)
+   NOTICE RGPD (sous le formulaire de réservation)
    ============================================ */
 .rgpd-notice {
     margin-top: 1.5rem;
@@ -534,15 +517,33 @@
     border-radius: var(--radius-md);
     border-left: 3px solid var(--gold);
 }
-
-.rgpd-notice__text {
+.rgpd-notice p {
     font-size: 0.8rem;
     color: var(--gray-600);
     line-height: 1.6;
     margin: 0;
 }
-
-.rgpd-notice__link {
+.rgpd-notice a {
     color: var(--gold);
     text-decoration: underline;
+}
+
+/* Responsive — mobile-first ; à partir de 768px, layouts élargis */
+@media (min-width: 768px) {
+    .booking-steps {
+        flex-wrap: nowrap;
+    }
+
+    .step {
+        flex: 1;
+        justify-content: flex-start;
+    }
+
+    .step-label {
+        display: inline;
+    }
+
+    .booking-form {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }

@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.4.1  
-**Dernière mise à jour:** 28 mai 2026
+**Version:** 2.4.2  
+**Dernière mise à jour:** 16 juin 2026
 
 ---
 
@@ -23,12 +23,34 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
-| 28/05/2026 | 2.4.1 | 🧹 Marque | `admin/index.php` — logos login + sidebar passent à `brandWordmark()` (suppression du `<span>Performance</span>` codé en dur, dernier résidu « Renaud Performance ») |
-| 28/05/2026 | 2.4.1 | ⚙️ Settings | Nouveau champ paramétrable `admin_activity` (Activité / Profession) → remplace l'activité codée en dur dans `confidentialite.php` |
-| 28/05/2026 | 2.4.1 | 🎨 CSS | Refacto anti-inline : extraction de **tout le CSS décoratif** vers les fichiers (`manage.css`, `booking.css`, `admin.css`, `main.css`). Plus aucun `style=` décoratif ni `<style>` inline ; seuls subsistent les `display:none` fonctionnels pilotés par JS |
-| 28/05/2026 | 2.4.1 | 🎨 CSS | `cfgField()` → `<span class="cfg-missing">` ; `admin.js`/`manage.js` → classes au lieu de styles injectés ; hex en dur `#fef3c7/#059669/#f59e0b` → tokens `var(--warning-light/--green/--warning)` |
-| 28/05/2026 | 2.4.1 | 📄 Nouveau | `sql/migration-2.4.1.sql` — clé `admin_activity` (bases existantes) |
-| 28/05/2026 | 2.4.1 | 🗄️ Schéma | `sql/database.sql` remis à l'état COMPLET : ajout des tables RGPD `rgpd_deletion_log` + `purge_stats` (manquantes) et du seed `admin_activity` → un réimport from scratch crée une base entièrement fonctionnelle sans rejouer les migrations |
+| 16/06/2026 | 2.4.2 | 📘 Doc | `CLAUDE.md` racine — mission v2.4.2 + règles d'or projet (architecture, CSS, PWA, sécurité) |
+| 16/06/2026 | 2.4.2 | 🔧 Fix | `admin/index.php` — résidu « Performance » en dur supprimé, remplacé par `brandWordmark()` partout (cohérence avec accueil/booking/légales) |
+| 16/06/2026 | 2.4.2 | 🎨 Design | `brandWordmark()` réécrit : split bicolore par milieu de chars (snap sur espace ±2), classes `.brand-half-a/b` — remplace l'ancien `.accent` |
+| 16/06/2026 | 2.4.2 | 🎨 Design | `main.css` — tokens sémantiques `--status-{pending\|confirmed\|cancelled\|completed}-{bg\|text}` + `--info-{bg\|border\|text}` + `--success` + `--red-strong` + `--red-soft` |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `manage.css` — hex `#fef3c7/#92400e/#d1fae5/...` → `var(--status-*)`, `#fee2e2/#991b1b/#fecaca` → `var(--red-*)` |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `admin.css` — `.alert-info` hex → `var(--info-*)` ; `.sidebar-logo` / `.login-logo` alignés sur DM Sans uppercase letter-spacing 0.08em (cohérence wordmark) |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `booking.css` — `#059669/#f59e0b` → `var(--success)/var(--warning)` ; `.booking-logo span` retiré (remplacé par `.brand-half-b` contextuel) |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `home.css` — `.accent`/`.brand-accent`/`.footer-bottom .accent` supprimés, remplacés par `.brand-half-a/b` |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `cfgField()` (init.php) — style inline `color:#ef4444;background:#fee2e2;...` → classe `.cfg-missing` (main.css) |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `api/test-gcal.php` — bloc `<style>` inline + `style="background:#dbeafe;..."` supprimés, remplacés par classes `.diag-*` + `.code-email` dans `main.css` |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `booking/manage.php` — bloc `<style>` chevron RGPD déplacé dans `manage.css` |
+| 16/06/2026 | 2.4.2 | ✅ Vérif | `grep -nE '#[0-9a-fA-F]{3,6}\b' assets/css/{booking,manage,admin,home}.css` retourne vide |
+| 16/06/2026 | 2.4.2 | 🎨 Design | Refacto **mobile-first** intégral — toutes les `@media max-width` inversées en `@media (min-width: ...)`. Règles de base = mobile, breakpoints uniques 768/1024 |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `home.css` — bases mobile (hero/contact/grid-2/audience/stats/services/compare/flash-cta/footer-top/timeline-item en `1fr`, nav-links/hero-right/about-photo cachés). Bloc 768px+ enrichit ; bloc 1024px+ passe les grilles à 3 col |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `admin.css` — sidebar full-width en horizontal (mobile), passe à fixe 260px à partir de 768px |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `booking.css` — booking-form 1 col mobile, 2 col 768px+ ; steps wrap+label caché mobile, nowrap+visible 768px+ |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `manage.css` — booking-info-grid 1 col mobile, 2 col 768px+ ; actions empilées mobile, en ligne 768px+ |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `main.css` — `:root` documenté en mobile-first ; page-title/data-table en valeurs mobile par défaut |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `home.css` — `.legal-logo span { color: var(--orange) }` supprimé (remplacé par `.brand-half-b` contextuel) ; doublons `.legal-header/.legal-main` fusionnés |
+| 16/06/2026 | 2.4.2 | 📱 PWA | `manifest.json` racine — nom, icônes 192/512 maskables, theme-color navy-deep, display standalone |
+| 16/06/2026 | 2.4.2 | 📱 PWA | `sw.js` racine — service worker cache versionné v2.4.2 ; network-first HTML/PHP, cache-first assets, exclusion des `/api/` |
+| 16/06/2026 | 2.4.2 | 📱 PWA | Icônes Lucide `focus` générées via PHP-GD : `assets/img/icon-{192,512}.png` (script `scripts/generate-pwa-icons.php` réutilisable) |
+| 16/06/2026 | 2.4.2 | 📱 PWA | `includes/init.php` — helpers `pwaHead()` (manifest + theme-color + apple-touch-icon) et `pwaRegister()` (enregistrement SW) |
+| 16/06/2026 | 2.4.2 | 📱 PWA | Inclusion dans `index.php`, `confidentialite.php`, `mentions-legales.php`, `booking/index.php`, `booking/manage.php`. Admin exclu (back-office) |
+| 16/06/2026 | 2.4.2 | 📱 PWA | `.htaccess` racine — DirectoryIndex `index.php` ; MIME `application/manifest+json` ; `Cache-Control: no-cache` sur `sw.js` ; `Service-Worker-Allowed: /` ; Deny sur config.local.php / google-credentials.json / *.sql |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | Suppression complète des `style="..."` décoratifs : booking/index.php (notice RGPD), booking/manage.php (section RGPD + modale suppression), admin/index.php (settings-grid-2), admin.js (reschedule-warning), manage.js (delete-success) |
+| 16/06/2026 | 2.4.2 | 🎨 Design | Nouvelles classes : `.rgpd-notice` (booking.css) ; `.rgpd-section/.rgpd-panel/.rgpd-icon/.btn-rgpd-delete/.delete-modal/.delete-modal__box/.delete-modal__intro/.delete-modal__list/.delete-modal__retain/.delete-modal__field/.delete-modal__label/.delete-modal__input/.delete-modal__actions/.delete-success` (manage.css) ; `.settings-grid-2/.settings-description--lg/.reschedule-warning/.reschedule-current` (admin.css) |
+| 16/06/2026 | 2.4.2 | ✅ Vérif | `grep 'style="' --include='*.php' --include='*.js' .` → uniquement 8 `display:none` fonctionnels (dérogation explicite : pilotés par JS) |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Refonte « Focus Coach » : charte navy/orange + Playfair Display, appliquée à TOUT le site |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Re-skin auto booking/admin/manage via remap des tokens `:root` (aucun markup touché) |
 | 28/05/2026 | 2.4.0 | 📄 Nouveau | `index.php` — page d'accueil dynamique (remplace `index.html` statique) |
@@ -311,51 +333,85 @@ require_once __DIR__ . '/../includes/init.php';
 
 ## 🎨 CSS Design System
 
-### 🔒 Règle d'or CSS (NE PAS DÉROGER)
+> **Règle d'or v2.4.2** : zéro hex en dur dans les modules. Tous les hex
+> vivent uniquement dans `:root` de `main.css`. Tout module consomme via
+> `var(--token)`. Vérification : `grep -nE '#[0-9a-fA-F]{3,6}\b'
+> assets/css/{booking,manage,admin,home}.css` doit retourner vide.
 
-> **Tout le style passe par des fichiers `.css` et des classes.** Aucun
-> `style="…"` inline décoratif, aucun bloc `<style>` dans le HTML/PHP,
-> aucune couleur hexadécimale codée en dur (toujours un token `var(--…)`).
->
-> **Source unique des tokens :** le bloc `:root` de `main.css`. Les autres
-> feuilles (`home.css`, `booking.css`, `admin.css`, `manage.css`) ne font
-> que **consommer** ces variables — pas de second `:root`.
->
-> **Seules exceptions tolérées :**
-> 1. Les icônes Lucide en `<svg>` inline (`stroke="currentColor"`, `width`/`height`, `viewBox`) ;
-> 2. Les `style="display:none"` **fonctionnels** que JS bascule via `element.style.display` (panneaux, modales). Tout le reste de leur style est dans une classe.
-
-### Variables CSS (`:root` dans `main.css`) — charte « Focus Coach »
+### Variables CSS (`:root` dans main.css)
 
 ```css
-/* Couleurs de marque */
---navy-900: #2E2A5E;   --navy-800: #4A4580;   --navy-700: #6B66B0;
---gold: #F0A500;       --gold-light: #ffb92e; --copper: #c96d22;
---cream: #F7F5F0;      --cream-dark: #ECEAE3; --white: #ffffff;
+/* Marque Focus Coach */
+--navy-900: #2E2A5E;       /* navy profond */
+--navy-800: #4A4580;       /* navy principal */
+--navy-700: #6B66B0;       /* bleu/violet clair */
+--gold: #F0A500;           /* accent orange */
+--gold-light: #ffb92e;
+--copper: #c96d22;
+--cream: #F7F5F0;          /* fond sable */
+--cream-dark: #ECEAE3;
+--white: #ffffff;
 
-/* Alias sémantiques (home.css) : --navy, --blue, --orange, --sand… */
+/* Alias sémantiques (consommés par home.css) */
+--navy: var(--navy-800);
+--navy-deep: var(--navy-900);
+--orange: var(--gold);
+--orange-light: #FEF6E4;
+--sand: var(--cream);
 
 /* États fonctionnels */
---green: #10b981;  --green-light: #d1fae5;
---red: #ef4444;    --red-light: #fee2e2;
---warning: #f59e0b; --warning-light: #fef3c7;
+--green / --green-light / --red / --red-light / --red-strong / --red-soft
+--warning / --warning-light / --success
 
-/* Gris : --gray-100/200/400/500/600/700 */
-/* Typo : --font-serif (Playfair), --font-sans (DM Sans) */
-/* Rayons : --radius-sm/md/lg/pill · Ombres : --shadow-sm/md/lg/card */
+/* Statuts de réservation (introduit v2.4.2) */
+--status-pending-bg   / --status-pending-text     (jaune)
+--status-confirmed-bg / --status-confirmed-text   (vert)
+--status-cancelled-bg / --status-cancelled-text   (rouge)
+--status-completed-bg / --status-completed-text   (bleu)
+
+/* Bandeau d'information (introduit v2.4.2) */
+--info-bg / --info-border / --info-text
+
+/* Typographie */
+--font-serif: 'Playfair Display', Georgia, serif;
+--font-sans:  'DM Sans', -apple-system, sans-serif;
+--font-display: var(--font-serif);
+--font-body:    var(--font-sans);
+
+/* Rayons */
+--radius / --radius-sm / --radius-md / --radius-lg / --radius-pill
+
+/* Ombres */
+--shadow-sm / --shadow-md / --shadow-lg / --shadow-card
 ```
 
-### Classes ajoutées en v2.4.1 (extraction de l'inline)
+### Classes globales (main.css)
 
-| Classe | Fichier | Rôle |
-|--------|---------|------|
-| `.cfg-missing` | main.css | Placeholder rouge des champs légaux non renseignés (`cfgField()`) |
-| `.settings-grid-2` | admin.css | Grille 2 colonnes (prénom/nom) des paramètres |
-| `.reschedule-current` / `.reschedule-warning` | admin.css | Bloc rappel + avertissement du formulaire de déplacement (injecté par `admin.js`) |
-| `.rgpd-notice` / `.rgpd-notice__text` / `.rgpd-notice__link` | booking.css | Mention RGPD sous le formulaire de réservation |
-| `.rgpd-section` `.rgpd-details` `.rgpd-toggle` `.rgpd-shield` `.rgpd-chevron` `.rgpd-panel(-text)` `.rgpd-delete-btn` | manage.css | Bloc « Protection des données » (accordéon + chevron) |
-| `.rgpd-modal` + `.rgpd-modal__box/title/text/list/note/field/label/input/actions` | manage.css | Modale de confirmation de suppression RGPD |
-| `.rgpd-success` + `.rgpd-success__icon/title/text` | manage.css | Écran « Données supprimées » (injecté par `manage.js`) |
+| Classe | Usage |
+|--------|-------|
+| `.cfg-missing` | Placeholder rouge `[À compléter]` rendu par `cfgField()` |
+| `.diag` (sur `<body>`) | Layout des pages de diagnostic `/api/test-*.php` |
+| `.diag .success/.error/.warning/.info` | États visuels du diagnostic |
+| `.diag .box` / `.diag .btn` / `.diag .btn-danger` | Composants du diagnostic |
+| `.diag .code-email` | Code inline sur fond bleu pâle (email Service Account) |
+| `.brand-half-a` / `.brand-half-b` | Wordmark bicolore (cf. `brandWordmark()`) |
+| `.hidden` | `display: none !important` (utilitaire) |
+
+### Wordmark bicolore — `brandWordmark()`
+
+Helper PHP (`includes/init.php`) qui rend le `site_name` (paramétrable
+via `/admin`) en deux moitiés de caractères, snap sur espace ±2 :
+
+- `"Focus Coach"` → `<span class="brand-half-a">Focus</span><span class="brand-half-b">Coach</span>`
+- `"FocusCoach"` → split par milieu → `Focus` + `Coach`
+- `"Acme"` (4 chars) → `Ac` + `me`
+
+CSS par défaut (home.css) : `.brand-half-a` orange, `.brand-half-b` navy.
+Adaptation par contexte sombre via sélecteur descendant :
+`.home-footer .brand-half-b`, `.legal-header .brand-half-b`,
+`.sidebar-logo .brand-half-b`, `.booking-header .brand-half-b` → `var(--white)`.
+
+> **Jamais** de mot de marque en dur dans le HTML — toujours `brandWordmark()`.
 
 ### Classes utilitaires
 
@@ -502,7 +558,6 @@ dur** dans les pages.
 | Adresse | `admin_address` | /admin → Paramètres |
 | SIRET | `admin_siret` | /admin → Paramètres |
 | Statut juridique | `legal_status` | /admin → Paramètres |
-| Activité / Profession | `admin_activity` | /admin → Paramètres |
 
 Helpers associés :
 - `siteConfig()` → tableau fusionnant BDD + fallbacks `config.php` (+ champs dérivés `full_name`, `logo_name`).
@@ -525,4 +580,4 @@ Helpers associés :
 
 ---
 
-**Dernière mise à jour : 28/05/2026 - v2.4.1**
+**Dernière mise à jour : 28/05/2026 - v2.4.0**

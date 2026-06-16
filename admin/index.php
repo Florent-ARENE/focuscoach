@@ -272,26 +272,18 @@ $currentPage = $_GET['page'] ?? 'bookings';
                         <div class="settings-grid-2">
                             <div class="form-group">
                                 <label class="form-label" for="admin_name">Prénom</label>
-                                <input type="text" class="form-input" id="admin_name"
+                                <input type="text" class="form-input" id="admin_name" 
                                        value="<?= Helpers::escape($currentSettings['admin_name'] ?? ADMIN_NAME) ?>"
                                        placeholder="Renaud">
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="admin_lastname">Nom de famille</label>
-                                <input type="text" class="form-input" id="admin_lastname"
+                                <input type="text" class="form-input" id="admin_lastname" 
                                        value="<?= Helpers::escape($currentSettings['admin_lastname'] ?? '') ?>"
                                        placeholder="Dupont">
                             </div>
                         </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="admin_activity">Activité / Profession</label>
-                            <input type="text" class="form-input" id="admin_activity"
-                                   value="<?= Helpers::escape($currentSettings['admin_activity'] ?? '') ?>"
-                                   placeholder="Coach, préparateur mental et formateur">
-                            <small class="form-help">Affichée dans la politique de confidentialité (responsable du traitement)</small>
-                        </div>
-
+                        
                         <div class="form-group">
                             <label class="form-label" for="admin_email">Email de notification</label>
                             <input type="email" class="form-input" id="admin_email" 
@@ -318,7 +310,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                         <h3 class="card-title">⚖️ Informations légales</h3>
                     </div>
                     <div class="card-body">
-                        <p class="settings-description">
+                        <p class="settings-description settings-description--lg">
                             Ces informations sont utilisées automatiquement dans les pages 
                             <strong>Mentions légales</strong> et <strong>Politique de confidentialité</strong>.
                         </p>

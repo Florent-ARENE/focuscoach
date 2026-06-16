@@ -225,21 +225,21 @@ const AdminApp = {
             <p class="reschedule-current">
                 RDV actuel : ${this.escapeHtml(booking.formatted_date)} à ${this.escapeHtml(booking.formatted_time)}
             </p>
-            
+
             <div class="form-group">
                 <label for="new-date">Nouvelle date</label>
-                <input type="date" id="new-date" class="form-input" 
+                <input type="date" id="new-date" class="form-input"
                        min="${new Date().toISOString().split('T')[0]}"
                        onchange="AdminApp.loadAvailableSlots()">
             </div>
-            
+
             <div class="form-group">
                 <label for="new-slot">Nouveau créneau</label>
                 <select id="new-slot" class="form-input" disabled>
                     <option value="">Sélectionnez d'abord une date</option>
                 </select>
             </div>
-            
+
             <div id="reschedule-warning" class="reschedule-warning" style="display:none;">
                 <strong>⚠️ Attention :</strong> Le visiteur sera informé du changement par email.
             </div>
@@ -422,8 +422,7 @@ const AdminApp = {
             admin_phone: document.getElementById('admin_phone')?.value || '',
             admin_address: document.getElementById('admin_address')?.value || '',
             admin_siret: document.getElementById('admin_siret')?.value || '',
-            legal_status: document.getElementById('legal_status')?.value || '',
-            admin_activity: document.getElementById('admin_activity')?.value || ''
+            legal_status: document.getElementById('legal_status')?.value || ''
         };
         
         try {

@@ -71,7 +71,6 @@ function siteConfig(): array
         'admin_address'   => '',
         'admin_siret'     => '',
         'legal_status'    => '',
-        'admin_activity'  => '',
     ];
     
     try {
@@ -102,20 +101,72 @@ function cfgField(string $value, string $placeholder = 'À compléter dans Param
 }
 
 /**
- * Wordmark de marque à partir du nom du site (paramétrable depuis /admin).
- * Le dernier mot est mis en accent. Ex : "Focus Coach" => Focus<span>Coach</span>
+ * Métadonnées PWA à inclure dans le <head> de chaque page publique.
+ * Centralise : manifest, theme-color, apple-touch-icon, viewport déjà
+ * géré par les pages. Le service worker est enregistré via pwaRegister().
+ * Usage : <?= pwaHead() ?>
+ */
+function pwaHead(): string
+{
+    return '<link rel="manifest" href="/manifest.json">'
+         . '<meta name="theme-color" content="#2E2A5E">'
+         . '<link rel="apple-touch-icon" href="/assets/img/icon-192.png">';
+}
+
+/**
+ * Bloc <script> qui enregistre le service worker. À placer en fin
+ * de <body> (avant </body>) pour ne pas bloquer le rendu.
+ * Usage : <?= pwaRegister() ?>
+ */
+function pwaRegister(): string
+{
+    return '<script>'
+         . "if('serviceWorker' in navigator){"
+         . "window.addEventListener('load',function(){"
+         . "navigator.serviceWorker.register('/sw.js').catch(function(e){console.warn('SW:',e);});"
+         . "});}"
+         . '</script>';
+}
+
+/**
+ * Wordmark bicolore à partir de `site_name` (paramétrable depuis /admin).
+ * Première moitié des caractères = .brand-half-a (orange par défaut),
+ * seconde moitié = .brand-half-b (navy par défaut). Les couleurs sont
+ * gérées par CSS — chaque contexte (fond clair/sombre) peut adapter via
+ * un sélecteur descendant (ex: .sidebar .brand-half-b { color: var(--white); }).
+ *
+ * Algorithme : milieu = round(len/2) avec snap sur un espace à ±2 chars
+ * pour éviter de couper un mot quand on peut couper proprement.
  * Usage : <span class="nav-brand-text"><?= brandWordmark() ?></span>
  */
 function brandWordmark(): string
 {
     $name = trim(siteConfig()['site_name'] ?? '');
     if ($name === '') {
-        return 'Focus<span class="accent">Coach</span>';
+        return '<span class="brand-half-a">Focus</span><span class="brand-half-b">Coach</span>';
     }
-    $parts = preg_split('/\s+/', $name, 2);
-    $first = \App\Helpers::escape($parts[0]);
-    if (count($parts) > 1 && $parts[1] !== '') {
-        return $first . '<span class="accent">' . \App\Helpers::escape($parts[1]) . '</span>';
+
+    $len = mb_strlen($name);
+    if ($len <= 1) {
+        return '<span class="brand-half-a">' . \App\Helpers::escape($name) . '</span>';
     }
-    return $first;
+
+    $mid = (int) round($len / 2);
+
+    // Snap : si un espace existe à ±2 chars du milieu, on coupe là (plus propre).
+    for ($delta = 0; $delta <= 2; $delta++) {
+        foreach ([$mid - $delta, $mid + $delta] as $candidate) {
+            if ($candidate > 0 && $candidate < $len
+                && mb_substr($name, $candidate - 1, 1) === ' ') {
+                $mid = $candidate;
+                break 2;
+            }
+        }
+    }
+
+    $a = rtrim(mb_substr($name, 0, $mid));
+    $b = ltrim(mb_substr($name, $mid));
+
+    return '<span class="brand-half-a">' . \App\Helpers::escape($a) . '</span>'
+         . '<span class="brand-half-b">' . \App\Helpers::escape($b) . '</span>';
 }

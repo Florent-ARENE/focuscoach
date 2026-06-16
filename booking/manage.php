@@ -42,6 +42,7 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
     <link rel="stylesheet" href="../assets/css/main.css">
     <link rel="stylesheet" href="../assets/css/booking.css">
     <link rel="stylesheet" href="../assets/css/manage.css">
+    <?= pwaHead() ?>
 </head>
 <body>
     <!-- Header -->
@@ -152,50 +153,50 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                     
                     <!-- RGPD — Bouton suppression des données (art. 17) -->
                     <div class="rgpd-section">
-                        <details class="rgpd-details">
-                            <summary class="rgpd-toggle">
-                                <svg class="rgpd-shield" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <details>
+                            <summary>
+                                <svg class="rgpd-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                                 </svg>
                                 <span>Protection des données personnelles</span>
-                                <svg class="rgpd-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <svg class="details-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path d="M6 9l6 6 6-6"/>
                                 </svg>
                             </summary>
                             <div class="rgpd-panel">
-                                <p class="rgpd-panel-text">
+                                <p>
                                     Conformément au RGPD (art. 17), vous pouvez demander la suppression de vos données personnelles associées à ce rendez-vous.
                                 </p>
-                                <button type="button" class="btn btn-sm rgpd-delete-btn" id="btn-delete-data">
+                                <button type="button" class="btn btn-sm btn-rgpd-delete" id="btn-delete-data">
                                     Supprimer mes données
                                 </button>
                             </div>
                         </details>
                     </div>
                 </div>
-
+                
                 <!-- Modale suppression RGPD -->
-                <div id="delete-data-modal" class="rgpd-modal" style="display:none;">
-                    <div class="rgpd-modal__box">
-                        <h3 class="rgpd-modal__title">Supprimer mes données personnelles</h3>
-                        <p class="rgpd-modal__text">
+                <div id="delete-data-modal" class="delete-modal" style="display:none;">
+                    <div class="delete-modal__box">
+                        <h3>Supprimer mes données personnelles</h3>
+                        <p class="delete-modal__intro">
                             Cette action est <strong>irréversible</strong>. Les données suivantes seront supprimées :
                         </p>
-                        <ul class="rgpd-modal__list">
+                        <ul class="delete-modal__list">
                             <li>Votre nom, email, téléphone, organisation</li>
                             <li>L'objet et le message de votre demande</li>
                             <li>Votre adresse IP et données de navigation</li>
                         </ul>
-                        <p class="rgpd-modal__note">
+                        <p class="delete-modal__retain">
                             Seuls la date du créneau et le type de service seront conservés de manière anonyme à des fins statistiques.
                         </p>
-                        <div class="rgpd-modal__field">
-                            <label class="rgpd-modal__label" for="delete-confirm-email">
+                        <div class="delete-modal__field">
+                            <label class="delete-modal__label">
                                 Pour confirmer, saisissez votre adresse email :
                             </label>
-                            <input type="email" id="delete-confirm-email" class="rgpd-modal__input" placeholder="votre@email.fr">
+                            <input type="email" id="delete-confirm-email" class="delete-modal__input" placeholder="votre@email.fr">
                         </div>
-                        <div class="rgpd-modal__actions">
+                        <div class="delete-modal__actions">
                             <button type="button" id="btn-delete-modal-close" class="btn btn-secondary btn-sm">Annuler</button>
                             <button type="button" id="btn-confirm-delete" class="btn btn-danger btn-sm">Supprimer définitivement</button>
                         </div>
@@ -314,5 +315,6 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
     <script src="../assets/js/calendar-module.js"></script>
     <script src="../assets/js/manage.js"></script>
     <?php endif; ?>
+    <?= pwaRegister() ?>
 </body>
 </html>

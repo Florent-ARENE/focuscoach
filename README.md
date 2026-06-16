@@ -1,9 +1,9 @@
-# 📅 Système de Réservation - Focus Coach
+# 📅 Focus Coach — Système de Réservation
 
-**Version:** 2.4.1  
-**Date:** 28 mai 2026  
-**Auteur:** Développé avec Claude AI  
-**Stack:** PHP 7.4+ / MySQL / JavaScript (vanilla)  
+**Version:** 2.4.2
+**Date:** 16 juin 2026
+**Auteur:** Développé avec Claude AI
+**Stack:** PHP 7.4+ / MySQL / JavaScript vanilla / **PWA installable**
 **Hébergement cible:** OVH mutualisé
 
 ---
@@ -34,6 +34,8 @@ Système de réservation de rendez-vous complet comprenant :
 - **Administration** : Gestion des réservations, créneaux, paramètres
 - **Notifications email** : Confirmations automatiques
 - **Sync Google Calendar** : Miroir unidirectionnel (sans librairie externe)
+- **PWA installable** : manifest + service worker (network-first pour le HTML
+  dynamique, cache-first pour les assets statiques). Cible Lighthouse PWA ≥ 90.
 
 ### Fonctionnalités clés
 
@@ -52,14 +54,6 @@ Système de réservation de rendez-vous complet comprenant :
 ---
 
 ## 📝 Changelog
-
-### Version 2.4.1 (28/05/2026)
-
-**🧹 Nettoyage de marque & CSS**
-- **Admin** : les logos (login + sidebar) utilisent désormais `brandWordmark()` — suppression du dernier `<span>Performance</span>` codé en dur (résidu « Renaud Performance »).
-- **Paramètre `admin_activity`** : l'activité affichée dans la politique de confidentialité devient éditable depuis /admin (remplace une valeur codée en dur).
-- **CSS** : extraction de **tout le style décoratif inline** vers les fichiers `.css` (règle d'or : aucun `style=` décoratif, aucun `<style>`, aucun hex en dur — uniquement des tokens `var(--…)`). Seuls les `display:none` fonctionnels pilotés par JS subsistent.
-- `sql/migration-2.4.1.sql` — ajoute la clé `admin_activity`.
 
 ### Version 2.3.0 (13/02/2026)
 
@@ -603,7 +597,6 @@ Via l'interface admin (`/admin/?page=settings`) :
 | `admin_address` | Adresse professionnelle | Mentions légales, politique confidentialité |
 | `admin_siret` | Numéro SIRET | Mentions légales, politique confidentialité |
 | `legal_status` | Statut juridique | Mentions légales (EI, SASU, etc.) |
-| `admin_activity` | Activité / Profession | Politique confidentialité (responsable du traitement) |
 | `google_calendar_enabled` | Activer sync Google (0/1) | Sync API |
 | `google_calendar_id` | ID du calendrier Google | Sync API |
 
@@ -935,4 +928,4 @@ Pour toute question ou problème :
 
 ---
 
-**Développé avec ❤️ par Claude AI pour Focus Coach**
+**Développé avec ❤️ par Claude AI pour Renaud - Performance Collective**
