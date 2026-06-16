@@ -6,6 +6,14 @@
 
 /* ============================================
    VARIABLES CSS
+   --------------------------------------------
+   Approche : MOBILE-FIRST.
+   Les règles de base ciblent le mobile. Les media queries enrichissent
+   progressivement à `min-width` :
+     - 768px : tablette+
+     - 1024px : desktop+
+   Aucun module ne doit utiliser `max-width`. Aucun hex en dur dans
+   les modules : tout passe par var(--token).
    ============================================ */
 :root {
     /* ----------------------------------------------------------------
@@ -155,7 +163,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .page-title {
-    font-size: 2.5rem;
+    font-size: 2rem;
     color: var(--navy-900);
     margin-bottom: 0.5rem;
 }
@@ -351,11 +359,12 @@ h1, h2, h3, h4, h5, h6 {
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 0.85rem;
 }
 
 .data-table th,
 .data-table td {
-    padding: 1rem;
+    padding: 0.75rem 0.5rem;
     text-align: left;
     border-bottom: 1px solid var(--gray-200);
 }
@@ -580,19 +589,22 @@ h1, h2, h3, h4, h5, h6 {
 .diag hr { margin: 2.5rem 0; border: 0; border-top: 1px solid var(--gray-200); }
 
 /* ============================================
-   RESPONSIVE
+   RESPONSIVE — mobile-first
+   Breakpoints : 768px (tablette+), 1024px (desktop+).
+   Les règles de base ciblent le mobile ; les @media min-width
+   enrichissent progressivement.
    ============================================ */
-@media (max-width: 768px) {
+@media (min-width: 768px) {
     .page-title {
-        font-size: 2rem;
+        font-size: 2.5rem;
     }
-    
+
     .data-table {
-        font-size: 0.85rem;
+        font-size: 1rem;
     }
-    
+
     .data-table th,
     .data-table td {
-        padding: 0.75rem 0.5rem;
+        padding: 1rem;
     }
 }

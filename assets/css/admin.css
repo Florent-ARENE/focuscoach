@@ -7,19 +7,20 @@
 /* Layout */
 .admin-layout {
     display: flex;
+    flex-direction: column;
     min-height: 100vh;
 }
 
-/* Sidebar */
+/* Sidebar — mobile first (full width, statique) */
 .sidebar {
-    width: 260px;
+    width: 100%;
     background: var(--navy-900);
     color: var(--white);
-    padding: 1.5rem;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
-    position: fixed;
-    height: 100vh;
+    position: relative;
+    height: auto;
     overflow-y: auto;
 }
 
@@ -46,6 +47,10 @@
 
 .sidebar-nav {
     flex: 1;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
 }
 
 .nav-item {
@@ -58,6 +63,8 @@
     border-radius: var(--radius-md);
     margin-bottom: 0.25rem;
     transition: var(--transition);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .nav-item:hover,
@@ -105,11 +112,11 @@
     color: var(--red);
 }
 
-/* Main content */
+/* Main content — mobile first (pas de marge sidebar) */
 .admin-main {
     flex: 1;
-    margin-left: 260px;
-    padding: 2rem;
+    margin-left: 0;
+    padding: 1rem;
     background: var(--gray-100);
     min-height: 100vh;
 }
@@ -336,34 +343,34 @@
     width: 100%;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        position: relative;
-        height: auto;
-        padding: 1rem;
-    }
-    
-    .sidebar-nav {
-        display: flex;
-        gap: 0.5rem;
-        overflow-x: auto;
-        padding-bottom: 0.5rem;
-    }
-    
-    .nav-item {
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    
-    .admin-main {
-        margin-left: 0;
-        padding: 1rem;
-    }
-    
+/* Responsive — mobile-first ; à partir de 768px, sidebar fixe à gauche */
+@media (min-width: 768px) {
     .admin-layout {
-        flex-direction: column;
+        flex-direction: row;
+    }
+
+    .sidebar {
+        width: 260px;
+        padding: 1.5rem;
+        position: fixed;
+        height: 100vh;
+    }
+
+    .sidebar-nav {
+        display: block;
+        gap: 0;
+        overflow-x: visible;
+        padding-bottom: 0;
+    }
+
+    .nav-item {
+        white-space: normal;
+        flex-shrink: 1;
+    }
+
+    .admin-main {
+        margin-left: 260px;
+        padding: 2rem;
     }
 }
 

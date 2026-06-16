@@ -63,21 +63,27 @@
     overflow: hidden;
 }
 
-/* Steps */
+/* Steps — mobile first (wrap, label caché) */
 .booking-steps {
     display: flex;
+    flex-wrap: wrap;
     background: var(--navy-800);
     padding: 1rem;
 }
 
 .step {
-    flex: 1;
+    flex: 1 1 100%;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
     color: var(--gray-400);
     font-size: 0.9rem;
+}
+
+.step-label {
+    display: none;
 }
 
 .step.active {
@@ -315,21 +321,15 @@
     border-radius: var(--radius-md);
 }
 
-/* Form */
+/* Form — mobile first (1 colonne) */
 .booking-form {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 1.5rem;
 }
 
 .booking-form .full-width {
     grid-column: 1 / -1;
-}
-
-@media (max-width: 600px) {
-    .booking-form {
-        grid-template-columns: 1fr;
-    }
 }
 
 /* Selected slot summary */
@@ -507,18 +507,22 @@
     background: var(--warning);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* Responsive — mobile-first ; à partir de 768px, layouts élargis */
+@media (min-width: 768px) {
     .booking-steps {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
-    
+
     .step {
-        flex: 1 1 100%;
-        justify-content: center;
+        flex: 1;
+        justify-content: flex-start;
     }
-    
+
     .step-label {
-        display: none;
+        display: inline;
+    }
+
+    .booking-form {
+        grid-template-columns: repeat(2, 1fr);
     }
 }

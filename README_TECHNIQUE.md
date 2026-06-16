@@ -35,6 +35,13 @@
 | 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `api/test-gcal.php` — bloc `<style>` inline + `style="background:#dbeafe;..."` supprimés, remplacés par classes `.diag-*` + `.code-email` dans `main.css` |
 | 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `booking/manage.php` — bloc `<style>` chevron RGPD déplacé dans `manage.css` |
 | 16/06/2026 | 2.4.2 | ✅ Vérif | `grep -nE '#[0-9a-fA-F]{3,6}\b' assets/css/{booking,manage,admin,home}.css` retourne vide |
+| 16/06/2026 | 2.4.2 | 🎨 Design | Refacto **mobile-first** intégral — toutes les `@media max-width` inversées en `@media (min-width: ...)`. Règles de base = mobile, breakpoints uniques 768/1024 |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `home.css` — bases mobile (hero/contact/grid-2/audience/stats/services/compare/flash-cta/footer-top/timeline-item en `1fr`, nav-links/hero-right/about-photo cachés). Bloc 768px+ enrichit ; bloc 1024px+ passe les grilles à 3 col |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `admin.css` — sidebar full-width en horizontal (mobile), passe à fixe 260px à partir de 768px |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `booking.css` — booking-form 1 col mobile, 2 col 768px+ ; steps wrap+label caché mobile, nowrap+visible 768px+ |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `manage.css` — booking-info-grid 1 col mobile, 2 col 768px+ ; actions empilées mobile, en ligne 768px+ |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `main.css` — `:root` documenté en mobile-first ; page-title/data-table en valeurs mobile par défaut |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `home.css` — `.legal-logo span { color: var(--orange) }` supprimé (remplacé par `.brand-half-b` contextuel) ; doublons `.legal-header/.legal-main` fusionnés |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Refonte « Focus Coach » : charte navy/orange + Playfair Display, appliquée à TOUT le site |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Re-skin auto booking/admin/manage via remap des tokens `:root` (aucun markup touché) |
 | 28/05/2026 | 2.4.0 | 📄 Nouveau | `index.php` — page d'accueil dynamique (remplace `index.html` statique) |
