@@ -42,6 +42,7 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
     <link rel="stylesheet" href="../assets/css/main.css">
     <link rel="stylesheet" href="../assets/css/booking.css">
     <link rel="stylesheet" href="../assets/css/manage.css">
+    <?= pwaHead() ?>
 </head>
 <body>
     <!-- Header -->
@@ -316,5 +317,6 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
     <script src="../assets/js/calendar-module.js"></script>
     <script src="../assets/js/manage.js"></script>
     <?php endif; ?>
+    <?= pwaRegister() ?>
 </body>
 </html>

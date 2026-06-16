@@ -23,6 +23,7 @@ $cfg = siteConfig();
     <!-- Point d'entrée CSS : design system global puis module page d'accueil -->
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/home.css">
+    <?= pwaHead() ?>
 </head>
 <body class="home">
 
@@ -417,5 +418,6 @@ $cfg = siteConfig();
 
     <!-- ═══ JS — formulaire de contact (mailto, sans backend) ═══ -->
     <script src="assets/js/home.js"></script>
+    <?= pwaRegister() ?>
 </body>
 </html>

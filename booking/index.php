@@ -21,6 +21,7 @@ $pageTitle = 'Prendre rendez-vous';
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/main.css">
     <link rel="stylesheet" href="../assets/css/booking.css">
+    <?= pwaHead() ?>
 </head>
 <body>
     <!-- Header -->
@@ -250,5 +251,6 @@ $pageTitle = 'Prendre rendez-vous';
     
     <script src="../assets/js/calendar-module.js"></script>
     <script src="../assets/js/booking.js"></script>
+    <?= pwaRegister() ?>
 </body>
 </html>

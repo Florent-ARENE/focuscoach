@@ -1,9 +1,9 @@
-# 📅 Système de Réservation - Renaud Performance Collective
+# 📅 Focus Coach — Système de Réservation
 
-**Version:** 2.3.0  
-**Date:** 13 février 2026  
-**Auteur:** Développé avec Claude AI  
-**Stack:** PHP 7.4+ / MySQL / JavaScript (vanilla)  
+**Version:** 2.4.2
+**Date:** 16 juin 2026
+**Auteur:** Développé avec Claude AI
+**Stack:** PHP 7.4+ / MySQL / JavaScript vanilla / **PWA installable**
 **Hébergement cible:** OVH mutualisé
 
 ---
@@ -34,6 +34,8 @@ Système de réservation de rendez-vous complet comprenant :
 - **Administration** : Gestion des réservations, créneaux, paramètres
 - **Notifications email** : Confirmations automatiques
 - **Sync Google Calendar** : Miroir unidirectionnel (sans librairie externe)
+- **PWA installable** : manifest + service worker (network-first pour le HTML
+  dynamique, cache-first pour les assets statiques). Cible Lighthouse PWA ≥ 90.
 
 ### Fonctionnalités clés
 

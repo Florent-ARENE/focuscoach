@@ -42,6 +42,12 @@
 | 16/06/2026 | 2.4.2 | 🔧 Refacto | `manage.css` — booking-info-grid 1 col mobile, 2 col 768px+ ; actions empilées mobile, en ligne 768px+ |
 | 16/06/2026 | 2.4.2 | 🔧 Refacto | `main.css` — `:root` documenté en mobile-first ; page-title/data-table en valeurs mobile par défaut |
 | 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `home.css` — `.legal-logo span { color: var(--orange) }` supprimé (remplacé par `.brand-half-b` contextuel) ; doublons `.legal-header/.legal-main` fusionnés |
+| 16/06/2026 | 2.4.2 | 📱 PWA | `manifest.json` racine — nom, icônes 192/512 maskables, theme-color navy-deep, display standalone |
+| 16/06/2026 | 2.4.2 | 📱 PWA | `sw.js` racine — service worker cache versionné v2.4.2 ; network-first HTML/PHP, cache-first assets, exclusion des `/api/` |
+| 16/06/2026 | 2.4.2 | 📱 PWA | Icônes Lucide `focus` générées via PHP-GD : `assets/img/icon-{192,512}.png` (script `scripts/generate-pwa-icons.php` réutilisable) |
+| 16/06/2026 | 2.4.2 | 📱 PWA | `includes/init.php` — helpers `pwaHead()` (manifest + theme-color + apple-touch-icon) et `pwaRegister()` (enregistrement SW) |
+| 16/06/2026 | 2.4.2 | 📱 PWA | Inclusion dans `index.php`, `confidentialite.php`, `mentions-legales.php`, `booking/index.php`, `booking/manage.php`. Admin exclu (back-office) |
+| 16/06/2026 | 2.4.2 | 📱 PWA | `.htaccess` racine — DirectoryIndex `index.php` ; MIME `application/manifest+json` ; `Cache-Control: no-cache` sur `sw.js` ; `Service-Worker-Allowed: /` ; Deny sur config.local.php / google-credentials.json / *.sql |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Refonte « Focus Coach » : charte navy/orange + Playfair Display, appliquée à TOUT le site |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Re-skin auto booking/admin/manage via remap des tokens `:root` (aucun markup touché) |
 | 28/05/2026 | 2.4.0 | 📄 Nouveau | `index.php` — page d'accueil dynamique (remplace `index.html` statique) |

@@ -101,6 +101,34 @@ function cfgField(string $value, string $placeholder = 'À compléter dans Param
 }
 
 /**
+ * Métadonnées PWA à inclure dans le <head> de chaque page publique.
+ * Centralise : manifest, theme-color, apple-touch-icon, viewport déjà
+ * géré par les pages. Le service worker est enregistré via pwaRegister().
+ * Usage : <?= pwaHead() ?>
+ */
+function pwaHead(): string
+{
+    return '<link rel="manifest" href="/manifest.json">'
+         . '<meta name="theme-color" content="#2E2A5E">'
+         . '<link rel="apple-touch-icon" href="/assets/img/icon-192.png">';
+}
+
+/**
+ * Bloc <script> qui enregistre le service worker. À placer en fin
+ * de <body> (avant </body>) pour ne pas bloquer le rendu.
+ * Usage : <?= pwaRegister() ?>
+ */
+function pwaRegister(): string
+{
+    return '<script>'
+         . "if('serviceWorker' in navigator){"
+         . "window.addEventListener('load',function(){"
+         . "navigator.serviceWorker.register('/sw.js').catch(function(e){console.warn('SW:',e);});"
+         . "});}"
+         . '</script>';
+}
+
+/**
  * Wordmark bicolore à partir de `site_name` (paramétrable depuis /admin).
  * Première moitié des caractères = .brand-half-a (orange par défaut),
  * seconde moitié = .brand-half-b (navy par défaut). Les couleurs sont
