@@ -14,19 +14,37 @@ use App\Icons;
 $isLoggedIn = !empty($_SESSION['admin_logged_in']);
 $loginError = null;
 
-// Login
+// Login : password_verify(ADMIN_PASSWORD_HASH) + rate limit 5/15min + regen session
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
-    if ($_POST['password'] === ADMIN_PASSWORD) {
+    $ip = Helpers::clientIp();
+    if (Helpers::isLoginLocked($ip)) {
+        $loginError = 'Trop de tentatives. Veuillez réessayer dans '
+            . Helpers::LOGIN_WINDOW_MIN . ' minutes.';
+    } elseif (!defined('ADMIN_PASSWORD_HASH') || ADMIN_PASSWORD_HASH === '') {
+        // Garde-fou : sans hash configuré, on refuse plutôt que de tomber
+        // dans un fallback clair (renaud2026 a fuité — plus jamais).
+        $loginError = 'Configuration manquante (ADMIN_PASSWORD_HASH).';
+    } elseif (password_verify((string) ($_POST['password'] ?? ''), ADMIN_PASSWORD_HASH)) {
+        Helpers::recordLoginAttempt($ip, true);
+        session_regenerate_id(true); // anti-fixation
         $_SESSION['admin_logged_in'] = true;
         $isLoggedIn = true;
     } else {
+        Helpers::recordLoginAttempt($ip, false);
         $loginError = 'Mot de passe incorrect';
     }
 }
 
-// Logout
+// Logout : on rase la session entière (pas juste un unset de la clé)
 if (isset($_GET['logout'])) {
-    unset($_SESSION['admin_logged_in']);
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params['path'], $params['domain'],
+            $params['secure'], $params['httponly']);
+    }
+    session_destroy();
     header('Location: index.php');
     exit;
 }

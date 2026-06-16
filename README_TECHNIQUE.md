@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.4.3  
-**Dernière mise à jour:** 16 juin 2026
+**Version:** 2.4.4  
+**Dernière mise à jour:** 16 juin 2026 — Lot 2 v2.4.4 (auth admin durcie)
 
 ---
 
@@ -23,6 +23,12 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 16/06/2026 | 2.4.4 | 🔒 Sécurité | **Lot 2 — Auth admin durcie**. `admin/index.php` bascule sur `password_verify(ADMIN_PASSWORD_HASH)` strict ; `define('ADMIN_PASSWORD', 'renaud2026')` supprimé de `config/config.php`. Rate limit 5 essais / 15 min par IP (table `admin_login_attempts`). Cookies session : `HttpOnly`/`SameSite=Lax`/`Secure` conditionnel HTTPS. `session_regenerate_id(true)` après login (anti-fixation). Logout efface session + cookie. |
+| 16/06/2026 | 2.4.4 | 🧰 Helper | `Helpers::clientIp()`, `Helpers::isLoginLocked($ip)`, `Helpers::recordLoginAttempt($ip, $success)` + constantes `LOGIN_MAX_ATTEMPTS=5` / `LOGIN_WINDOW_MIN=15`. Succès purge les échecs antérieurs (relâche le verrou). Fail-open BDD pour ne pas lock-out sur panne. |
+| 16/06/2026 | 2.4.4 | 🗄️ Migration | `sql/migration-2.4.4.sql` + `sql/database.sql` : nouvelle table `admin_login_attempts (ip_address, success, attempted_at)` avec index composite `(ip_address, attempted_at)`. |
+| 16/06/2026 | 2.4.4 | ⚙️ Config | `config/config.php` exige désormais `config.local.php` (plus de fallback clair). `config/config.local.php.template` documente `ADMIN_PASSWORD_HASH`. `includes/init.php` durcit les cookies de session via `session_set_cookie_params()` avant `session_start()`. |
+| 16/06/2026 | 2.4.4 | ✅ AD-9 | `tests/smoke.php` étend de 5 cas auth bcrypt (hash valide OK/KO, hash vide rejeté, hash malformé rejeté, format `$2y$`). Rate limit testé en intégration BDD, hors smoke unitaire. |
+| 16/06/2026 | 2.4.4 | 🧹 Doc | `README_TECHNIQUE.md` pied de page « Dernière mise à jour … v2.4.0 » supprimé — un seul stamp de version en en-tête (AD-2 appliqué au stamp lui-même). |
 | 16/06/2026 | 2.4.3 | 🔒 Sécurité | **Lot 1 — CSRF obligatoire**. `api/admin.php` (POST update/delete/reschedule/blocked_dates/settings) et `api/booking.php` exigent maintenant un token CSRF valide ; 403 immédiat sinon. Vérif lue via header `X-CSRF-Token` (priorité) ou body `csrf_token` (fallback). |
 | 16/06/2026 | 2.4.3 | 🧰 Helper | `Helpers::verifyCsrfFromRequest()`, `Helpers::csrfFailure()`, `Helpers::csrfMeta()` (injecte `<meta name="csrf-token">` dans le `<head>`). `Helpers::getJsonInput()` passe en cache statique (lit `php://input` une seule fois). |
 | 16/06/2026 | 2.4.3 | 🎨 Client | `admin.js` + `booking.js` : helper `csrfHeaders()` qui lit le meta et le fusionne dans tous les fetch POST. `admin/index.php` + `booking/index.php` : `<?= Helpers::csrfMeta() ?>` dans le `<head>`. |
@@ -584,7 +590,3 @@ Helpers associés :
 > Re-skin global : les pages booking/admin/manage consomment les tokens `:root`
 > de `main.css` via `var(...)`. Remapper les VALEURS (sans renommer) suffit à
 > changer toute la charte — c'est ainsi qu'a été appliquée la refonte 2.4.0.
-
----
-
-**Dernière mise à jour : 28/05/2026 - v2.4.0**

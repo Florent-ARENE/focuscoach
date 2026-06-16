@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS blocked_dates;
 DROP TABLE IF EXISTS settings;
 DROP TABLE IF EXISTS rgpd_deletion_log;
 DROP TABLE IF EXISTS purge_stats;
+DROP TABLE IF EXISTS admin_login_attempts;
 
 -- ============================================
 -- TABLE : bookings
@@ -166,6 +167,20 @@ CREATE TABLE purge_stats (
 
     UNIQUE INDEX idx_purge_date (purge_date)
 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABLE : admin_login_attempts
+-- Trace des tentatives de login admin (rate limit 5 essais / 15 min par IP)
+-- ============================================
+CREATE TABLE admin_login_attempts (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    ip_address   VARCHAR(45)  NOT NULL,
+    success      TINYINT(1)   NOT NULL DEFAULT 0,
+    attempted_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_ip_time   (ip_address, attempted_at),
+    INDEX idx_attempted (attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================

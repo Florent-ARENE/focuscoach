@@ -13,24 +13,19 @@ if (!defined('BOOKING_APP')) {
 }
 
 // ============================================
-// BASE DE DONNEES MySQL
+// BASE DE DONNEES MySQL + secrets
 // ============================================
-// Les identifiants sont dans config.local.php (non ecrase par les mises a jour)
+// Les identifiants vivent dans config.local.php (non versionne, cf. .gitignore,
+// non ecrase par les mises a jour). Le fichier est REQUIS — pas de fallback
+// clair pour ADMIN_PASSWORD (cf. config.local.php.template). Copier d'abord
+// le template puis renseigner les valeurs reelles avant le premier run.
 $localConfig = __DIR__ . '/config.local.php';
-if (file_exists($localConfig)) {
-    require_once $localConfig;
-} else {
-    // Valeurs par defaut si config.local.php n'existe pas encore
-    define('DB_HOST', 'localhost');
-    define('DB_NAME', 'virtualburenaud');
-    define('DB_USER', 'root');
-    define('DB_PASS', '');
-    define('DB_CHARSET', 'utf8mb4');
-    define('DB_PORT', 3306);
-    
-    // Mot de passe admin par defaut
-    define('ADMIN_PASSWORD', 'renaud2026');
+if (!file_exists($localConfig)) {
+    die('Configuration manquante : copier config/config.local.php.template '
+        . 'en config/config.local.php et renseigner les valeurs reelles '
+        . '(DB_*, ADMIN_PASSWORD_HASH, Stripe...).');
 }
+require_once $localConfig;
 
 // ============================================
 // ENVIRONNEMENT

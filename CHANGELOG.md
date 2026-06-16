@@ -13,6 +13,62 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.4.4] — 2026-06-16 — Lot 2 : Auth admin durcie
+
+### 🔒 Sécurité
+- **`password_verify(ADMIN_PASSWORD_HASH)` strict** sur le login admin
+  (`admin/index.php`). Le `define('ADMIN_PASSWORD', 'renaud2026')` qui
+  vivait en clair dans `config/config.php` est supprimé. La valeur
+  `renaud2026` ayant fuité dans le repo et les fils de conversation,
+  elle est considérée comme compromise — le nouveau mot de passe est
+  posé en hash bcrypt dans `config.local.php` (non versionné). Aucun
+  fallback transitoire : sans `ADMIN_PASSWORD_HASH` valide, le login
+  refuse plutôt que de retomber sur le clair.
+- **Rate limit login admin** : 5 essais ratés / 15 min par IP, puis
+  refus avec message générique (pas de fuite du compteur restant).
+  Implémenté côté SQL (table `admin_login_attempts`) — cohérent avec
+  le reste du projet, audit possible. Succès = purge des échecs (le
+  verrou se relâche immédiatement après une bonne saisie).
+- **Cookies de session durcis** (`includes/init.php`,
+  `session_set_cookie_params` avant `session_start`) : `HttpOnly`
+  (anti-XSS read), `SameSite=Lax` (anti-CSRF flow web), `Secure`
+  conditionné HTTPS (préserve le dev local en `php -S`).
+- **`session_regenerate_id(true)` après login admin réussi** : anti
+  session-fixation. Logout : on rase `$_SESSION`, on efface le cookie,
+  on `session_destroy()` — pas juste un `unset` de clé.
+- **`config/config.php` exige `config.local.php`** : die clair si
+  absent (plus de chemin de fallback avec mot de passe en dur). Le
+  template `config.local.php.template` documente toutes les clés
+  attendues (DB, `ADMIN_PASSWORD_HASH`, Stripe).
+
+### 🧰 Helpers
+- `Helpers::clientIp()` — IP serveur observée (pas de `X-Forwarded-For`,
+  pas de proxy de confiance sur OVH mutualisé).
+- `Helpers::isLoginLocked($ip)` — true si ≥ 5 échecs sur la fenêtre.
+  Fail-open en cas d'erreur BDD : on ne lock pas si on ne peut pas lire
+  (la dernière ligne de défense reste `password_verify`).
+- `Helpers::recordLoginAttempt($ip, $success)` — log + purge des
+  échecs antérieurs si succès. Constantes `LOGIN_MAX_ATTEMPTS=5` et
+  `LOGIN_WINDOW_MIN=15`.
+
+### 🗄️ Migration
+- **`sql/migration-2.4.4.sql`** — `CREATE TABLE admin_login_attempts`
+  avec index `(ip_address, attempted_at)` pour la fenêtre glissante.
+  Intégrée à `sql/database.sql` pour les installations fresh.
+
+### ✅ Non-régression (AD-9)
+- `tests/smoke.php` : +5 cas auth bcrypt (hash valide accepte / refuse,
+  hash vide refusé, hash malformé refusé sans exception qui leak,
+  format `$2y$` attendu). Le rate limit demande la BDD → testé en
+  intégration, hors smoke unitaire.
+
+### 🧹 Doc
+- **Pied de page redondant supprimé** dans `README_TECHNIQUE.md`
+  (« Dernière mise à jour : 28/05/2026 - v2.4.0 ») : AD-2 appliqué au
+  stamp lui-même — une seule source de version dans le fichier
+  (l'en-tête). Le pre-commit AD-1 cherchait un match « n'importe où »,
+  le pied désynchronisé verdissait à tort. Plus de divergence possible.
+
 ## [2.4.3] — 2026-06-16 — Lot 1 : CSRF obligatoire
 
 ### 🔒 Sécurité
