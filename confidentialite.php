@@ -21,7 +21,7 @@ $lastUpdate = '13 février 2026';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $pageTitle ?> | <?= siteConfig()['site_name'] ?></title>
+    <title><?= Helpers::escape($pageTitle) ?> | <?= Helpers::escape(siteConfig()['site_name']) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -45,8 +45,8 @@ $lastUpdate = '13 février 2026';
     
     <!-- Contenu principal -->
     <main class="legal-main">
-        <h1><?= $pageTitle ?></h1>
-        <p class="legal-update">Dernière mise à jour : <?= $lastUpdate ?></p>
+        <h1><?= Helpers::escape($pageTitle) ?></h1>
+        <p class="legal-update">Dernière mise à jour : <?= Helpers::escape($lastUpdate) ?></p>
         
         
         <!-- 1. RESPONSABLE DU TRAITEMENT -->

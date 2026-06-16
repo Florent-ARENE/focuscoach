@@ -56,7 +56,14 @@ class Database
                 ];
                 
                 self::$instance = new PDO($dsn, DB_USER, DB_PASS, $options);
-                
+
+                // Aligner le fuseau MySQL sur celui de PHP (sinon NOW() SQL
+                // peut être en UTC pendant que PHP est en Europe/Paris → écart
+                // d'1 ou 2 h entre created_at et les calculs DateTime PHP).
+                // date('P') donne l'offset numérique courant (+01:00 / +02:00
+                // avec DST), accepté par `SET time_zone`.
+                self::$instance->exec("SET time_zone = '" . date('P') . "'");
+
             } catch (PDOException $e) {
                 if (APP_DEBUG) {
                     die('Erreur de connexion : ' . $e->getMessage());

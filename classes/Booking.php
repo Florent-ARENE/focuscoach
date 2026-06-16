@@ -78,13 +78,24 @@ class Booking
             ];
             
         } catch (\PDOException $e) {
+            // 23000 = violation de contrainte d'intégrité — ici l'UNIQUE
+            // sur active_key (race entre isSlotTaken() et INSERT). On
+            // traduit en message UX cohérent au lieu d'une erreur générique.
+            if ($e->getCode() === '23000') {
+                return [
+                    'success' => false,
+                    'message' => 'Ce créneau vient d\'être réservé. Veuillez en choisir un autre.',
+                    'booking_id' => null,
+                    'manage_token' => null
+                ];
+            }
             if (APP_DEBUG) {
                 return ['success' => false, 'message' => 'Erreur : ' . $e->getMessage(), 'booking_id' => null, 'manage_token' => null];
             }
             return ['success' => false, 'message' => 'Une erreur est survenue.', 'booking_id' => null, 'manage_token' => null];
         }
     }
-    
+
     /**
      * Générer un token unique pour la gestion client
      */
@@ -124,7 +135,20 @@ class Booking
         if (!in_array($booking['status'], ['pending', 'confirmed'])) {
             return ['success' => false, 'message' => 'Cette réservation ne peut plus être modifiée'];
         }
-        
+
+        // Idempotence : double POST / re-clic → on évite de repasser en pending
+        // et de spammer un mail « demande de modification » pour rien.
+        if ($booking['slot_date'] === $newDate
+            && substr($booking['slot_time_start'], 0, 5) === substr($newTimeStart, 0, 5)
+            && substr($booking['slot_time_end'], 0, 5)   === substr($newTimeEnd, 0, 5)) {
+            return [
+                'success'   => true,
+                'unchanged' => true,
+                'message'   => 'Aucun changement de créneau.',
+                'booking_id'=> $booking['id'],
+            ];
+        }
+
         // Vérifier que le nouveau créneau est disponible
         if (!$this->isSlotAvailable($newDate, $newTimeStart, $booking['id'])) {
             return ['success' => false, 'message' => 'Ce créneau n\'est plus disponible'];
@@ -393,7 +417,24 @@ class Booking
         if (!$booking) {
             return ['success' => false, 'message' => 'Réservation non trouvée'];
         }
-        
+
+        // Idempotence : si rien ne change (double POST, re-clic), on sort
+        // sans toucher la BDD ni envoyer d'emails. Le drapeau `unchanged`
+        // permet à l'API de skipper les notifs et la sync Google Calendar.
+        if ($booking['slot_date'] === $newDate
+            && substr($booking['slot_time_start'], 0, 5) === substr($newTimeStart, 0, 5)
+            && substr($booking['slot_time_end'], 0, 5)   === substr($newTimeEnd, 0, 5)) {
+            return [
+                'success'   => true,
+                'unchanged' => true,
+                'message'   => 'Aucun changement de créneau.',
+                'old_date'  => $booking['slot_date'],
+                'old_time'  => $booking['slot_time_start'],
+                'new_date'  => $newDate,
+                'new_time'  => $newTimeStart,
+            ];
+        }
+
         // Vérifier que le nouveau créneau est disponible
         if (!$this->isSlotAvailable($newDate, $newTimeStart, $id)) {
             return ['success' => false, 'message' => 'Ce créneau est déjà pris'];

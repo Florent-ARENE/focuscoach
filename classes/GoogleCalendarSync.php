@@ -32,6 +32,13 @@ class GoogleCalendarSync
     // URLs API Google
     private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
     private const CALENDAR_API_BASE = 'https://www.googleapis.com/calendar/v3';
+
+    // Budget réseau borné : le but est de NE PAS manger le budget Apache
+    // 60 s si Google rame. 5 s pour établir la TCP+TLS, 15 s total.
+    // Au-delà, on log et on rend la main — la BDD locale reste cohérente,
+    // la sync repasse au prochain événement.
+    private const CURL_CONNECT_TIMEOUT = 5;
+    private const CURL_TOTAL_TIMEOUT   = 15;
     
     public function __construct()
     {
@@ -160,10 +167,11 @@ class GoogleCalendarSync
             $ch = curl_init(self::TOKEN_URL);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => http_build_query($postData),
-                CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
-                CURLOPT_TIMEOUT => 30
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => http_build_query($postData),
+                CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
+                CURLOPT_CONNECTTIMEOUT => self::CURL_CONNECT_TIMEOUT,
+                CURLOPT_TIMEOUT        => self::CURL_TOTAL_TIMEOUT,
             ]);
             
             $response = curl_exec($ch);
@@ -207,11 +215,12 @@ class GoogleCalendarSync
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => [
+            CURLOPT_HTTPHEADER     => [
                 'Authorization: Bearer ' . $token,
                 'Content-Type: application/json'
             ],
-            CURLOPT_TIMEOUT => 30
+            CURLOPT_CONNECTTIMEOUT => self::CURL_CONNECT_TIMEOUT,
+            CURLOPT_TIMEOUT        => self::CURL_TOTAL_TIMEOUT,
         ]);
         
         switch (strtoupper($method)) {

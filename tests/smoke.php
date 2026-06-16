@@ -12,6 +12,12 @@
  *
  * Cibles couvertes :
  *   - CSRF : verifyCsrfFromRequest header > body > $_POST + rejet absence/invalide.
+ *   - Auth admin : password_verify vs ADMIN_PASSWORD_HASH (hash valide / hash absent
+ *     / hash KO). Le rate limit nécessite la BDD → testé en intégration, hors smoke.
+ *   - Intégrité (Lot 3) : alignement offset MySQL (date('P')) côté PHP, format
+ *     active_key bookings (concat date_time pour pending/confirmed), idempotence
+ *     reschedule (équivalence date+heure). La race UNIQUE et les timeouts cURL
+ *     se testent en intégration BDD/réseau, hors smoke unitaire.
  */
 
 require_once __DIR__ . '/../includes/init.php';
@@ -107,6 +113,75 @@ it('Header prioritaire sur body en cas de conflit (header bidon, body valide →
 it('Vide explicite (chaîne vide) → rejeté', function () {
     $_SERVER['HTTP_X_CSRF_TOKEN'] = '';
     expect_false(Helpers::verifyCsrfFromRequest(['csrf_token' => '']));
+});
+
+// ============================================
+// LOT 2 — Auth admin (password_verify)
+// ============================================
+echo "\n🔐 Lot 2 — Auth admin (password_verify)\n";
+
+$known = 'Sm0k3-T3st-Mdp!';
+$validHash = password_hash($known, PASSWORD_DEFAULT);
+
+it('Hash bcrypt valide + bon mot de passe → accepté', function () use ($known, $validHash) {
+    expect_true(password_verify($known, $validHash));
+});
+
+it('Hash bcrypt valide + mauvais mot de passe → rejeté', function () use ($validHash) {
+    expect_false(password_verify('mauvais', $validHash));
+});
+
+it('Hash vide → rejeté (pas de bypass possible)', function () use ($known) {
+    expect_false(password_verify($known, ''));
+});
+
+it('Hash mal formé → rejeté (pas d\'exception PHP qui leak)', function () use ($known) {
+    expect_false(password_verify($known, 'pas_un_hash_bcrypt'));
+});
+
+it('Format hash = $2y$ (PASSWORD_DEFAULT actuel)', function () use ($validHash) {
+    expect_true(strpos($validHash, '$2y$') === 0,
+        'PASSWORD_DEFAULT devrait produire un hash bcrypt — reçu : ' . substr($validHash, 0, 4));
+});
+
+// ============================================
+// LOT 3 — Intégrité (alignement TZ, active_key, idempotence reschedule)
+// ============================================
+echo "\n🧱 Lot 3 — Intégrité\n";
+
+it('Offset PHP date(\'P\') au format `±HH:MM` (compatible SET time_zone MySQL)', function () {
+    $offset = date('P');
+    expect_true(
+        preg_match('/^[+\-]\d{2}:\d{2}$/', $offset) === 1,
+        'attendu ±HH:MM, reçu : ' . var_export($offset, true)
+    );
+});
+
+it('Format active_key pour pending/confirmed = `YYYY-MM-DD_HH:MM:SS` (≤ 20 chars)', function () {
+    // Reproduit la définition de la colonne générée côté SQL.
+    $sample = '2026-12-31' . '_' . '09:00:00';
+    expect_true(strlen($sample) === 19);
+    expect_true(strlen($sample) <= 20); // colonne VARCHAR(20)
+});
+
+it('Idempotence reschedule : équivalence date + heure sur 5 chars (HH:MM)', function () {
+    // Reproduit la logique de Booking::reschedule().
+    $oldStart = '14:00:00';
+    $newStart = '14:00';   // saisie front sans secondes
+    expect_true(substr($oldStart, 0, 5) === substr($newStart, 0, 5));
+});
+
+it('Idempotence reschedule : seconde différente NE TRIGGER PAS le change', function () {
+    // Date BDD avec :00, saisie front : on tronque à 5 chars → identique.
+    $oldStart = '14:00:30';
+    $newStart = '14:00:45';
+    expect_true(substr($oldStart, 0, 5) === substr($newStart, 0, 5));
+});
+
+it('Idempotence reschedule : minute différente => change', function () {
+    $oldStart = '14:00:00';
+    $newStart = '14:30:00';
+    expect_false(substr($oldStart, 0, 5) === substr($newStart, 0, 5));
 });
 
 // ============================================

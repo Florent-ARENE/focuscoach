@@ -8,8 +8,75 @@
 
 namespace App;
 
+use PDO;
+
 class Helpers
 {
+    // Politique rate limit login admin — fenêtre plate, deux constantes.
+    public const LOGIN_MAX_ATTEMPTS = 5;
+    public const LOGIN_WINDOW_MIN   = 15;
+
+    /**
+     * IP du client telle qu'observée côté serveur. Pas de prise en compte
+     * des en-têtes proxy (X-Forwarded-For) : on est sur OVH mutualisé,
+     * pas de reverse proxy de confiance — sinon vecteur de spoofing.
+     */
+    public static function clientIp(): string
+    {
+        return (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+    }
+
+    /**
+     * Vrai si l'IP est verrouillée (≥ LOGIN_MAX_ATTEMPTS échecs sur la
+     * fenêtre LOGIN_WINDOW_MIN). Les succès remettent le compteur à zéro
+     * via recordLoginAttempt(true).
+     */
+    public static function isLoginLocked(string $ip): bool
+    {
+        try {
+            $db = Database::getInstance();
+            $stmt = $db->prepare(
+                "SELECT COUNT(*) FROM admin_login_attempts
+                 WHERE ip_address = :ip
+                   AND success = 0
+                   AND attempted_at > (NOW() - INTERVAL :win MINUTE)"
+            );
+            $stmt->bindValue(':ip', $ip);
+            $stmt->bindValue(':win', self::LOGIN_WINDOW_MIN, PDO::PARAM_INT);
+            $stmt->execute();
+            return ((int) $stmt->fetchColumn()) >= self::LOGIN_MAX_ATTEMPTS;
+        } catch (\PDOException $e) {
+            // En cas d'erreur BDD, on ne bloque pas (fail-open sur la lecture,
+            // l'auth bcrypt reste la dernière ligne de défense).
+            return false;
+        }
+    }
+
+    /**
+     * Enregistre une tentative (succès ou échec). En cas de succès, purge
+     * les échecs antérieurs de l'IP pour relâcher le verrou immédiatement.
+     */
+    public static function recordLoginAttempt(string $ip, bool $success): void
+    {
+        try {
+            $db = Database::getInstance();
+            if ($success) {
+                $purge = $db->prepare(
+                    "DELETE FROM admin_login_attempts WHERE ip_address = :ip AND success = 0"
+                );
+                $purge->execute([':ip' => $ip]);
+            }
+            $stmt = $db->prepare(
+                "INSERT INTO admin_login_attempts (ip_address, success) VALUES (:ip, :s)"
+            );
+            $stmt->bindValue(':ip', $ip);
+            $stmt->bindValue(':s', $success ? 1 : 0, PDO::PARAM_INT);
+            $stmt->execute();
+        } catch (\PDOException $e) {
+            // Échec de log = pas bloquant pour l'auth.
+        }
+    }
+
     /**
      * Nettoyer une entrée utilisateur
      */

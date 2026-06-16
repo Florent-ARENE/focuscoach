@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS blocked_dates;
 DROP TABLE IF EXISTS settings;
 DROP TABLE IF EXISTS rgpd_deletion_log;
 DROP TABLE IF EXISTS purge_stats;
+DROP TABLE IF EXISTS admin_login_attempts;
 
 -- ============================================
 -- TABLE : bookings
@@ -67,13 +68,24 @@ CREATE TABLE bookings (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     confirmed_at DATETIME DEFAULT NULL,
     cancelled_at DATETIME DEFAULT NULL,
-    
+
+    -- Clé d'unicité créneau actif (race double-booking)
+    -- NULL si annulé/terminé → InnoDB autorise plusieurs NULL sur UNIQUE,
+    -- donc un créneau libéré peut être re-réservé.
+    active_key VARCHAR(20) GENERATED ALWAYS AS (
+        CASE WHEN status IN ('pending','confirmed')
+             THEN CONCAT(slot_date, '_', slot_time_start)
+             ELSE NULL
+        END
+    ) STORED,
+
     -- Index
     INDEX idx_status (status),
     INDEX idx_slot_date (slot_date),
     INDEX idx_visitor_email (visitor_email),
-    UNIQUE INDEX idx_manage_token (manage_token)
-    
+    UNIQUE INDEX idx_manage_token (manage_token),
+    UNIQUE KEY uq_active_slot (active_key)
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
@@ -166,6 +178,20 @@ CREATE TABLE purge_stats (
 
     UNIQUE INDEX idx_purge_date (purge_date)
 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABLE : admin_login_attempts
+-- Trace des tentatives de login admin (rate limit 5 essais / 15 min par IP)
+-- ============================================
+CREATE TABLE admin_login_attempts (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    ip_address   VARCHAR(45)  NOT NULL,
+    success      TINYINT(1)   NOT NULL DEFAULT 0,
+    attempted_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_ip_time   (ip_address, attempted_at),
+    INDEX idx_attempted (attempted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
