@@ -50,6 +50,18 @@ if (empty($_SESSION['admin_logged_in'])) {
     }
 }
 
+/**
+ * CSRF obligatoire sur tout POST qui change l'état (AD §4 — socle).
+ * GET = lecture, exempté. La vérif lit X-CSRF-Token (header) puis fallback
+ * sur le body JSON / $_POST. Échec = 403 immédiat.
+ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrfBody = Helpers::getJsonInput();
+    if (!Helpers::verifyCsrfFromRequest($csrfBody)) {
+        Helpers::csrfFailure();
+    }
+}
+
 try {
     $action = $_GET['action'] ?? '';
     $booking = new Booking();

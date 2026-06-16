@@ -4,12 +4,22 @@
  * ============================================
  */
 
+/**
+ * Lit le jeton CSRF depuis <meta name="csrf-token"> et le renvoie sous
+ * la forme d'un objet headers à fusionner dans fetch(). Centralisé pour
+ * que tous les POST passent par la même mécanique.
+ */
+function csrfHeaders() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? { 'X-CSRF-Token': meta.content } : {};
+}
+
 const AdminApp = {
     // Configuration
     config: {
         apiBase: '../api/'
     },
-    
+
     // State
     state: {
         bookings: [],
@@ -325,7 +335,7 @@ const AdminApp = {
         try {
             const response = await fetch(this.config.apiBase + 'admin.php?action=reschedule', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
                 body: JSON.stringify({ 
                     id, 
                     new_date: newDate, 
@@ -360,7 +370,7 @@ const AdminApp = {
         try {
             const response = await fetch(this.config.apiBase + 'admin.php?action=delete', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
                 body: JSON.stringify({ id })
             });
             
@@ -402,7 +412,7 @@ const AdminApp = {
         try {
             const response = await fetch(this.config.apiBase + 'admin.php?action=update', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
                 body: JSON.stringify({ id, status })
             });
             
@@ -441,7 +451,7 @@ const AdminApp = {
         try {
             const response = await fetch(this.config.apiBase + 'admin.php?action=settings', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
                 body: JSON.stringify(settings)
             });
             

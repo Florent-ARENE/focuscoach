@@ -1,12 +1,15 @@
 # CLAUDE.md — Focus Coach
 
+> **Socle commun** : `./cadrage/CADRAGE_UNIVERSEL.md` (règles AD-1→AD-10) + `./cadrage/INSTRUCTIONS_DEMARRAGE_SESSION_UNIVERSEL.md`. **Source unique** — ne pas éditer de copie locale, lire la source.
+> **Version** : source unique = `./VERSION` (lue par `version.php` → `appVersion()`). Aucun numéro de version codé en dur ailleurs (AD-1) ; alignement vérifié par `.git/hooks/pre-commit` (AD-8).
+
 Point d'entrée Claude Code — committé à la racine. Décrit **(1)** l'état courant du projet, **(2)** la mission en cours et **(3)** les règles d'or immuables qui s'appliquent à toutes les itérations.
 
 > **Avant toute modification** : lire `README_TECHNIQUE.md` (arborescence, carte des fonctions, design system) puis `grep` pour vérifier qu'on ne duplique pas. **À la fin de chaque itération** : mettre à jour `README_TECHNIQUE.md` (changelog daté, arborescence, carte des fonctions, section CSS si nouveaux tokens) et `README.md` si l'impact utilisateur est visible.
 
 ---
 
-## 📦 État courant — v2.4.2
+## 📦 État courant — v2.4.3
 
 Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tout le changelog.
 
