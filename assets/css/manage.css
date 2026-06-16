@@ -386,10 +386,139 @@
     background: var(--red-soft);
 }
 
-/* RGPD details/summary — chevron animé, marker natif retiré */
+/* ============================================
+   RGPD — section de suppression des données (art. 17)
+   ============================================ */
+.rgpd-section {
+    margin: 2.5rem 1.5rem 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--gray-200);
+}
+.rgpd-section details { cursor: pointer; }
+.rgpd-section details summary {
+    font-size: 0.8rem;
+    color: var(--gray-400);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+}
 .rgpd-section details[open] .details-chevron { transform: rotate(180deg); }
 .rgpd-section details summary::-webkit-details-marker { display: none; }
 .rgpd-section details summary::marker { display: none; content: ''; }
+.rgpd-icon { flex-shrink: 0; color: var(--gold); }
+.details-chevron {
+    flex-shrink: 0;
+    margin-left: auto;
+    transition: transform 0.2s ease;
+}
+.rgpd-panel {
+    margin-top: 0.75rem;
+    padding: 1.25rem;
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--gold);
+}
+.rgpd-panel p {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    line-height: 1.7;
+    margin: 0 0 1rem 0;
+}
+.btn-rgpd-delete {
+    color: var(--red);
+    border: 1px solid var(--red-light);
+    background: var(--red-light);
+    font-size: 0.8rem;
+    padding: 0.4rem 0.75rem;
+}
+
+/* ============================================
+   MODALE DE SUPPRESSION RGPD
+   ============================================ */
+.delete-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.delete-modal.is-open { display: flex; }
+.delete-modal__box {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    margin: auto;
+}
+.delete-modal__box h3 {
+    color: var(--navy-900);
+    margin-bottom: 1rem;
+}
+.delete-modal__intro {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 0.5rem;
+}
+.delete-modal__list {
+    color: var(--gray-600);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    padding-left: 1.25rem;
+}
+.delete-modal__retain {
+    color: var(--gray-500);
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+.delete-modal__field { margin-bottom: 1rem; }
+.delete-modal__label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--navy-800);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+.delete-modal__input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-family: var(--font-sans);
+}
+.delete-modal__actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* ============================================
+   ÉCRAN DE CONFIRMATION SUPPRESSION (rendu JS)
+   ============================================ */
+.delete-success {
+    text-align: center;
+    padding: 3rem 1.5rem;
+}
+.delete-success__icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+.delete-success__title {
+    color: var(--navy-900);
+    margin-bottom: 1rem;
+}
+.delete-success__text {
+    color: var(--gray-600);
+    line-height: 1.6;
+    max-width: 500px;
+    margin: 0 auto 2rem;
+}
 
 /* Text utilities */
 .text-muted {

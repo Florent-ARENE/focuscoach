@@ -222,25 +222,25 @@ const AdminApp = {
         
         document.getElementById('modal-body').innerHTML = `
             <h3>Déplacer le rendez-vous</h3>
-            <p style="margin-bottom: 1rem; color: var(--gray-600);">
+            <p class="reschedule-current">
                 RDV actuel : ${this.escapeHtml(booking.formatted_date)} à ${this.escapeHtml(booking.formatted_time)}
             </p>
-            
+
             <div class="form-group">
                 <label for="new-date">Nouvelle date</label>
-                <input type="date" id="new-date" class="form-input" 
+                <input type="date" id="new-date" class="form-input"
                        min="${new Date().toISOString().split('T')[0]}"
                        onchange="AdminApp.loadAvailableSlots()">
             </div>
-            
+
             <div class="form-group">
                 <label for="new-slot">Nouveau créneau</label>
                 <select id="new-slot" class="form-input" disabled>
                     <option value="">Sélectionnez d'abord une date</option>
                 </select>
             </div>
-            
-            <div id="reschedule-warning" style="display:none; padding: 1rem; background: #fef3c7; border-radius: 8px; margin-top: 1rem;">
+
+            <div id="reschedule-warning" class="reschedule-warning" style="display:none;">
                 <strong>⚠️ Attention :</strong> Le visiteur sera informé du changement par email.
             </div>
         `;

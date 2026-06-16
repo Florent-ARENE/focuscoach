@@ -507,6 +507,27 @@
     background: var(--warning);
 }
 
+/* ============================================
+   NOTICE RGPD (sous le formulaire de réservation)
+   ============================================ */
+.rgpd-notice {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--gold);
+}
+.rgpd-notice p {
+    font-size: 0.8rem;
+    color: var(--gray-600);
+    line-height: 1.6;
+    margin: 0;
+}
+.rgpd-notice a {
+    color: var(--gold);
+    text-decoration: underline;
+}
+
 /* Responsive — mobile-first ; à partir de 768px, layouts élargis */
 @media (min-width: 768px) {
     .booking-steps {

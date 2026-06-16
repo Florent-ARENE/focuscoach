@@ -269,7 +269,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                             <small class="form-help">Utilisé dans les titres de page et les emails</small>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="settings-grid-2">
                             <div class="form-group">
                                 <label class="form-label" for="admin_name">Prénom</label>
                                 <input type="text" class="form-input" id="admin_name" 
@@ -310,7 +310,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                         <h3 class="card-title">⚖️ Informations légales</h3>
                     </div>
                     <div class="card-body">
-                        <p class="settings-description" style="margin-bottom: 1.5rem;">
+                        <p class="settings-description settings-description--lg">
                             Ces informations sont utilisées automatiquement dans les pages 
                             <strong>Mentions légales</strong> et <strong>Politique de confidentialité</strong>.
                         </p>

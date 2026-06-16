@@ -152,23 +152,22 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                     <?php endif; ?>
                     
                     <!-- RGPD — Bouton suppression des données (art. 17) -->
-                    <div class="rgpd-section" style="margin: 2.5rem 1.5rem 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--gray-200);">
-                        <details style="cursor: pointer;">
-                            <summary style="font-size: 0.8rem; color: var(--gray-400); user-select: none; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0;">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gold, #c9a227)" stroke-width="2" style="flex-shrink:0;">
+                    <div class="rgpd-section">
+                        <details>
+                            <summary>
+                                <svg class="rgpd-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                                 </svg>
                                 <span>Protection des données personnelles</span>
-                                <svg class="details-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0; margin-left:auto; transition: transform 0.2s ease;">
+                                <svg class="details-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path d="M6 9l6 6 6-6"/>
                                 </svg>
                             </summary>
-                            <div style="margin-top: 0.75rem; padding: 1.25rem; background: var(--gray-100); border-radius: var(--radius-md); border-left: 3px solid var(--gold, #c9a227);">
-                                <p style="font-size: 0.8rem; color: var(--gray-500); line-height: 1.7; margin: 0 0 1rem 0;">
+                            <div class="rgpd-panel">
+                                <p>
                                     Conformément au RGPD (art. 17), vous pouvez demander la suppression de vos données personnelles associées à ce rendez-vous.
                                 </p>
-                                <button type="button" class="btn btn-sm" id="btn-delete-data"
-                                        style="color: var(--red, #ef4444); border: 1px solid var(--red-light, #fee2e2); background: var(--red-light, #fee2e2); font-size: 0.8rem; padding: 0.4rem 0.75rem;">
+                                <button type="button" class="btn btn-sm btn-rgpd-delete" id="btn-delete-data">
                                     Supprimer mes données
                                 </button>
                             </div>
@@ -177,28 +176,27 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                 </div>
                 
                 <!-- Modale suppression RGPD -->
-                <div id="delete-data-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-                    <div style="background:white; border-radius:16px; padding:2rem; max-width:500px; width:90%; margin:auto; position:relative; top:50%; transform:translateY(-50%);">
-                        <h3 style="color:var(--navy-900); margin-bottom:1rem;">Supprimer mes données personnelles</h3>
-                        <p style="color:var(--gray-600); font-size:0.9rem; line-height:1.6; margin-bottom:0.5rem;">
+                <div id="delete-data-modal" class="delete-modal" style="display:none;">
+                    <div class="delete-modal__box">
+                        <h3>Supprimer mes données personnelles</h3>
+                        <p class="delete-modal__intro">
                             Cette action est <strong>irréversible</strong>. Les données suivantes seront supprimées :
                         </p>
-                        <ul style="color:var(--gray-600); font-size:0.85rem; line-height:1.6; margin-bottom:1rem; padding-left:1.25rem;">
+                        <ul class="delete-modal__list">
                             <li>Votre nom, email, téléphone, organisation</li>
                             <li>L'objet et le message de votre demande</li>
                             <li>Votre adresse IP et données de navigation</li>
                         </ul>
-                        <p style="color:var(--gray-500); font-size:0.8rem; margin-bottom:1.5rem;">
+                        <p class="delete-modal__retain">
                             Seuls la date du créneau et le type de service seront conservés de manière anonyme à des fins statistiques.
                         </p>
-                        <div style="margin-bottom:1rem;">
-                            <label style="display:block; font-size:0.85rem; color:var(--navy-800); margin-bottom:0.5rem; font-weight:500;">
+                        <div class="delete-modal__field">
+                            <label class="delete-modal__label">
                                 Pour confirmer, saisissez votre adresse email :
                             </label>
-                            <input type="email" id="delete-confirm-email" placeholder="votre@email.fr"
-                                   style="width:100%; padding:0.75rem 1rem; border:1px solid var(--gray-200); border-radius:8px; font-size:0.95rem; font-family:var(--font-sans);">
+                            <input type="email" id="delete-confirm-email" class="delete-modal__input" placeholder="votre@email.fr">
                         </div>
-                        <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+                        <div class="delete-modal__actions">
                             <button type="button" id="btn-delete-modal-close" class="btn btn-secondary btn-sm">Annuler</button>
                             <button type="button" id="btn-confirm-delete" class="btn btn-danger btn-sm">Supprimer définitivement</button>
                         </div>

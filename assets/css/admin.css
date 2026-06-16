@@ -519,3 +519,31 @@
 .toast.error {
     background: var(--red);
 }
+
+/* ============================================
+   PARAMÈTRES — utilitaires
+   ============================================ */
+.settings-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+@media (min-width: 768px) {
+    .settings-grid-2 { grid-template-columns: 1fr 1fr; }
+}
+.settings-description--lg { margin-bottom: 1.5rem; }
+
+/* ============================================
+   AVERTISSEMENT DE DÉPLACEMENT (modale admin)
+   ============================================ */
+.reschedule-warning {
+    padding: 1rem;
+    background: var(--warning-light);
+    color: var(--warning);
+    border-radius: var(--radius-md);
+    margin-top: 1rem;
+}
+.reschedule-current {
+    margin-bottom: 1rem;
+    color: var(--gray-600);
+}

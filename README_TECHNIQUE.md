@@ -48,6 +48,9 @@
 | 16/06/2026 | 2.4.2 | 📱 PWA | `includes/init.php` — helpers `pwaHead()` (manifest + theme-color + apple-touch-icon) et `pwaRegister()` (enregistrement SW) |
 | 16/06/2026 | 2.4.2 | 📱 PWA | Inclusion dans `index.php`, `confidentialite.php`, `mentions-legales.php`, `booking/index.php`, `booking/manage.php`. Admin exclu (back-office) |
 | 16/06/2026 | 2.4.2 | 📱 PWA | `.htaccess` racine — DirectoryIndex `index.php` ; MIME `application/manifest+json` ; `Cache-Control: no-cache` sur `sw.js` ; `Service-Worker-Allowed: /` ; Deny sur config.local.php / google-credentials.json / *.sql |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | Suppression complète des `style="..."` décoratifs : booking/index.php (notice RGPD), booking/manage.php (section RGPD + modale suppression), admin/index.php (settings-grid-2), admin.js (reschedule-warning), manage.js (delete-success) |
+| 16/06/2026 | 2.4.2 | 🎨 Design | Nouvelles classes : `.rgpd-notice` (booking.css) ; `.rgpd-section/.rgpd-panel/.rgpd-icon/.btn-rgpd-delete/.delete-modal/.delete-modal__box/.delete-modal__intro/.delete-modal__list/.delete-modal__retain/.delete-modal__field/.delete-modal__label/.delete-modal__input/.delete-modal__actions/.delete-success` (manage.css) ; `.settings-grid-2/.settings-description--lg/.reschedule-warning/.reschedule-current` (admin.css) |
+| 16/06/2026 | 2.4.2 | ✅ Vérif | `grep 'style="' --include='*.php' --include='*.js' .` → uniquement 8 `display:none` fonctionnels (dérogation explicite : pilotés par JS) |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Refonte « Focus Coach » : charte navy/orange + Playfair Display, appliquée à TOUT le site |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Re-skin auto booking/admin/manage via remap des tokens `:root` (aucun markup touché) |
 | 28/05/2026 | 2.4.0 | 📄 Nouveau | `index.php` — page d'accueil dynamique (remplace `index.html` statique) |
