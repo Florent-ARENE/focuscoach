@@ -172,11 +172,6 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                                 </button>
                             </div>
                         </details>
-                        <style>
-                            details[open] .details-chevron { transform: rotate(180deg); }
-                            details summary::-webkit-details-marker { display: none; }
-                            details summary::marker { display: none; content: ''; }
-                        </style>
                     </div>
                 </div>
                 

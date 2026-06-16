@@ -74,23 +74,23 @@
 }
 
 .status-badge.pending {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--status-pending-bg);
+    color: var(--status-pending-text);
 }
 
 .status-badge.confirmed {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--status-confirmed-bg);
+    color: var(--status-confirmed-text);
 }
 
 .status-badge.cancelled {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--status-cancelled-bg);
+    color: var(--status-cancelled-text);
 }
 
 .status-badge.completed {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--status-completed-bg);
+    color: var(--status-completed-text);
 }
 
 .booking-card-body {
@@ -143,12 +143,12 @@
 .pending-notice {
     margin-top: 1.5rem;
     padding: 1rem;
-    background: #fef3c7;
+    background: var(--status-pending-bg);
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    color: #92400e;
+    color: var(--status-pending-text);
     font-size: 0.9rem;
 }
 
@@ -243,7 +243,7 @@
     color: var(--gray-600);
     margin-bottom: 1rem;
     padding: 0.75rem;
-    background: #fef3c7;
+    background: var(--status-pending-bg);
     border-radius: var(--radius-sm);
 }
 
@@ -368,13 +368,18 @@
 }
 
 .btn-danger {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--red-light);
+    color: var(--red-strong);
 }
 
 .btn-danger:hover {
-    background: #fecaca;
+    background: var(--red-soft);
 }
+
+/* RGPD details/summary — chevron animé, marker natif retiré */
+.rgpd-section details[open] .details-chevron { transform: rotate(180deg); }
+.rgpd-section details summary::-webkit-details-marker { display: none; }
+.rgpd-section details summary::marker { display: none; content: ''; }
 
 /* Text utilities */
 .text-muted {

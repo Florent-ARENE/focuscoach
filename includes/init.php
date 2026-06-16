@@ -97,24 +97,48 @@ function cfgField(string $value, string $placeholder = 'À compléter dans Param
     if (!empty($value)) {
         return \App\Helpers::escape($value);
     }
-    return '<span style="color:#ef4444;background:#fee2e2;padding:0.1em 0.4em;border-radius:3px;font-size:0.85em;">[' . $placeholder . ']</span>';
+    return '<span class="cfg-missing">[' . \App\Helpers::escape($placeholder) . ']</span>';
 }
 
 /**
- * Wordmark de marque à partir du nom du site (paramétrable depuis /admin).
- * Le dernier mot est mis en accent. Ex : "Focus Coach" => Focus<span>Coach</span>
+ * Wordmark bicolore à partir de `site_name` (paramétrable depuis /admin).
+ * Première moitié des caractères = .brand-half-a (orange par défaut),
+ * seconde moitié = .brand-half-b (navy par défaut). Les couleurs sont
+ * gérées par CSS — chaque contexte (fond clair/sombre) peut adapter via
+ * un sélecteur descendant (ex: .sidebar .brand-half-b { color: var(--white); }).
+ *
+ * Algorithme : milieu = round(len/2) avec snap sur un espace à ±2 chars
+ * pour éviter de couper un mot quand on peut couper proprement.
  * Usage : <span class="nav-brand-text"><?= brandWordmark() ?></span>
  */
 function brandWordmark(): string
 {
     $name = trim(siteConfig()['site_name'] ?? '');
     if ($name === '') {
-        return 'Focus<span class="accent">Coach</span>';
+        return '<span class="brand-half-a">Focus</span><span class="brand-half-b">Coach</span>';
     }
-    $parts = preg_split('/\s+/', $name, 2);
-    $first = \App\Helpers::escape($parts[0]);
-    if (count($parts) > 1 && $parts[1] !== '') {
-        return $first . '<span class="accent">' . \App\Helpers::escape($parts[1]) . '</span>';
+
+    $len = mb_strlen($name);
+    if ($len <= 1) {
+        return '<span class="brand-half-a">' . \App\Helpers::escape($name) . '</span>';
     }
-    return $first;
+
+    $mid = (int) round($len / 2);
+
+    // Snap : si un espace existe à ±2 chars du milieu, on coupe là (plus propre).
+    for ($delta = 0; $delta <= 2; $delta++) {
+        foreach ([$mid - $delta, $mid + $delta] as $candidate) {
+            if ($candidate > 0 && $candidate < $len
+                && mb_substr($name, $candidate - 1, 1) === ' ') {
+                $mid = $candidate;
+                break 2;
+            }
+        }
+    }
+
+    $a = rtrim(mb_substr($name, 0, $mid));
+    $b = ltrim(mb_substr($name, $mid));
+
+    return '<span class="brand-half-a">' . \App\Helpers::escape($a) . '</span>'
+         . '<span class="brand-half-b">' . \App\Helpers::escape($b) . '</span>';
 }

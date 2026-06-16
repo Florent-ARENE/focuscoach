@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.4.0  
-**Dernière mise à jour:** 13 février 2026
+**Version:** 2.4.2  
+**Dernière mise à jour:** 16 juin 2026
 
 ---
 
@@ -23,6 +23,18 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 16/06/2026 | 2.4.2 | 📘 Doc | `CLAUDE.md` racine — mission v2.4.2 + règles d'or projet (architecture, CSS, PWA, sécurité) |
+| 16/06/2026 | 2.4.2 | 🔧 Fix | `admin/index.php` — résidu « Performance » en dur supprimé, remplacé par `brandWordmark()` partout (cohérence avec accueil/booking/légales) |
+| 16/06/2026 | 2.4.2 | 🎨 Design | `brandWordmark()` réécrit : split bicolore par milieu de chars (snap sur espace ±2), classes `.brand-half-a/b` — remplace l'ancien `.accent` |
+| 16/06/2026 | 2.4.2 | 🎨 Design | `main.css` — tokens sémantiques `--status-{pending\|confirmed\|cancelled\|completed}-{bg\|text}` + `--info-{bg\|border\|text}` + `--success` + `--red-strong` + `--red-soft` |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `manage.css` — hex `#fef3c7/#92400e/#d1fae5/...` → `var(--status-*)`, `#fee2e2/#991b1b/#fecaca` → `var(--red-*)` |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `admin.css` — `.alert-info` hex → `var(--info-*)` ; `.sidebar-logo` / `.login-logo` alignés sur DM Sans uppercase letter-spacing 0.08em (cohérence wordmark) |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `booking.css` — `#059669/#f59e0b` → `var(--success)/var(--warning)` ; `.booking-logo span` retiré (remplacé par `.brand-half-b` contextuel) |
+| 16/06/2026 | 2.4.2 | 🔧 Refacto | `home.css` — `.accent`/`.brand-accent`/`.footer-bottom .accent` supprimés, remplacés par `.brand-half-a/b` |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `cfgField()` (init.php) — style inline `color:#ef4444;background:#fee2e2;...` → classe `.cfg-missing` (main.css) |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `api/test-gcal.php` — bloc `<style>` inline + `style="background:#dbeafe;..."` supprimés, remplacés par classes `.diag-*` + `.code-email` dans `main.css` |
+| 16/06/2026 | 2.4.2 | 🧹 Nettoyage | `booking/manage.php` — bloc `<style>` chevron RGPD déplacé dans `manage.css` |
+| 16/06/2026 | 2.4.2 | ✅ Vérif | `grep -nE '#[0-9a-fA-F]{3,6}\b' assets/css/{booking,manage,admin,home}.css` retourne vide |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Refonte « Focus Coach » : charte navy/orange + Playfair Display, appliquée à TOUT le site |
 | 28/05/2026 | 2.4.0 | 🎨 Design | Re-skin auto booking/admin/manage via remap des tokens `:root` (aucun markup touché) |
 | 28/05/2026 | 2.4.0 | 📄 Nouveau | `index.php` — page d'accueil dynamique (remplace `index.html` statique) |
@@ -305,44 +317,85 @@ require_once __DIR__ . '/../includes/init.php';
 
 ## 🎨 CSS Design System
 
+> **Règle d'or v2.4.2** : zéro hex en dur dans les modules. Tous les hex
+> vivent uniquement dans `:root` de `main.css`. Tout module consomme via
+> `var(--token)`. Vérification : `grep -nE '#[0-9a-fA-F]{3,6}\b'
+> assets/css/{booking,manage,admin,home}.css` doit retourner vide.
+
 ### Variables CSS (`:root` dans main.css)
 
 ```css
-/* Couleurs */
---primary: #1a2744;        /* Navy - couleur principale */
---secondary: #c9a227;      /* Or - accents */
---bg-light: #faf8f5;       /* Fond clair */
---bg-cream: #f5f1eb;       /* Fond crème */
---text-dark: #1a2744;      /* Texte principal */
---text-light: #6b7280;     /* Texte secondaire */
---gray-100 à --gray-900;   /* Échelle de gris */
---green: #059669;          /* Succès */
---green-light: #d1fae5;
---red: #dc2626;            /* Erreur/Danger */
---orange: #f59e0b;         /* Warning/Pending */
+/* Marque Focus Coach */
+--navy-900: #2E2A5E;       /* navy profond */
+--navy-800: #4A4580;       /* navy principal */
+--navy-700: #6B66B0;       /* bleu/violet clair */
+--gold: #F0A500;           /* accent orange */
+--gold-light: #ffb92e;
+--copper: #c96d22;
+--cream: #F7F5F0;          /* fond sable */
+--cream-dark: #ECEAE3;
+--white: #ffffff;
+
+/* Alias sémantiques (consommés par home.css) */
+--navy: var(--navy-800);
+--navy-deep: var(--navy-900);
+--orange: var(--gold);
+--orange-light: #FEF6E4;
+--sand: var(--cream);
+
+/* États fonctionnels */
+--green / --green-light / --red / --red-light / --red-strong / --red-soft
+--warning / --warning-light / --success
+
+/* Statuts de réservation (introduit v2.4.2) */
+--status-pending-bg   / --status-pending-text     (jaune)
+--status-confirmed-bg / --status-confirmed-text   (vert)
+--status-cancelled-bg / --status-cancelled-text   (rouge)
+--status-completed-bg / --status-completed-text   (bleu)
+
+/* Bandeau d'information (introduit v2.4.2) */
+--info-bg / --info-border / --info-text
 
 /* Typographie */
---font-serif: 'Playfair Display', serif;    /* Titres */
---font-sans: 'DM Sans', sans-serif;         /* Corps */
-
-/* Espacements */
---spacing-xs: 0.25rem;
---spacing-sm: 0.5rem;
---spacing-md: 1rem;
---spacing-lg: 1.5rem;
---spacing-xl: 2rem;
+--font-serif: 'Playfair Display', Georgia, serif;
+--font-sans:  'DM Sans', -apple-system, sans-serif;
+--font-display: var(--font-serif);
+--font-body:    var(--font-sans);
 
 /* Rayons */
---radius-sm: 4px;
---radius-md: 8px;
---radius-lg: 12px;
---radius-full: 9999px;
+--radius / --radius-sm / --radius-md / --radius-lg / --radius-pill
 
 /* Ombres */
---shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
---shadow-md: 0 4px 6px rgba(0,0,0,0.1);
---shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+--shadow-sm / --shadow-md / --shadow-lg / --shadow-card
 ```
+
+### Classes globales (main.css)
+
+| Classe | Usage |
+|--------|-------|
+| `.cfg-missing` | Placeholder rouge `[À compléter]` rendu par `cfgField()` |
+| `.diag` (sur `<body>`) | Layout des pages de diagnostic `/api/test-*.php` |
+| `.diag .success/.error/.warning/.info` | États visuels du diagnostic |
+| `.diag .box` / `.diag .btn` / `.diag .btn-danger` | Composants du diagnostic |
+| `.diag .code-email` | Code inline sur fond bleu pâle (email Service Account) |
+| `.brand-half-a` / `.brand-half-b` | Wordmark bicolore (cf. `brandWordmark()`) |
+| `.hidden` | `display: none !important` (utilitaire) |
+
+### Wordmark bicolore — `brandWordmark()`
+
+Helper PHP (`includes/init.php`) qui rend le `site_name` (paramétrable
+via `/admin`) en deux moitiés de caractères, snap sur espace ±2 :
+
+- `"Focus Coach"` → `<span class="brand-half-a">Focus</span><span class="brand-half-b">Coach</span>`
+- `"FocusCoach"` → split par milieu → `Focus` + `Coach`
+- `"Acme"` (4 chars) → `Ac` + `me`
+
+CSS par défaut (home.css) : `.brand-half-a` orange, `.brand-half-b` navy.
+Adaptation par contexte sombre via sélecteur descendant :
+`.home-footer .brand-half-b`, `.legal-header .brand-half-b`,
+`.sidebar-logo .brand-half-b`, `.booking-header .brand-half-b` → `var(--white)`.
+
+> **Jamais** de mot de marque en dur dans le HTML — toujours `brandWordmark()`.
 
 ### Classes utilitaires
 

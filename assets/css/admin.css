@@ -24,18 +24,19 @@
 }
 
 .sidebar-logo {
-    font-family: var(--font-serif);
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    font-weight: 500;
     color: var(--white);
     text-decoration: none;
     margin-bottom: 0.5rem;
     display: block;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
-.sidebar-logo span {
-    color: var(--gold);
-}
+/* Contexte sombre — la 2e moitié du wordmark doit rester lisible */
+.sidebar-logo .brand-half-b { color: var(--white); }
 
 .sidebar-subtitle {
     font-size: 0.75rem;
@@ -309,14 +310,12 @@
 }
 
 .login-logo {
-    font-family: var(--font-serif);
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-family: var(--font-body);
+    font-size: 1.35rem;
+    font-weight: 500;
     margin-bottom: 0.5rem;
-}
-
-.login-logo span {
-    color: var(--gold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .login-subtitle {
@@ -466,9 +465,9 @@
 }
 
 .alert-info {
-    background: #e0f2fe;
-    border: 1px solid #7dd3fc;
-    color: #0369a1;
+    background: var(--info-bg);
+    border: 1px solid var(--info-border);
+    color: var(--info-text);
 }
 
 .alert ol {

@@ -31,9 +31,8 @@
     text-decoration: none;
 }
 
-.booking-logo span {
-    color: var(--gold);
-}
+/* Contexte sombre — la 2e moitié du wordmark doit rester lisible */
+.booking-header .brand-half-b { color: var(--white); }
 
 .back-link {
     color: var(--cream);
@@ -255,13 +254,13 @@
 }
 
 .day-indicators .indicator.confirmed {
-    background: #059669;
-    color: white;
+    background: var(--success);
+    color: var(--white);
 }
 
 .day-indicators .indicator.pending {
-    background: #f59e0b;
-    color: white;
+    background: var(--warning);
+    color: var(--white);
 }
 
 /* Slots */
@@ -501,11 +500,11 @@
 }
 
 .legend-badge.confirmed {
-    background: #059669;
+    background: var(--success);
 }
 
 .legend-badge.pending {
-    background: #f59e0b;
+    background: var(--warning);
 }
 
 /* Responsive */

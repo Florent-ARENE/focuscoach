@@ -21,26 +21,9 @@ use App\Settings;
 <head>
     <meta charset="UTF-8">
     <title>Test Google Calendar Sync</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
-        h2 { color: #1a2744; border-bottom: 2px solid #c9a227; padding-bottom: 10px; }
-        h3 { color: #1a2744; margin-top: 30px; }
-        .success { color: #059669; }
-        .error { color: #dc2626; }
-        .warning { color: #d97706; }
-        .info { color: #2563eb; }
-        pre { background: #f3f4f6; padding: 15px; border-radius: 8px; overflow-x: auto; }
-        .box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; }
-        .btn { display: inline-block; background: #c9a227; color: #1a2744; padding: 10px 20px; 
-               text-decoration: none; border-radius: 4px; font-weight: bold; margin: 10px 5px 10px 0; }
-        .btn:hover { background: #b8922a; }
-        .btn-danger { background: #dc2626; color: white; }
-        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e5e7eb; }
-        th { background: #f3f4f6; }
-    </style>
+    <link rel="stylesheet" href="../assets/css/main.css">
 </head>
-<body>
+<body class="diag">
     <h2>🔍 Diagnostic Google Calendar Sync</h2>
     
     <?php
@@ -153,7 +136,7 @@ use App\Settings;
             <?php if ($credValid): ?>
                 <p>
                     <strong>Email Service Account:</strong><br>
-                    <code style="background: #dbeafe; padding: 5px 10px; border-radius: 4px;">
+                    <code class="code-email">
                         <?= htmlspecialchars($serviceEmail) ?>
                     </code>
                 </p>
@@ -286,7 +269,7 @@ use App\Settings;
     </div>
     <?php endif; ?>
     
-    <hr style="margin: 40px 0;">
+    <hr>
     <p><a href="../admin/?page=settings">← Retour aux paramètres</a></p>
 </body>
 </html>

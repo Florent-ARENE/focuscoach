@@ -410,7 +410,7 @@ $cfg = siteConfig();
             </div>
         </div>
         <div class="footer-bottom">
-            <p>© <?= date('Y') ?> <span class="accent"><?= Helpers::escape($cfg['site_name']) ?></span> · <?= Helpers::escape($cfg['full_name']) ?> · Tous droits réservés</p>
+            <p>© <?= date('Y') ?> <?= brandWordmark() ?> · <?= Helpers::escape($cfg['full_name']) ?> · Tous droits réservés</p>
             <p class="footer-note">Membre engagé dans les principes éthiques ICF &amp; EMCC</p>
         </div>
     </footer>

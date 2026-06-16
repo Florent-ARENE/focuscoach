@@ -73,8 +73,19 @@ nav.home-nav {
     font-family: var(--font-body); font-size: 1rem; font-weight: 500;
     color: var(--navy); letter-spacing: 0.08em; text-transform: uppercase;
 }
-.nav-brand-text .accent,
-.brand-accent { color: var(--orange); }
+
+/* ============================================
+   WORDMARK BICOLORE — brandWordmark() (init.php)
+   .brand-half-a = première moitié (orange)
+   .brand-half-b = seconde moitié (navy par défaut)
+   Adaptations par contexte sombre plus bas / dans les modules.
+   ============================================ */
+.brand-half-a { color: var(--orange); }
+.brand-half-b { color: var(--navy); }
+
+/* Contextes sombres : la seconde moitié doit rester lisible */
+.home-footer .brand-half-b,
+.legal-header .brand-half-b { color: var(--white); }
 
 .home-nav .nav-links { display: flex; gap: 2rem; list-style: none; margin: 0; padding: 0; }
 .home-nav .nav-links a {
@@ -349,7 +360,6 @@ nav.home-nav {
 .footer-links a:hover { color: var(--orange); }
 .footer-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
 .footer-bottom p { font-size: 0.75rem; color: var(--on-dark-25); }
-.footer-bottom .accent { color: var(--orange); }
 .footer-note { font-size: 0.72rem; color: var(--on-dark-20); }
 
 /* ============================================
