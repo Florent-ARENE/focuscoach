@@ -30,24 +30,24 @@ const SummaryModule = {
         let html = '<div class="booking-summary-card">';
         
         // Date
-        html += this.renderItem('📅', 'Date', data.date || '-');
-        
+        html += this.renderItem(Icons.svg('calendar', 18), 'Date', data.date || '-');
+
         // Horaire
-        html += this.renderItem('🕐', 'Horaire', data.time || '-');
-        
+        html += this.renderItem(Icons.svg('clock', 18), 'Horaire', data.time || '-');
+
         // Service (optionnel)
         if (showService && data.service) {
-            html += this.renderItem('📋', 'Service', data.service);
+            html += this.renderItem(Icons.svg('clipboard-list', 18), 'Service', data.service);
         }
-        
+
         // Nom (optionnel)
         if (showName && data.name) {
-            html += this.renderItem('👤', 'Nom', data.name);
+            html += this.renderItem(Icons.svg('user', 18), 'Nom', data.name);
         }
-        
+
         // Sujet (optionnel)
         if (showSubject && data.subject) {
-            html += this.renderItem('📝', 'Objet', data.subject);
+            html += this.renderItem(Icons.svg('file-text', 18), 'Objet', data.subject);
         }
         
         // Statut (optionnel)
@@ -80,17 +80,17 @@ const SummaryModule = {
      */
     renderStatus(status) {
         const statuses = {
-            pending: { icon: '⏳', label: 'En attente', class: 'pending' },
-            confirmed: { icon: '✅', label: 'Confirmé', class: 'confirmed' },
-            cancelled: { icon: '❌', label: 'Annulé', class: 'cancelled' },
-            completed: { icon: '✓', label: 'Terminé', class: 'completed' }
+            pending:   { icon: Icons.svg('hourglass', 16),    label: 'En attente', class: 'pending' },
+            confirmed: { icon: Icons.svg('circle-check', 16), label: 'Confirmé',   class: 'confirmed' },
+            cancelled: { icon: Icons.svg('circle-x', 16),     label: 'Annulé',     class: 'cancelled' },
+            completed: { icon: Icons.svg('check', 16),        label: 'Terminé',    class: 'completed' }
         };
         
         const s = statuses[status] || statuses.pending;
         
         return `
             <div class="summary-item">
-                <span class="summary-icon">📌</span>
+                <span class="summary-icon">${Icons.svg('pin', 18)}</span>
                 <div class="summary-content">
                     <span class="summary-label">Statut</span>
                     <span class="summary-value">
@@ -107,10 +107,10 @@ const SummaryModule = {
     renderCompact(data) {
         return `
             <div class="summary-compact">
-                <span class="summary-icon">📅</span>
+                <span class="summary-icon">${Icons.svg('calendar', 16)}</span>
                 <span class="summary-date">${data.date || '-'}</span>
                 <span class="summary-separator">•</span>
-                <span class="summary-icon">🕐</span>
+                <span class="summary-icon">${Icons.svg('clock', 16)}</span>
                 <span class="summary-time">${data.time || '-'}</span>
             </div>
         `;
@@ -160,7 +160,7 @@ const SummaryModule = {
         
         container.innerHTML = `
             <div class="success-panel">
-                <div class="success-icon-large">✅</div>
+                <div class="success-icon-large">${Icons.svg('check-circle', 56)}</div>
                 <h2 class="success-title">${title}</h2>
                 <p class="success-message">${message}</p>
                 ${this.render(data, { showStatus: true })}

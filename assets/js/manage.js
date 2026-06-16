@@ -149,7 +149,7 @@ const ManageApp = {
                 if (data.success) {
                     document.getElementById('manage-app').innerHTML = `
                         <div class="delete-success">
-                            <div class="delete-success__icon">✓</div>
+                            <div class="delete-success__icon">${Icons.svg('check-circle', 56)}</div>
                             <h2 class="delete-success__title">Données supprimées</h2>
                             <p class="delete-success__text">
                                 Vos données personnelles ont été supprimées conformément à votre demande.

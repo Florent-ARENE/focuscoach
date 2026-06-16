@@ -191,7 +191,7 @@ const BookingApp = {
         
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error-message';
-        errorDiv.innerHTML = '<p>❌ ' + message + '</p>';
+        errorDiv.innerHTML = '<p>' + Icons.svg('x-circle', 16, 'icon-inline') + message + '</p>';
         
         this.elements.bookingForm.insertBefore(errorDiv, this.elements.bookingForm.firstChild);
         

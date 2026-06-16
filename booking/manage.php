@@ -9,6 +9,7 @@ require_once __DIR__ . '/../includes/init.php';
 
 use App\Booking;
 use App\Helpers;
+use App\Icons;
 
 $pageTitle = 'Gérer mon rendez-vous';
 $token = $_GET['token'] ?? '';
@@ -80,8 +81,17 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                 <div class="booking-card" id="booking-details">
                     <div class="booking-card-header">
                         <h2>Votre rendez-vous</h2>
+                        <?php
+                        $statusIcons = [
+                            'pending'   => 'hourglass',
+                            'confirmed' => 'circle-check',
+                            'cancelled' => 'circle-x',
+                            'completed' => 'check',
+                        ];
+                        $iconName = $statusIcons[$booking['status']] ?? 'circle';
+                        ?>
                         <span class="status-badge <?= $booking['status'] ?>">
-                            <?= $booking['status_info']['icon'] ?? '' ?> 
+                            <?= Icons::svg($iconName, 14, 'icon-inline') ?>
                             <?= $booking['status_info']['label'] ?? ucfirst($booking['status']) ?>
                         </span>
                     </div>
@@ -89,7 +99,7 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                     <div class="booking-card-body">
                         <div class="booking-info-grid">
                             <div class="info-item">
-                                <span class="info-icon">📅</span>
+                                <span class="info-icon"><?= Icons::svg('calendar', 18) ?></span>
                                 <div class="info-content">
                                     <span class="info-label">Date</span>
                                     <span class="info-value" id="display-date"><?= htmlspecialchars($booking['formatted_date']) ?></span>
@@ -97,7 +107,7 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                             </div>
                             
                             <div class="info-item">
-                                <span class="info-icon">🕐</span>
+                                <span class="info-icon"><?= Icons::svg('clock', 18) ?></span>
                                 <div class="info-content">
                                     <span class="info-label">Horaire</span>
                                     <span class="info-value" id="display-time"><?= htmlspecialchars($booking['formatted_time']) ?></span>
@@ -105,7 +115,7 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                             </div>
                             
                             <div class="info-item">
-                                <span class="info-icon">📋</span>
+                                <span class="info-icon"><?= Icons::svg('clipboard-list', 18) ?></span>
                                 <div class="info-content">
                                     <span class="info-label">Service</span>
                                     <span class="info-value"><?= htmlspecialchars($booking['service_label']) ?></span>
@@ -113,7 +123,7 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                             </div>
                             
                             <div class="info-item">
-                                <span class="info-icon">👤</span>
+                                <span class="info-icon"><?= Icons::svg('user', 18) ?></span>
                                 <div class="info-content">
                                     <span class="info-label">Nom</span>
                                     <span class="info-value"><?= htmlspecialchars($booking['visitor_name']) ?></span>
@@ -138,7 +148,7 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                     <?php if ($canModify): ?>
                     <div class="booking-card-actions">
                         <button type="button" class="btn btn-secondary" id="btn-reschedule">
-                            📅 Déplacer le rendez-vous
+                            <?= Icons::svg('calendar', 18, 'icon-inline') ?>Déplacer le rendez-vous
                         </button>
                         <button type="button" class="btn btn-danger" id="btn-cancel">
                             ❌ Annuler
@@ -293,7 +303,7 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
                         <div class="booking-summary-row">
                             <span class="booking-summary-label">Statut</span>
                             <span class="booking-summary-value">
-                                <span class="status-badge pending">🟡 En attente</span>
+                                <span class="status-badge pending"><?= Icons::svg('hourglass', 14, 'icon-inline') ?>En attente</span>
                             </span>
                         </div>
                     </div>
@@ -312,6 +322,7 @@ $canModify = $booking && in_array($booking['status'], ['pending', 'confirmed']);
     </footer>
     
     <?php if ($booking && $canModify): ?>
+    <script src="../assets/js/icons.js"></script>
     <script src="../assets/js/calendar-module.js"></script>
     <script src="../assets/js/manage.js"></script>
     <?php endif; ?>

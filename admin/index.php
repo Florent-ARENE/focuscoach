@@ -8,6 +8,7 @@ require_once __DIR__ . '/../includes/init.php';
 
 use App\Helpers;
 use App\Settings;
+use App\Icons;
 
 // Gestion de l'authentification
 $isLoggedIn = !empty($_SESSION['admin_logged_in']);
@@ -85,27 +86,27 @@ $currentPage = $_GET['page'] ?? 'bookings';
             
             <nav class="sidebar-nav">
                 <a href="?page=bookings" class="nav-item <?= $currentPage === 'bookings' ? 'active' : '' ?>">
-                    <span>📅</span>
+                    <span><?= Icons::svg('calendar', 18) ?></span>
                     Réservations
                     <span class="nav-badge" id="pending-count">0</span>
                 </a>
                 <a href="?page=settings" class="nav-item <?= $currentPage === 'settings' ? 'active' : '' ?>">
-                    <span>⚙️</span>
+                    <span><?= Icons::svg('settings', 18) ?></span>
                     Paramètres
                 </a>
             </nav>
             
             <div class="sidebar-footer">
                 <a href="../" class="sidebar-link" target="_blank">
-                    <span>🌐</span>
+                    <span><?= Icons::svg('globe', 18) ?></span>
                     Voir le site
                 </a>
                 <a href="../booking/" class="sidebar-link" target="_blank">
-                    <span>📅</span>
+                    <span><?= Icons::svg('calendar-clock', 18) ?></span>
                     Page réservation
                 </a>
                 <a href="?logout=1" class="sidebar-link danger">
-                    <span>🚪</span>
+                    <span><?= Icons::svg('log-out', 18) ?></span>
                     Déconnexion
                 </a>
             </div>
@@ -127,21 +128,21 @@ $currentPage = $_GET['page'] ?? 'bookings';
                 <div class="stat-card">
                     <div class="stat-card-header">
                         <span class="stat-label">En attente</span>
-                        <div class="stat-icon pending">🟡</div>
+                        <div class="stat-icon pending"><?= Icons::svg('hourglass', 24) ?></div>
                     </div>
                     <div class="stat-value" id="stat-pending">0</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-card-header">
                         <span class="stat-label">Confirmées</span>
-                        <div class="stat-icon confirmed">🟢</div>
+                        <div class="stat-icon confirmed"><?= Icons::svg('circle-check', 24) ?></div>
                     </div>
                     <div class="stat-value" id="stat-confirmed">0</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-card-header">
                         <span class="stat-label">Aujourd'hui</span>
-                        <div class="stat-icon today">📅</div>
+                        <div class="stat-icon today"><?= Icons::svg('calendar', 24) ?></div>
                     </div>
                     <div class="stat-value" id="stat-today">0</div>
                 </div>
@@ -185,7 +186,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                     <tbody id="bookings-table-body">
                         <tr>
                             <td colspan="6" class="empty-state">
-                                <div class="empty-state-icon">⏳</div>
+                                <div class="empty-state-icon"><?= Icons::svg('inbox', 40) ?></div>
                                 <p>Chargement...</p>
                             </td>
                         </tr>
@@ -205,7 +206,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                 <!-- Google Calendar -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">📅 Google Calendar (Miroir)</h3>
+                        <h3 class="card-title"><?= Icons::svg('calendar', 20, 'icon-inline') ?>Google Calendar (Miroir)</h3>
                     </div>
                     <div class="card-body">
                         <p class="settings-description">
@@ -240,7 +241,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                         </div>
                         
                         <div class="alert alert-info">
-                            <strong>⚠️ Configuration requise :</strong>
+                            <strong><?= Icons::svg('alert-triangle', 16, 'icon-inline') ?>Configuration requise :</strong>
                             <ol>
                                 <li>Créer un projet sur <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
                                 <li>Activer l'API Google Calendar</li>
@@ -259,7 +260,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                 <!-- Informations générales -->
                 <div class="card mt-2">
                     <div class="card-header">
-                        <h3 class="card-title">🏢 Informations générales</h3>
+                        <h3 class="card-title"><?= Icons::svg('building-2', 20, 'icon-inline') ?>Informations générales</h3>
                     </div>
                     <div class="card-body">
                         <div class="form-group">
@@ -307,7 +308,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                 <!-- Informations légales (RGPD / Mentions légales) -->
                 <div class="card mt-2">
                     <div class="card-header">
-                        <h3 class="card-title">⚖️ Informations légales</h3>
+                        <h3 class="card-title"><?= Icons::svg('scale', 20, 'icon-inline') ?>Informations légales</h3>
                     </div>
                     <div class="card-body">
                         <p class="settings-description settings-description--lg">
@@ -337,7 +338,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                         </div>
                         
                         <div class="alert alert-info">
-                            <strong>💡 Important :</strong> Ces champs sont obligatoires pour la conformité RGPD et les mentions légales LCEN. 
+                            <strong><?= Icons::svg('lightbulb', 16, 'icon-inline') ?>Important :</strong> Ces champs sont obligatoires pour la conformité RGPD et les mentions légales LCEN. 
                             Tant qu'ils ne sont pas remplis, des placeholders <code>[À COMPLÉTER]</code> s'afficheront sur les pages publiques.
                         </div>
                         
@@ -357,7 +358,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
         <div class="modal">
             <div class="modal-header">
                 <h3 class="modal-title">Détails de la réservation</h3>
-                <button type="button" class="modal-close" onclick="AdminApp.closeModal()">✕</button>
+                <button type="button" class="modal-close" onclick="AdminApp.closeModal()" aria-label="Fermer"><?= Icons::svg('x', 18) ?></button>
             </div>
             <div class="modal-body" id="modal-body"></div>
             <div class="modal-footer" id="modal-footer"></div>
@@ -367,6 +368,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
     <!-- Toast notification -->
     <div class="toast" id="toast"></div>
     
+    <script src="../assets/js/icons.js"></script>
     <script src="../assets/js/admin.js"></script>
 <?php endif; ?>
 </body>

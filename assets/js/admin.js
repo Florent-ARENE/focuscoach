@@ -17,6 +17,19 @@ const AdminApp = {
     },
     
     /**
+     * Mapping statut → icône Lucide (remplace les emojis de status_info)
+     */
+    statusIcon(status) {
+        const map = {
+            pending:   Icons.svg('hourglass', 14),
+            confirmed: Icons.svg('circle-check', 14),
+            cancelled: Icons.svg('circle-x', 14),
+            completed: Icons.svg('check', 14),
+        };
+        return map[status] || '';
+    },
+
+    /**
      * Initialisation
      */
     async init() {
@@ -94,7 +107,7 @@ const AdminApp = {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="6" class="empty-state">
-                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-icon">${Icons.svg('inbox', 40)}</div>
                         <p>Aucune réservation</p>
                     </td>
                 </tr>
@@ -113,15 +126,15 @@ const AdminApp = {
                 <td>${this.escapeHtml(b.service_label)}</td>
                 <td>
                     <span class="status-badge ${b.status}">
-                        ${b.status_info?.icon || ''} ${b.status_info?.label || b.status}
+                        ${this.statusIcon(b.status)} ${b.status_info?.label || b.status}
                     </span>
                 </td>
                 <td>
                     <div class="action-btns">
-                        <button class="action-btn view" onclick="AdminApp.viewBooking(${b.id})" title="Voir">👁</button>
+                        <button class="action-btn view" onclick="AdminApp.viewBooking(${b.id})" title="Voir" aria-label="Voir">${Icons.svg('eye', 16)}</button>
                         ${b.status === 'pending' ? `
-                            <button class="action-btn confirm" onclick="AdminApp.confirmBooking(${b.id})" title="Confirmer">✓</button>
-                            <button class="action-btn cancel" onclick="AdminApp.cancelBooking(${b.id})" title="Refuser">✕</button>
+                            <button class="action-btn confirm" onclick="AdminApp.confirmBooking(${b.id})" title="Confirmer" aria-label="Confirmer">${Icons.svg('check', 16)}</button>
+                            <button class="action-btn cancel" onclick="AdminApp.cancelBooking(${b.id})" title="Refuser" aria-label="Refuser">${Icons.svg('x', 16)}</button>
                         ` : ''}
                     </div>
                 </td>
@@ -143,7 +156,7 @@ const AdminApp = {
                 <span class="detail-label">Statut</span>
                 <span class="detail-value">
                     <span class="status-badge ${b.status}">
-                        ${b.status_info?.icon || ''} ${b.status_info?.label || b.status}
+                        ${this.statusIcon(b.status)} ${b.status_info?.label || b.status}
                     </span>
                 </span>
             </div>
@@ -198,14 +211,14 @@ const AdminApp = {
         // Bouton Déplacer pour toutes les réservations non annulées/terminées
         if (b.status === 'pending' || b.status === 'confirmed') {
             footerHtml = `
-                <button class="btn btn-secondary" onclick="AdminApp.showRescheduleForm(${b.id})">📅 Déplacer</button>
-                <button class="btn btn-danger" onclick="AdminApp.deleteBooking(${b.id})">🗑️ Supprimer</button>
+                <button class="btn btn-secondary" onclick="AdminApp.showRescheduleForm(${b.id})">${Icons.svg('calendar', 16, 'icon-inline')}Déplacer</button>
+                <button class="btn btn-danger" onclick="AdminApp.deleteBooking(${b.id})">${Icons.svg('trash-2', 16, 'icon-inline')}Supprimer</button>
             `;
             
             if (b.status === 'pending') {
-                footerHtml += `<button class="btn btn-success" onclick="AdminApp.confirmBooking(${b.id})">✅ Confirmer</button>`;
+                footerHtml += `<button class="btn btn-success" onclick="AdminApp.confirmBooking(${b.id})">${Icons.svg('check-circle', 16, 'icon-inline')}Confirmer</button>`;
             } else if (b.status === 'confirmed') {
-                footerHtml += `<button class="btn btn-warning" onclick="AdminApp.cancelBooking(${b.id})">❌ Annuler</button>`;
+                footerHtml += `<button class="btn btn-warning" onclick="AdminApp.cancelBooking(${b.id})">${Icons.svg('x-circle', 16, 'icon-inline')}Annuler</button>`;
             }
         }
         
@@ -241,7 +254,7 @@ const AdminApp = {
             </div>
 
             <div id="reschedule-warning" class="reschedule-warning" style="display:none;">
-                <strong>⚠️ Attention :</strong> Le visiteur sera informé du changement par email.
+                <strong>${Icons.svg('alert-triangle', 16, 'icon-inline')}Attention :</strong> Le visiteur sera informé du changement par email.
             </div>
         `;
         

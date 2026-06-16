@@ -8,6 +8,7 @@
  */
 require_once __DIR__ . '/includes/init.php';
 use App\Helpers;
+use App\Icons;
 $cfg = siteConfig();
 ?>
 <!DOCTYPE html>
@@ -38,7 +39,7 @@ $cfg = siteConfig();
             <li><a href="#philosophie">Philosophie</a></li>
             <li><a href="#about">À propos</a></li>
             <li><a href="#parcours">Parcours</a></li>
-            <li><a href="booking/" class="nav-cta">Prendre RDV ⚡</a></li>
+            <li><a href="booking/" class="nav-cta">Prendre RDV <?= Icons::svg('zap', 16, 'icon-cta') ?></a></li>
         </ul>
     </nav>
 
@@ -93,7 +94,7 @@ $cfg = siteConfig();
             </article>
             <article class="audience-card audience-card--cta">
                 <p>Pas sûr de vous reconnaître dans ces profils ? Écrivez-moi en deux lignes — on trouvera ensemble.</p>
-                <a href="#contact">Me contacter →</a>
+                <a href="#contact">Me contacter <?= Icons::svg('arrow-right', 16, 'icon-cta') ?></a>
             </article>
         </div>
     </section>
@@ -131,7 +132,7 @@ $cfg = siteConfig();
                     </ul>
                 </details>
                 <div class="service-tags"><span class="service-tag">Collectivités</span><span class="service-tag">ESS</span><span class="service-tag">Entreprises</span></div>
-                <a href="#contact" class="parlons">Parlons-en →</a>
+                <a href="#contact" class="parlons">Parlons-en <?= Icons::svg('arrow-right', 16, 'icon-cta') ?></a>
             </article>
             <article class="service-card">
                 <p class="service-num">02</p>
@@ -147,7 +148,7 @@ $cfg = siteConfig();
                     </ul>
                 </details>
                 <div class="service-tags"><span class="service-tag">Coaching</span><span class="service-tag">Managers</span><span class="service-tag">Gestion émotions</span></div>
-                <a href="#contact" class="parlons">Parlons-en →</a>
+                <a href="#contact" class="parlons">Parlons-en <?= Icons::svg('arrow-right', 16, 'icon-cta') ?></a>
             </article>
             <article class="service-card">
                 <img class="service-card__img" src="assets/img/team_focus_coach.jpg" alt="Renaud entraîneur volley">
@@ -164,7 +165,7 @@ $cfg = siteConfig();
                     </ul>
                 </details>
                 <div class="service-tags"><span class="service-tag">Sport collectif</span><span class="service-tag">Compétition</span><span class="service-tag">Individuel</span></div>
-                <a href="#contact" class="parlons">Parlons-en →</a>
+                <a href="#contact" class="parlons">Parlons-en <?= Icons::svg('arrow-right', 16, 'icon-cta') ?></a>
             </article>
             <article class="service-card">
                 <p class="service-num">04</p>
@@ -180,11 +181,11 @@ $cfg = siteConfig();
                     </ul>
                 </details>
                 <div class="service-tags"><span class="service-tag">Intra / Inter</span><span class="service-tag">Managers</span><span class="service-tag">Tous publics</span><span class="service-tag">Depuis 2011</span></div>
-                <a href="#contact" class="parlons">Parlons-en →</a>
+                <a href="#contact" class="parlons">Parlons-en <?= Icons::svg('arrow-right', 16, 'icon-cta') ?></a>
             </article>
             <article class="service-card service-card--featured">
                 <img class="service-card__img" src="assets/img/coaching_007.jpg" alt="Le coach impulse le mouvement">
-                <p class="service-num service-num--icon">⚡</p>
+                <p class="service-num service-num--icon"><?= Icons::svg('zap', 32) ?></p>
                 <h3 class="service-title">Coaching flash — 30 minutes pour changer de regard</h3>
                 <p class="service-text">Une session courte et ciblée pour faire évoluer un système de représentation bloquant : prise de décision, conflit, doute, cap à franchir. Vous repartez avec un regard neuf et des leviers concrets.</p>
                 <details class="acc"><summary>Exemples d'interventions</summary>
@@ -198,7 +199,7 @@ $cfg = siteConfig();
                 <div class="service-tags"><span class="service-tag">Visio ou présentiel</span><span class="service-tag">Réservation en ligne</span></div>
                 <div class="service-price-row">
                     <span class="service-price">80 €</span>
-                    <a href="booking/" class="parlons">Réserver →</a>
+                    <a href="booking/" class="parlons">Réserver <?= Icons::svg('arrow-right', 16, 'icon-cta') ?></a>
                 </div>
             </article>
         </div>
@@ -329,7 +330,7 @@ $cfg = siteConfig();
             <div class="flash-cta-aside">
                 <p class="flash-cta-price">80 €<span> / séance</span></p>
                 <p class="flash-cta-duration">Session de 30 minutes · visio ou présentiel</p>
-                <a href="booking/" class="btn-primary">Réserver un créneau →</a>
+                <a href="booking/" class="btn-primary">Réserver un créneau <?= Icons::svg('arrow-right', 18, 'icon-cta') ?></a>
                 <p class="flash-cta-note">Réservation sécurisée. Paiement demandé par email à la confirmation.</p>
             </div>
         </div>
@@ -343,10 +344,10 @@ $cfg = siteConfig();
             <div class="contact-left">
                 <p class="contact-lead">Chaque accompagnement commence par une conversation. Que vous soyez une organisation en transformation, un sportif qui prépare une compétition ou un particulier en période de questionnement — prenez contact, c'est sans engagement.</p>
                 <div class="contact-infos">
-                    <div class="contact-info"><span class="contact-icon">📍</span><span>Bordeaux — interventions en Nouvelle-Aquitaine et France entière</span></div>
-                    <div class="contact-info"><span class="contact-icon">📞</span><span><?= cfgField($cfg['admin_phone'], 'Téléphone à renseigner') ?></span></div>
-                    <div class="contact-info"><span class="contact-icon">✉️</span><span><?= cfgField($cfg['admin_email']) ?></span></div>
-                    <div class="contact-info"><span class="contact-icon">⏱</span><span>Réponse sous 24 heures</span></div>
+                    <div class="contact-info"><span class="contact-icon"><?= Icons::svg('map-pin', 18) ?></span><span>Bordeaux — interventions en Nouvelle-Aquitaine et France entière</span></div>
+                    <div class="contact-info"><span class="contact-icon"><?= Icons::svg('phone', 18) ?></span><span><?= cfgField($cfg['admin_phone'], 'Téléphone à renseigner') ?></span></div>
+                    <div class="contact-info"><span class="contact-icon"><?= Icons::svg('mail', 18) ?></span><span><?= cfgField($cfg['admin_email']) ?></span></div>
+                    <div class="contact-info"><span class="contact-icon"><?= Icons::svg('clock', 18) ?></span><span>Réponse sous 24 heures</span></div>
                 </div>
             </div>
             <form class="contact-right" id="contact-form" data-dest="<?= Helpers::escape($cfg['admin_email']) ?>">
@@ -373,7 +374,7 @@ $cfg = siteConfig();
                     <label class="form-label" for="ct-message">Votre message</label>
                     <textarea id="ct-message" class="form-textarea" placeholder="Décrivez en quelques mots votre situation ou votre besoin..."></textarea>
                 </div>
-                <button type="submit" class="form-submit">Envoyer ma demande →</button>
+                <button type="submit" class="form-submit">Envoyer ma demande <?= Icons::svg('arrow-right', 18, 'icon-cta') ?></button>
             </form>
         </div>
     </section>
@@ -417,6 +418,7 @@ $cfg = siteConfig();
     </footer>
 
     <!-- ═══ JS — formulaire de contact (mailto, sans backend) ═══ -->
+    <script src="assets/js/icons.js"></script>
     <script src="assets/js/home.js"></script>
     <?= pwaRegister() ?>
 </body>
