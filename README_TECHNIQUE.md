@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.5.2  
-**Dernière mise à jour:** 17 juin 2026 — v2.5.2 (Booking v3 §5 — tunnel multi-pages PHP)
+**Version:** 2.5.3  
+**Dernière mise à jour:** 17 juin 2026 — v2.5.3 (cleanup AD-2 : grille tarifaire retirée du template)
 
 ---
 
@@ -23,6 +23,7 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 17/06/2026 | 2.5.3 | 🧹 AD-2 | **Cleanup mono-source — grille tarifaire retirée du template**. La constante `STRIPE_PRICES` de `config/config.local.php.template` (jamais consommée par le code, vérifié `grep -rn STRIPE_PRICES *.php` → 0 hit hors `config/`) est remplacée par un commentaire qui pointe vers la source unique : `services.stripe_price_id` + `packages.stripe_price_id` en BDD, gérés via /admin. Évite la divergence inévitable entre la grille en BDD et celle dans le template à mesure que Renaud édite ses tarifs en admin. La constante reste tolérée dans un `config.local.php` existant (pas de code qui la lit, pas de breakage). |
 | 17/06/2026 | 2.5.2 | 🗂️ Module | **Booking v3 — checkpoint §5 : tunnel multi-pages PHP** (`modules/booking/`, AD-6 autonome). 6 pages PHP server-rendered, état dans `$_SESSION['booking_draft']` : `index.php` (étape 1, cards prestations par segment), `date.php` (étape 2, liste des dates disponibles pour le service choisi via `Slot::getServiceAvailableDates`), `slot.php` (étape 3, créneaux du jour via `Slot::computeSlotsForService`), `confirm.php` (étape 4, formulaire identité + récap), `process.php` (création du booking via `Booking::create()` mode v3, CSRF vérifié), `success.php` (confirmation). Pas de SPA — cohérent avec la stack vanilla et `booking/manage.php`. Le tunnel legacy `/booking/` reste en place (transition). |
 | 17/06/2026 | 2.5.2 | 🔌 API | **`api/booking-v3-slots.php`** créé — endpoint service-aware (`?service=<id>` requis) avec trois modes : `&date=YYYY-MM-DD` → créneaux du jour ; `&month=YYYY-MM` → vue calendrier mensuelle ; sans paramètre → toutes les dates disponibles sur l'horizon. L'ancien `api/slots.php` reste en place (consommé par le tunnel legacy v2). |
 | 17/06/2026 | 2.5.2 | 🧱 Modèle | **`Booking::create()` accepte le mode v3** : si `$data['service_id'] > 0`, insère `service_id` + `duration_min` + `buffer_after_min` (figés à la création) + `payment_status = 'none'` ; sinon mode legacy (service_type ENUM). Bascule détectée à l'usage, pas par signature → pas de duplication. La race UNIQUE `active_key` continue de fermer le double-booking — l'invariant transactionnel pour les chevauchements de durées variables sera ajouté au §6 (POST de paiement). |

@@ -13,6 +13,42 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.5.3] — 2026-06-17 — Cleanup AD-2 : grille tarifaire retirée du template
+
+Patch de cohérence mono-source (AD-2) déclenché par une remarque
+en revue : depuis le §3 du chantier v3, la grille tarifaire vit
+en BDD (`services.price_cents` + `packages.price_cents`) et les
+identifiants Stripe vivent en BDD aussi
+(`services.stripe_price_id` + `packages.stripe_price_id`, à saisir
+en admin §8). Maintenir **en parallèle** la grille tarifaire dans
+`config.local.php.template` (sous forme de commentaires « 80 € /
+100 € / … » et d'une constante `STRIPE_PRICES` placeholder)
+créerait deux sources qui finiraient par diverger dès que Renaud
+ajuste un tarif en admin.
+
+### Vérif avant retrait
+
+`grep -rn STRIPE_PRICES *.php` → 0 hit hors `config/`. La
+constante n'est consommée par **aucun** code applicatif — elle
+n'était qu'un placeholder de doc dans le template.
+
+### Changement
+
+`config/config.local.php.template` : la constante `STRIPE_PRICES`
+et la grille tarifaire commentée sont supprimées et remplacées par
+un commentaire qui pointe vers la source unique (`services` +
+`packages` en BDD, /admin pour la saisie) et qui résume la grille
+actuelle comme un mémo, source de vérité = BDD. Un
+`config.local.php` existant qui inclut encore la constante reste
+fonctionnel — aucun code ne la lit, donc aucun breakage.
+
+### Suite (rappel)
+
+Reprise du chantier v3 en session neuve sur §6 — paiement Stripe
+Checkout + webhook idempotent. Le prompt de reprise §6 est rédigé
+hors-commit (à coller au démarrage de la nouvelle session Claude
+Code) et porte tous les invariants déjà durcis aux §3-§5.
+
 ## [2.5.2] — 2026-06-17 — Booking v3 §5 : tunnel multi-pages PHP
 
 Troisième checkpoint du chantier Booking v3. Pose le **squelette
