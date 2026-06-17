@@ -13,6 +13,182 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.5.0] — 2026-06-17 — Booking v3 §3 : modèle de données
+
+Premier checkpoint du chantier **Module de réservation v3** (cible
+v3.0.0). Cette release ne change rien à l'expérience utilisateur —
+elle pose le modèle de données qui sera consommé par §4-§10.
+
+Les pré-requis cadrage (`CADRAGE_UNIVERSEL.md` + `INSTRUCTIONS_…` à
+**v1.2**) ont été posés en amont (deux commits dédiés, cf. branche
+`claude/dazzling-goodall-VLGur`).
+
+### 🗄️ SQL — nouvelles tables
+
+- **`services`** — catalogue prestations (CRUD admin). Remplace
+  l'ENUM figé `service_type` de l'offre conseil. Porte `slug`
+  (unique), `segment` ∈ {sportif, dirigeant, particulier}, `name`,
+  `description`, `duration_min`, `buffer_after_min` (temps de
+  compte rendu, défaut 15 min), `price_cents` (0 → séance gratuite
+  / court-circuit Stripe), `stripe_price_id` (renseigné en admin
+  après création du Price), `is_active`, `sort_order`.
+- **`availability`** — planning récurrent hebdomadaire en fenêtres
+  `[window_start, window_end]` au lieu de créneaux pré-découpés.
+  Les créneaux sont calculés au runtime à partir de (fenêtre,
+  service.duration, service.buffer, `BOOKING_STEP`). Unique sur
+  `(day_of_week, window_start, window_end)`.
+- **`availability_exceptions`** — overrides par date.
+  `is_available = 0` → journée fermée ; `is_available = 1` + une
+  fenêtre → cette fenêtre remplace le récurrent pour ce jour.
+- **`packages`** — forfaits à jetons. Réfère 1 service inclus
+  (`fk_packages_service`). `sessions_count`, `validity_days`,
+  `price_cents`, `stripe_price_id`.
+- **`package_purchases`** — achats clients. Porte les crédits
+  (`credits_total`, `credits_used`), le `manage_token` unique
+  d'accès à l'espace pack, le statut ∈ {pending_payment, active,
+  expired, exhausted}. Un seul jeton par client — les séances
+  issues du pack n'ont pas leur propre `manage_token` (cf.
+  invariant § 4 de `docs/booking-v3-spec.md`).
+- **`stripe_events_processed`** — idempotence du webhook Stripe.
+  PK = `event_id`. En tête de `api/stripe-webhook.php` (à créer
+  §6) : `INSERT IGNORE` ; `rowCount() == 0` → event déjà traité →
+  200 no-op.
+
+### 🗄️ SQL — table `bookings` étendue
+
+Colonnes ajoutées (toutes nullable / avec default, donc non
+destructives sur les enregistrements existants) :
+
+- `service_id` (FK NULL — anciens bookings conseil restent NULL),
+- `package_purchase_id` (FK NULL — séance issue d'un pack),
+- `duration_min`, `buffer_after_min` (copiés du service à la
+  création — figent la durée du booking, indépendamment d'une
+  édition ultérieure du catalogue),
+- `payment_status` ∈ {none, pending, paid, refunded},
+- `stripe_session_id`, `amount_paid_cents`,
+- `payment_expires_at` (hold de 15 min pendant Stripe Checkout),
+- `confirmation_email_sent_at` (garde-fou anti double-email sur
+  retry webhook Stripe).
+
+ENUM `status` étendu de `pending_payment` (hold pendant Stripe) et
+`expired` (hold libéré sans confirmation).
+
+### 🛡️ Invariant — `active_key` redéfinie pour inclure `pending_payment`
+
+```sql
+active_key = CASE WHEN status IN ('pending','confirmed','pending_payment')
+                  THEN CONCAT(slot_date, '_', slot_time_start)
+                  ELSE NULL END
+```
+
+Sans cela, deux holds concurrents de 15 min sur le même créneau ne
+seraient pas arbitrés par l'UNIQUE → les deux clients arrivent sur
+Stripe, les deux paient → double booking. La nouvelle colonne
+ferme le cas « même départ ». Le cas « durées variables, départs
+différents qui se chevauchent » sera couvert au §5/§6 par une
+vérification transactionnelle (`SELECT … FOR UPDATE`). Les deux
+gardes coexistent (cf. `docs/booking-v3-spec.md` § 4).
+
+### 🗄️ Migration `sql/migration-3.0.0.sql`
+
+**Non destructive sur les données live.** Ordre :
+
+1. CREATE TABLE des 6 nouvelles tables.
+2. DROP UNIQUE `uq_active_slot` + DROP COLUMN `active_key`.
+3. MODIFY enum `bookings.status` (ajout `pending_payment` +
+   `expired`).
+4. ADD COLUMNs nouvelles sur `bookings`.
+5. ADD `active_key` étendue + UNIQUE.
+6. ADD FKs `fk_bookings_service` + `fk_bookings_package_purchase`
+   (ON DELETE SET NULL → un service ou pack supprimé ne supprime
+   pas les bookings historiques, il les détache).
+7. **Regroupement `available_slots` → `availability`** en SQL pur
+   avec `LAG()` + `SUM() OVER` (prérequis MariaDB ≥ 10.2 ou
+   MySQL ≥ 8). Trous = coupures de fenêtres. **Résultat attendu
+   sur défauts inchangés** (12 × 5 = 60 créneaux 30 min) : 10
+   fenêtres (matin + après-midi × 5 jours).
+8. Seed `services` (10 prestations selon §11 du prompt v3) +
+   `packages` (3 forfaits), **dupliqué** depuis `seed.sql` car les
+   bases déjà déployées ne rejouent jamais `seed.sql` — sans cette
+   duplication, la prod arriverait en 3.0.0 avec un catalogue vide
+   → tunnel cassé.
+
+⚠️ **Sauvegarde obligatoire avant exécution** :
+
+```
+mysqldump --single-transaction --routines --triggers \
+  -u <user> -p <db> > backup-pre-3.0.0-$(date +%F).sql
+```
+
+OVH mutualisé = pas d'atomicité de déploiement. Rollback = restore
+du dump + revert du code.
+
+### 🗄️ SQL — `schema.sql` & `seed.sql`
+
+`sql/schema.sql` consolide la cible install neuve : 6 nouvelles
+tables + nouvelle structure `bookings`. `available_slots`
+conservée en cible (vide) pour réversibilité d'un éventuel rejeu
+de la migration sur install neuve. `service_type` (ancienne ENUM
+offre conseil) gardée pour les bookings archivés — plus utilisée
+par le code v3.
+
+`sql/seed.sql` remplace le seed `available_slots` (60 lignes) par
+10 fenêtres `availability` (Lu-Ve, 09:00-12:00 + 14:00-17:00) et
+ajoute le catalogue `services` + `packages`. `price_cents` reflète
+la grille tarifaire Focus Coach (montants en centimes, alignés sur
+les commentaires `STRIPE_PRICES` du template `config.local.php`) —
+Sport Flash 80 €, Préparation mentale 100 €, Décision Express
+200 €, Manager Miroir 250 €, Coaching Fondateur 280 €, Duo Aligné
+350 €, Déclic 30 70 €, Reset Mental & Rebond 100 €, forfaits 5×
+420 €, Parcours Dirigeant 6× 1 500 €. La séance Découverte reste
+à 0 (gratuite par design → court-circuit Stripe). `stripe_price_id`
+restent NULL — Renaud les renseignera en admin après avoir créé
+les Price côté Stripe. Tant que c'est le cas, `health.php` (§9)
+signalera les services avec `price_cents > 0` mais sans
+`stripe_price_id`, et le tunnel (§6) refusera de démarrer pour
+ces services.
+
+### 📄 Doc — `docs/booking-v3-spec.md`
+
+Mémoire technique du chantier, créée au §3, à enrichir aux
+checkpoints suivants :
+
+- Modèle de données (lien vers schema.sql).
+- Algorithme de regroupement `available_slots` → `availability` +
+  résultat attendu sur défauts.
+- Algorithme de calcul des créneaux (esquisse §4).
+- Invariants de course : `active_key` étendue + vérification
+  transactionnelle de chevauchement + retry sur collision hold
+  expiré.
+- Machines à états `bookings.status` et
+  `package_purchases.status`.
+- Tunnel multi-pages PHP (état dans `$_SESSION['booking_draft']`).
+- Stripe : résilience clés absentes, court-circuit `price_cents
+  == 0`, webhook idempotent, effets de bord (sync GCal, email)
+  rendus idempotents **chacun séparément** plutôt que via le flag
+  d'event (sinon un retry après timeout GCal perdrait la sync).
+- RGPD : `package_purchases` est un nouveau puits de données
+  nominatives, à couvrir par le cron de purge.
+- Procédure de rollback (dump avant migration).
+
+### 📘 Cadrage en amont
+
+Cadrage universel passé à **v1.2** (deux commits dédiés `91ab9b3`
++ `a5f6a29`, sur la branche `claude/dazzling-goodall-VLGur`).
+
+- **`CADRAGE_UNIVERSEL.md` v1.2** : AD-8 étendu au pendant
+  runtime (`health.php`, liveness rapide / check profond séparés,
+  **aucun appel API tiers synchrone** sinon une panne externe
+  ferait passer le déploiement en ROUGE à tort). AD-9 étendu aux
+  tests d'API/endpoints. §8 checklist : 2 lignes ajoutées.
+- **`INSTRUCTIONS_DEMARRAGE_SESSION_UNIVERSEL.md` v1.2** : sources
+  d'autorité recentrées sur l'état réel du repo (commits poussés
+  ou ZIP de réamorçage en filet). Pipeline humain → instance
+  Claude (architecture + rédaction des prompts) → Claude Code
+  (implémentation) → allers-retours → verdict humain, explicité.
+
+Pré-requis §12 du prompt Booking v3 levé.
+
 ## [2.4.8] — 2026-06-16 — `available_slots` idempotent
 
 ### 🗄️ SQL
