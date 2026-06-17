@@ -48,36 +48,41 @@ define('STRIPE_PUBLISHABLE_KEY', 'REPLACE_WITH_STRIPE_PUBLISHABLE_KEY');
 define('STRIPE_WEBHOOK_SECRET',  'REPLACE_WITH_STRIPE_WEBHOOK_SECRET');
 
 // ──────────────────────────────────────────────
-//  Tarifs Stripe par offre — vivent en BDD depuis v3.0.0
+//  URL canonique de l'install
 // ──────────────────────────────────────────────
-// AD-2 (mono-source) : la grille tarifaire et les `stripe_price_id`
-// vivent désormais dans les tables `services.stripe_price_id` et
-// `packages.stripe_price_id`, gérés via /admin (CRUD §8 à venir).
+// URL absolue (avec slash final) de la racine du site. Sert à Stripe
+// Checkout (success_url / cancel_url) et à tout endpoint qui doit
+// produire une URL absolue de retour.
 //
-// Geste opérationnel après import de la migration 3.0.0 :
-//   1. Dans le dashboard Stripe → Catalogue de produits → créer un
-//      Price unique en EUR par prestation et par forfait.
-//      Format du Price ID : `price_…`.
-//   2. Dans /admin → Services / Forfaits → coller chaque `price_id`
+// JAMAIS dérivée du header HTTP `Host` (risque XSS Host-header).
+// Fixe par environnement : prod / staging / dev.
+//
+// Exemples :
+//   define('BASE_URL', 'https://focuscoach.fr/');
+//   define('BASE_URL', 'https://staging.focuscoach.fr/');
+//   define('BASE_URL', 'http://localhost:8000/');
+define('BASE_URL', 'https://focuscoach.fr/');
+
+// ──────────────────────────────────────────────
+//  Tarifs & identifiants Stripe par offre — vivent en BDD (AD-2)
+// ──────────────────────────────────────────────
+// La grille tarifaire (`price_cents`) et les identifiants
+// `stripe_price_id` vivent dans les tables `services` et `packages`,
+// gérés via /admin. **Aucune valeur de prix dans ce template** : une
+// seule source de vérité = la BDD.
+//
+// Geste opérationnel après import :
+//   1. Dashboard Stripe → Catalogue → créer un Price (EUR) par
+//      prestation et par forfait. Format : `price_…`.
+//   2. /admin → Services / Forfaits → coller chaque `stripe_price_id`
 //      en face de la prestation correspondante.
-//   3. health.php (§9) signalera tout service / forfait actif avec
+//   3. health.php signalera tout service / forfait actif avec
 //      `price_cents > 0` mais sans `stripe_price_id` — tant que c'est
 //      le cas, le tunnel refuse de démarrer pour ce service (refus
 //      explicite, pas un crash).
 //
 // La séance Découverte (`price_cents = 0`) court-circuite Stripe
 // même quand les clés sont présentes (pas de session Checkout à 0 €).
-//
-// Grille tarifaire actuelle (mémo, source de vérité = BDD) :
-//   Sport Flash 80 € · Préparation mentale 100 € · Forfait Performance 5× 420 €
-//   Décision Express 200 € · Manager Miroir 250 € · Coaching Fondateur 280 €
-//   Duo Aligné 350 € · Parcours Dirigeant 6× 1 500 €
-//   Déclic 30 70 € · Reset Mental 100 € · Rebond 100 € · Forfait Élan 5× 420 €
-//
-// L'ancienne constante `STRIPE_PRICES` du template a été retirée en
-// v2.5.3 (jamais consommée par le code). Si tu maintiens un vieux
-// `config.local.php` qui l'inclut encore, tu peux la supprimer sans
-// risque.
 
 // ──────────────────────────────────────────────
 //  Google Calendar (optionnel — si la sync est activée)
