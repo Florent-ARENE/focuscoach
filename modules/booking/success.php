@@ -65,7 +65,7 @@ $pageTitle = 'Demande envoyée';
 
             <?php if (!empty($result['manage_token'])): ?>
             <p class="bv3-manage-link">
-                <a class="btn btn-secondary" href="../../booking/manage.php?token=<?= Helpers::escape($result['manage_token']) ?>">
+                <a class="btn btn-secondary" href="manage.php?token=<?= Helpers::escape($result['manage_token']) ?>">
                     Gérer mon rendez-vous
                 </a>
             </p>

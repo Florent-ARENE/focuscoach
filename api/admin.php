@@ -314,11 +314,18 @@ switch ($action) {
         break;
     
     // ============================================
-    // CRÉNEAUX DISPONIBLES (GESTION)
+    // FENÊTRES D'OUVERTURE HEBDO (planning récurrent v3)
     // ============================================
-    case 'slots':
+    // Remplace l'ancien case 'slots' qui exposait
+    // `available_slots` (créneaux pré-découpés, table droppée en
+    // v2.6.0). Le CRUD complet (édition / ajout / suppression de
+    // fenêtres) arrive avec le checkpoint §8 — ici on se contente
+    // d'exposer le planning courant en lecture.
+    case 'availability':
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            Helpers::jsonResponse(['slots_by_day' => $slot->getSlotsByDay()]);
+            Helpers::jsonResponse([
+                'availability_by_day' => $slot->getAvailabilityByDay(),
+            ]);
         }
         break;
     

@@ -20,97 +20,72 @@ class Booking
     }
     
     /**
-     * Créer une nouvelle réservation
+     * Créer une nouvelle réservation (v3 — service catalogué)
      *
-     * Modes acceptés :
-     *  - v2 (legacy) : `$data['service_type']` ∈ enum SERVICE_TYPES,
-     *    pas de service_id. status = 'pending'.
-     *  - v3 : `$data['service_id']` (FK services) + `duration_min` +
-     *    `buffer_after_min` figés à la création (indépendants d'une
-     *    édition ultérieure du catalogue). status = 'pending' tant que
-     *    §6 n'a pas branché Stripe — `pending_payment` viendra alors.
+     * Mode v3 obligatoire depuis la purge legacy 2.6.0 :
+     * `$data['service_id']` (FK services) + `duration_min` +
+     * `buffer_after_min` figés à la création (indépendants d'une
+     * édition ultérieure du catalogue). status = 'pending' tant que
+     * §6 n'a pas branché Stripe — `pending_payment` viendra alors.
      */
     public function create(array $data): array
     {
+        if (empty($data['service_id']) || (int) $data['service_id'] <= 0) {
+            return [
+                'success'      => false,
+                'message'      => 'Prestation requise (service_id manquant).',
+                'booking_id'   => null,
+                'manage_token' => null,
+            ];
+        }
+
         // Vérifier que le créneau est disponible
         if ($this->isSlotTaken($data['slot_date'], $data['slot_time_start'])) {
             return [
-                'success' => false,
-                'message' => 'Ce créneau vient d\'être réservé. Veuillez en choisir un autre.',
-                'booking_id' => null,
-                'manage_token' => null
+                'success'      => false,
+                'message'      => 'Ce créneau vient d\'être réservé. Veuillez en choisir un autre.',
+                'booking_id'   => null,
+                'manage_token' => null,
             ];
         }
 
         $manageToken = $this->generateManageToken();
-        $isV3        = isset($data['service_id']) && (int) $data['service_id'] > 0;
 
         try {
-            if ($isV3) {
-                $stmt = $this->db->prepare(
-                    "INSERT INTO bookings (
-                        visitor_name, visitor_email, visitor_phone, visitor_organization,
-                        slot_date, slot_time_start, slot_time_end,
-                        service_id, duration_min, buffer_after_min,
-                        subject, message,
-                        status, payment_status,
-                        manage_token, ip_address, user_agent
-                    ) VALUES (
-                        :name, :email, :phone, :organization,
-                        :date, :time_start, :time_end,
-                        :service_id, :duration_min, :buffer_after_min,
-                        :subject, :message,
-                        'pending', 'none',
-                        :token, :ip, :ua
-                    )"
-                );
-                $stmt->execute([
-                    ':name'             => $data['visitor_name'],
-                    ':email'            => $data['visitor_email'],
-                    ':phone'            => $data['visitor_phone']        ?? null,
-                    ':organization'     => $data['visitor_organization'] ?? null,
-                    ':date'             => $data['slot_date'],
-                    ':time_start'       => $data['slot_time_start'],
-                    ':time_end'         => $data['slot_time_end'],
-                    ':service_id'       => (int) $data['service_id'],
-                    ':duration_min'     => (int) ($data['duration_min']     ?? 0),
-                    ':buffer_after_min' => (int) ($data['buffer_after_min'] ?? 0),
-                    ':subject'          => $data['subject'] ?? null,
-                    ':message'          => $data['message'] ?? null,
-                    ':token'            => $manageToken,
-                    ':ip'               => $_SERVER['REMOTE_ADDR']      ?? null,
-                    ':ua'               => $_SERVER['HTTP_USER_AGENT'] ?? null,
-                ]);
-            } else {
-                $stmt = $this->db->prepare(
-                    "INSERT INTO bookings (
-                        visitor_name, visitor_email, visitor_phone, visitor_organization,
-                        slot_date, slot_time_start, slot_time_end,
-                        service_type, subject, message,
-                        status, manage_token, ip_address, user_agent
-                    ) VALUES (
-                        :name, :email, :phone, :organization,
-                        :date, :time_start, :time_end,
-                        :service, :subject, :message,
-                        'pending', :token, :ip, :ua
-                    )"
-                );
-                $stmt->execute([
-                    ':name'         => $data['visitor_name'],
-                    ':email'        => $data['visitor_email'],
-                    ':phone'        => $data['visitor_phone']        ?? null,
-                    ':organization' => $data['visitor_organization'] ?? null,
-                    ':date'         => $data['slot_date'],
-                    ':time_start'   => $data['slot_time_start'],
-                    ':time_end'     => $data['slot_time_end'],
-                    ':service'      => $data['service_type'] ?? 'autre',
-                    ':subject'      => $data['subject'] ?? null,
-                    ':message'      => $data['message'] ?? null,
-                    ':token'        => $manageToken,
-                    ':ip'           => $_SERVER['REMOTE_ADDR']      ?? null,
-                    ':ua'           => $_SERVER['HTTP_USER_AGENT'] ?? null,
-                ]);
-            }
+            $stmt = $this->db->prepare(
+                "INSERT INTO bookings (
+                    visitor_name, visitor_email, visitor_phone, visitor_organization,
+                    slot_date, slot_time_start, slot_time_end,
+                    service_id, duration_min, buffer_after_min,
+                    subject, message,
+                    status, payment_status,
+                    manage_token, ip_address, user_agent
+                ) VALUES (
+                    :name, :email, :phone, :organization,
+                    :date, :time_start, :time_end,
+                    :service_id, :duration_min, :buffer_after_min,
+                    :subject, :message,
+                    'pending', 'none',
+                    :token, :ip, :ua
+                )"
+            );
+            $stmt->execute([
+                ':name'             => $data['visitor_name'],
+                ':email'            => $data['visitor_email'],
+                ':phone'            => $data['visitor_phone']        ?? null,
+                ':organization'     => $data['visitor_organization'] ?? null,
+                ':date'             => $data['slot_date'],
+                ':time_start'       => $data['slot_time_start'],
+                ':time_end'         => $data['slot_time_end'],
+                ':service_id'       => (int) $data['service_id'],
+                ':duration_min'     => (int) ($data['duration_min']     ?? 0),
+                ':buffer_after_min' => (int) ($data['buffer_after_min'] ?? 0),
+                ':subject'          => $data['subject'] ?? null,
+                ':message'          => $data['message'] ?? null,
+                ':token'            => $manageToken,
+                ':ip'               => $_SERVER['REMOTE_ADDR']      ?? null,
+                ':ua'               => $_SERVER['HTTP_USER_AGENT'] ?? null,
+            ]);
 
             $bookingId = (int) $this->db->lastInsertId();
 
@@ -153,14 +128,19 @@ class Booking
      */
     public function getByToken(string $token): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM bookings WHERE manage_token = :token");
+        $stmt = $this->db->prepare(
+            "SELECT b.*, s.name AS service_name, s.slug AS service_slug
+               FROM bookings b
+               LEFT JOIN services s ON s.id = b.service_id
+              WHERE b.manage_token = :token"
+        );
         $stmt->execute([':token' => $token]);
         $booking = $stmt->fetch();
-        
+
         if ($booking) {
             $booking = $this->enrichBooking($booking);
         }
-        
+
         return $booking ?: null;
     }
     
@@ -286,14 +266,19 @@ class Booking
     }
     public function getById(int $id): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM bookings WHERE id = :id");
+        $stmt = $this->db->prepare(
+            "SELECT b.*, s.name AS service_name, s.slug AS service_slug
+               FROM bookings b
+               LEFT JOIN services s ON s.id = b.service_id
+              WHERE b.id = :id"
+        );
         $stmt->execute([':id' => $id]);
         $booking = $stmt->fetch();
-        
+
         if ($booking) {
             $booking = $this->enrichBooking($booking);
         }
-        
+
         return $booking ?: null;
     }
     
@@ -306,25 +291,27 @@ class Booking
         $params = [];
         
         if (!empty($filters['status'])) {
-            $where[] = 'status = :status';
+            $where[] = 'b.status = :status';
             $params[':status'] = $filters['status'];
         }
-        
+
         if (!empty($filters['date_from'])) {
-            $where[] = 'slot_date >= :date_from';
+            $where[] = 'b.slot_date >= :date_from';
             $params[':date_from'] = $filters['date_from'];
         }
-        
+
         if (!empty($filters['date_to'])) {
-            $where[] = 'slot_date <= :date_to';
+            $where[] = 'b.slot_date <= :date_to';
             $params[':date_to'] = $filters['date_to'];
         }
         
-        $sql = "SELECT * FROM bookings";
+        $sql = "SELECT b.*, s.name AS service_name, s.slug AS service_slug
+                  FROM bookings b
+                  LEFT JOIN services s ON s.id = b.service_id";
         if (!empty($where)) {
             $sql .= " WHERE " . implode(' AND ', $where);
         }
-        $sql .= " ORDER BY slot_date ASC, slot_time_start ASC";
+        $sql .= " ORDER BY b.slot_date ASC, b.slot_time_start ASC";
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -627,8 +614,13 @@ class Booking
     {
         $booking['formatted_date'] = Helpers::formatDateFr($booking['slot_date']);
         $booking['formatted_time'] = Helpers::formatTimeSlot($booking['slot_time_start'], $booking['slot_time_end']);
-        $booking['status_info'] = BOOKING_STATUS[$booking['status']] ?? null;
-        $booking['service_label'] = SERVICE_TYPES[$booking['service_type']] ?? $booking['service_type'];
+        $booking['status_info']    = BOOKING_STATUS[$booking['status']] ?? null;
+        // `service_name` est posé par les SELECT (LEFT JOIN services) ;
+        // fallback explicite quand la jointure ne ramène rien
+        // (ex. booking créé via tests anciens, service supprimé).
+        if (empty($booking['service_name'])) {
+            $booking['service_name'] = 'Prestation';
+        }
         return $booking;
     }
 }

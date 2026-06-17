@@ -122,33 +122,6 @@ CREATE TABLE IF NOT EXISTS availability_exceptions (
 
 
 -- ============================================
--- TABLE : available_slots — DEPRECATED depuis v3.0.0
--- ============================================
--- Conservée sur les installs migrées par réversibilité, et CRÉÉE ICI
--- vide pour qu'une install neuve qui rejouerait la migration 3.0.0
--- (par script unifié) n'échoue pas sur l'INSERT SELECT depuis cette
--- table inexistante.
--- N'EST PLUS LUE PAR LE CODE après bascule de Slot.php sur
--- `availability` (chantier §4). Une migration future pourra la
--- dropper après validation en prod.
--- ============================================
-CREATE TABLE IF NOT EXISTS available_slots (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    day_of_week TINYINT NOT NULL COMMENT '1=Lundi, 7=Dimanche',
-    time_start  TIME    NOT NULL,
-    time_end    TIME    NOT NULL,
-    is_active   BOOLEAN DEFAULT TRUE,
-
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX idx_day_active (day_of_week, is_active),
-    UNIQUE KEY uq_slot (day_of_week, time_start, time_end)
-
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- ============================================
 -- TABLE : blocked_dates — dates indisponibles (congés, etc.)
 -- ============================================
 CREATE TABLE IF NOT EXISTS blocked_dates (
@@ -241,13 +214,15 @@ CREATE TABLE IF NOT EXISTS stripe_events_processed (
 -- ============================================
 -- v3.0.0 :
 --   - service_id / package_purchase_id / duration_min /
---     buffer_after_min / payment_* ajoutés (catalogue + paiement),
+--     buffer_after_min / payment_* (catalogue + paiement),
 --   - status étendu de 'pending_payment' (hold pendant Stripe) et
 --     'expired' (hold libéré sans confirmation),
 --   - active_key recalculée pour inclure 'pending_payment' (sinon
 --     deux holds concurrents non arbitrés → double paiement).
---   - service_type CONSERVÉ pour les bookings archivés (offre
---     conseil, plus utilisée par le code mais lisible en BDD).
+--   - service_type (ENUM offre conseil) SUPPRIMÉ avec la purge
+--     2.6.0 : plus aucun booking en base n'y faisait référence
+--     (phase de dev sans utilisateurs). Le nom de la prestation
+--     s'obtient via JOIN sur services.name.
 -- ============================================
 CREATE TABLE IF NOT EXISTS bookings (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -265,7 +240,7 @@ CREATE TABLE IF NOT EXISTS bookings (
 
     -- Prestation (v3.0.0)
     service_id          INT DEFAULT NULL
-        COMMENT 'FK services. NULL pour les bookings archivés de l''offre conseil',
+        COMMENT 'FK services. NULL pour les bookings issus d''un pack non encore associés ou cas limites',
     package_purchase_id INT DEFAULT NULL
         COMMENT 'FK package_purchases. NULL si paiement à l''unité',
     duration_min        INT DEFAULT NULL
@@ -273,10 +248,9 @@ CREATE TABLE IF NOT EXISTS bookings (
     buffer_after_min    INT DEFAULT NULL
         COMMENT 'Copié de services.buffer_after_min à la création',
 
-    -- Service legacy (offre conseil, archive — plus utilisé par le code)
-    service_type ENUM('diagnostic','optimisation','changement','pilotage','cohesion','certification','autre') DEFAULT 'autre',
-    subject      VARCHAR(255) DEFAULT NULL,
-    message      TEXT         DEFAULT NULL,
+    -- Contenu de la demande
+    subject VARCHAR(255) DEFAULT NULL,
+    message TEXT         DEFAULT NULL,
 
     -- Statut
     status ENUM('pending','confirmed','cancelled','completed','pending_payment','expired') NOT NULL DEFAULT 'pending',

@@ -39,7 +39,7 @@ $cfg = siteConfig();
             <li><a href="#philosophie">Philosophie</a></li>
             <li><a href="#about">À propos</a></li>
             <li><a href="#parcours">Parcours</a></li>
-            <li class="nav-cta-item"><a href="booking/" class="nav-cta">Prendre RDV <?= Icons::svg('zap', 16, 'icon-cta') ?></a></li>
+            <li class="nav-cta-item"><a href="modules/booking/" class="nav-cta">Prendre RDV <?= Icons::svg('zap', 16, 'icon-cta') ?></a></li>
         </ul>
     </nav>
 
@@ -199,7 +199,7 @@ $cfg = siteConfig();
                 <div class="service-tags"><span class="service-tag">Visio ou présentiel</span><span class="service-tag">Réservation en ligne</span></div>
                 <div class="service-price-row">
                     <span class="service-price">80 €</span>
-                    <a href="booking/" class="parlons">Réserver <?= Icons::svg('arrow-right', 16, 'icon-cta') ?></a>
+                    <a href="modules/booking/" class="parlons">Réserver <?= Icons::svg('arrow-right', 16, 'icon-cta') ?></a>
                 </div>
             </article>
         </div>
@@ -330,7 +330,7 @@ $cfg = siteConfig();
             <div class="flash-cta-aside">
                 <p class="flash-cta-price">80 €<span> / séance</span></p>
                 <p class="flash-cta-duration">Session de 30 minutes · visio ou présentiel</p>
-                <a href="booking/" class="btn-primary">Réserver un créneau <?= Icons::svg('arrow-right', 18, 'icon-cta') ?></a>
+                <a href="modules/booking/" class="btn-primary">Réserver un créneau <?= Icons::svg('arrow-right', 18, 'icon-cta') ?></a>
                 <p class="flash-cta-note">Réservation sécurisée. Paiement demandé par email à la confirmation.</p>
             </div>
         </div>
@@ -398,7 +398,7 @@ $cfg = siteConfig();
                     <a href="#philosophie">Philosophie</a>
                     <a href="#about">Qui je suis</a>
                     <a href="#parcours">Parcours</a>
-                    <a href="booking/">Prendre rendez-vous</a>
+                    <a href="modules/booking/">Prendre rendez-vous</a>
                 </div>
             </div>
             <div>

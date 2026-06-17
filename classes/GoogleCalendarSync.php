@@ -426,7 +426,8 @@ class GoogleCalendarSync
             $lines[] = "🏢 Organisation : {$booking['visitor_organization']}";
         }
         
-        $serviceName = SERVICE_TYPES[$booking['service_type']] ?? $booking['service_type'] ?? 'Non spécifié';
+        // v3 : nom récupéré via JOIN dans Booking::getById()/getByToken().
+        $serviceName = !empty($booking['service_name']) ? $booking['service_name'] : 'Non spécifié';
         $lines[] = "📋 Service : {$serviceName}";
         
         if (!empty($booking['subject'])) {

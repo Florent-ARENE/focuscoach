@@ -13,6 +13,189 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.6.0] — 2026-06-17 — Purge legacy avant §6 (tunnel v2 retiré)
+
+Checkpoint **§5b** du chantier Booking v3 — non prévu dans le
+prompt initial, mais déclenché par la confirmation du user que la
+phase est purement dev (aucun utilisateur en prod). Plutôt que
+d'enchaîner §6 (paiement Stripe) sur une base avec deux tunnels
+et deux algos en parallèle, on dégraisse :
+
+- code legacy supprimé (pas commenté, pas conditionnel — supprimé),
+- modèle BDD simplifié (`available_slots` droppée, `service_type`
+  retiré de `bookings`),
+- CTA basculé sur `/modules/booking/` (legacy hors d'atteinte).
+
+§6 attaquera donc un code-base limpide.
+
+### ✂️ Fichiers supprimés
+
+```
+booking/
+├── index.php            ✂ tunnel v2 SPA-like
+└── manage.php           → déplacé en modules/booking/manage.php
+api/
+├── slots.php            ✂ remplacé par api/booking-v3-slots.php
+└── booking.php          ✂ remplacé par modules/booking/process.php
+assets/
+├── css/booking.css      ✂ remplacé par assets/css/booking-v3.css
+└── js/
+    ├── booking.js       ✂ logique de tunnel v2 (SPA)
+    └── calendar-module.js ✂ widget calendrier partagé v2
+```
+
+Le dossier `booking/` (vide après ces retraits) est supprimé.
+
+### 🧱 Classes — modèle simplifié
+
+**`classes/Booking.php`**
+
+- `create()` accepte uniquement le mode v3 — refus explicite si
+  `$data['service_id']` est absent ou ≤ 0. La branche legacy
+  (`service_type` ENUM) disparaît.
+- `getByToken()`, `getById()`, `getAll()` ajoutent un **`LEFT JOIN
+  services s ON s.id = b.service_id`** qui expose `service_name`
+  et `service_slug` sur chaque booking renvoyé. Une seule requête
+  au lieu d'un lookup PHP par booking (résout aussi le N+1).
+- `enrichBooking()` retire l'attribut `service_label` (qui était
+  un lookup `SERVICE_TYPES[…]`) — `service_name` issu du JOIN est
+  la voie unique.
+
+**`classes/Slot.php`**
+
+- Suppression de toutes les méthodes legacy : `getAvailableForDate`,
+  `getAvailableDates`, `getAvailabilityForMonth` (consommaient
+  `available_slots`), `getSlotsByDay`, `toggleSlot`.
+- Seules les méthodes v3 (`computeCandidates` statique pure,
+  `resolveDayWindows`, `getActiveBookingsForDate`,
+  `computeSlotsForService`, `getServiceAvailableDates`,
+  `getServiceAvailabilityForMonth`) restent, plus les utilitaires
+  `blocked_dates` (toujours utiles).
+- Nouvelle méthode **`getAvailabilityByDay()`** qui remplace
+  `getSlotsByDay()` pour le back-office, en lisant la table
+  `availability` (planning hebdo récurrent v3).
+
+**`classes/Mailer.php` et `classes/GoogleCalendarSync.php`**
+
+Le lookup `SERVICE_TYPES[$booking['service_type']]` est remplacé
+par `$booking['service_name'] ?? 'Prestation'` (utilise la valeur
+posée par le JOIN). Plus de dépendance à l'ENUM legacy.
+
+### ⚙️ `config/config.php` — constantes legacy retirées
+
+- `SLOT_DURATION` (30 min — utilisé par le pas du tunnel v2),
+- `BOOKING_ADVANCE_MIN_HOURS` (24 h — délai mini legacy),
+- `BOOKING_ADVANCE_MAX_DAYS` (60 j — horizon legacy),
+- `SERVICE_TYPES` (7 entrées de l'offre conseil),
+- champ `'icon'` de `BOOKING_STATUS` (emojis — jamais consommé par
+  une vue depuis la bascule SVG Lucide, flag déjà posé dans
+  `CLAUDE.md` §10).
+
+Restent : `TIMEZONE`, `BOOKING_STEP`, `MIN_NOTICE_MIN`,
+`MAX_HORIZON_DAYS`, `BOOKING_STATUS` (sans `icon`).
+
+### 🔌 `api/admin.php` — case renommé
+
+Le case `slots` (qui exposait `Slot::getSlotsByDay()` lisant
+`available_slots`) devient `availability` et expose
+`Slot::getAvailabilityByDay()` (fenêtres du planning hebdo v3).
+Le CRUD complet (édition / ajout / suppression de fenêtres)
+arrivera avec §8.
+
+### 🗄️ Schéma BDD — purge destructive
+
+**`sql/migration-3.0.0.sql`** ajoute une étape 11 destructive :
+
+```sql
+DROP TABLE IF EXISTS available_slots;
+ALTER TABLE bookings DROP COLUMN service_type;
+```
+
+Un commentaire en tête de l'étape avertit que ces lignes doivent
+être retirées si quelqu'un veut appliquer la migration sur une
+prod historique qui contiendrait des bookings de l'offre conseil
+— le user a explicitement confirmé qu'aucun utilisateur n'est
+connecté, donc le destructif passe.
+
+**`sql/schema.sql`** retire le `CREATE TABLE available_slots`
+(était conservé en cible pour réversibilité) et la colonne
+`service_type` de `bookings`.
+
+### 🗂️ `modules/booking/manage.php` (déplacé + v3)
+
+Le nouveau manage v3 affiche le récap (date, horaire, prestation
+via `service_name`, statut) + bouton **Annuler** + section
+**RGPD** (effacement art. 17). Le **reschedule client est
+temporairement désactivé** : il dépendait de `calendar-module.js`
++ `api/slots.php` qu'on vient de supprimer. Le rebranchement sur
+`api/booking-v3-slots.php?service=<id>&month=…` est noté comme
+dette technique — à faire après §6/§7. Pendant ce temps,
+`Booking::reschedule()` reste utilisable côté admin (back-office),
+et le client peut annuler puis re-réserver.
+
+`assets/js/manage.js` est simplifié en conséquence (cancel + RGPD
+seulement, chemins API en `../../api/...` car la page vit à deux
+niveaux sous la racine).
+
+### 🎨 CTA basculé sur le tunnel v3
+
+`index.php` racine (4 liens « Prendre RDV », « Réserver »,
+« Prendre rendez-vous ») et `admin/index.php` (lien sidebar
+« Page réservation ») pointent désormais sur `/modules/booking/`.
+Le dossier `/booking/` n'existe plus côté repo, donc plus de
+chemin résiduel.
+
+### 🛡️ Pre-commit hook + miroir
+
+- `hex_files` retire `assets/css/booking.css` (fichier supprimé),
+- `emoji_targets` retire `booking/index.php`, `booking/manage.php`,
+  `assets/js/booking.js` ; ajoute `modules/booking/manage.php`,
+- `escape_targets` retire `booking/index.php`,
+  `booking/manage.php` ; ajoute `modules/booking/manage.php`.
+
+`scripts/git-hooks/pre-commit` resynchronisé. Côté Renaud :
+
+```bash
+cp scripts/git-hooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+### ✅ Tests
+
+- `tests/smoke.php` : **24/24 vert** (les cas testent la logique
+  pure de `computeCandidates`, indépendante de la suppression du
+  tunnel legacy).
+- `php -l` propre sur les 17 fichiers PHP touchés.
+- **Vérification visuelle requise** côté Renaud : tester en local
+  le flow complet `/modules/booking/` (prestation → date → créneau
+  → confirm → success) et `/modules/booking/manage.php?token=…`
+  (récap + cancel + RGPD) sur 375 / 768 / 1280.
+
+### 📄 Dette restante (signalée pour propreté)
+
+`README.md` racine contient encore plusieurs références à
+l'arborescence et aux constantes legacy supprimées :
+`SERVICE_TYPES`, `BOOKING_ADVANCE_*`, `assets/js/calendar-module.js`,
+`Slot::getAvailableDates`, le bloc « TYPES DE SERVICES ». À
+refondre au passage v3.0.0 — pas bloquant pour le pipeline §6.
+
+### Suite
+
+§6 (paiement Stripe Checkout + webhook idempotent) peut maintenant
+attaquer une base limpide :
+
+- pas de mode legacy dans `Booking::create()` à maintenir,
+- pas de double endpoint slots,
+- pas de constante `STRIPE_PRICES` (purgée en 2.5.3) ni de
+  `SERVICE_TYPES` legacy à arbitrer,
+- `service_name` posé par le JOIN — utilisable directement dans
+  les `metadata` de Stripe Checkout et les emails de
+  confirmation.
+
+Le prompt de reprise §6 reste valable (état de la branche à
+mettre à jour avec le hash du commit `chore(booking-v3):
+checkpoint §5b — purge legacy`).
+
 ## [2.5.3] — 2026-06-17 — Cleanup AD-2 : grille tarifaire retirée du template
 
 Patch de cohérence mono-source (AD-2) déclenché par une remarque

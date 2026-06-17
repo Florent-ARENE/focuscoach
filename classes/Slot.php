@@ -3,156 +3,33 @@
  * ============================================
  * CLASSE SLOT
  * ============================================
- * Gestion des créneaux disponibles
+ * Calcul des créneaux disponibles (Booking v3).
+ * Depuis la purge legacy 2.6.0, ne consomme plus `available_slots`
+ * (table droppée) — uniquement `availability` (récurrent hebdo) +
+ * `availability_exceptions` (overrides par date) + `services`
+ * (durée + buffer) + `bookings` (intervalles occupés étendus du
+ * buffer).
  */
 
 namespace App;
 
 use PDO;
-use DateTime;
 
 class Slot
 {
     private PDO $db;
-    
+
     public function __construct()
     {
         $this->db = Database::getInstance();
     }
-    
-    /**
-     * Récupérer les créneaux disponibles pour une date
-     */
-    public function getAvailableForDate(string $date): array
-    {
-        // Vérifier si la date n'est pas bloquée
-        if ($this->isDateBlocked($date)) {
-            return [];
-        }
-        
-        // Récupérer le jour de la semaine (1=Lundi, 7=Dimanche)
-        $dayOfWeek = (int) date('N', strtotime($date));
-        
-        // Récupérer les créneaux définis pour ce jour
-        $stmt = $this->db->prepare("
-            SELECT time_start, time_end 
-            FROM available_slots 
-            WHERE day_of_week = :day AND is_active = 1
-            ORDER BY time_start
-        ");
-        $stmt->execute([':day' => $dayOfWeek]);
-        $definedSlots = $stmt->fetchAll();
-        
-        if (empty($definedSlots)) {
-            return [];
-        }
-        
-        // Récupérer les réservations existantes
-        $stmt = $this->db->prepare("
-            SELECT slot_time_start, slot_time_end 
-            FROM bookings 
-            WHERE slot_date = :date AND status IN ('pending', 'confirmed')
-        ");
-        $stmt->execute([':date' => $date]);
-        $bookedSlots = $stmt->fetchAll();
-        $bookedTimes = array_column($bookedSlots, 'slot_time_start');
-        
-        // Filtrer les créneaux disponibles
-        $availableSlots = [];
-        $now = new DateTime();
-        $minBookingTime = (clone $now)->modify('+' . BOOKING_ADVANCE_MIN_HOURS . ' hours');
-        
-        foreach ($definedSlots as $slot) {
-            $slotStart = new DateTime($date . ' ' . $slot['time_start']);
-            
-            // Vérifier que le créneau est dans le futur
-            if ($slotStart < $minBookingTime) {
-                continue;
-            }
-            
-            // Vérifier que le créneau n'est pas déjà réservé
-            if (in_array($slot['time_start'], $bookedTimes)) {
-                continue;
-            }
-            
-            $availableSlots[] = [
-                'time_start' => $slot['time_start'],
-                'time_end' => $slot['time_end'],
-                'label' => Helpers::formatTimeSlot($slot['time_start'], $slot['time_end'])
-            ];
-        }
-        
-        return $availableSlots;
-    }
-    
-    /**
-     * Récupérer les dates disponibles pour les X prochains jours
-     */
-    public function getAvailableDates(?int $days = null): array
-    {
-        $days = $days ?? BOOKING_ADVANCE_MAX_DAYS;
-        $availableDates = [];
-        
-        $startDate = new DateTime('tomorrow');
-        $endDate = (clone $startDate)->modify('+' . $days . ' days');
-        
-        $currentDate = clone $startDate;
-        while ($currentDate <= $endDate) {
-            $dateStr = $currentDate->format('Y-m-d');
-            $slots = $this->getAvailableForDate($dateStr);
-            
-            if (!empty($slots)) {
-                $availableDates[] = [
-                    'date' => $dateStr,
-                    'formatted' => Helpers::formatDateFr($dateStr),
-                    'day_name' => DAYS_OF_WEEK[(int)$currentDate->format('N')],
-                    'slots_count' => count($slots)
-                ];
-            }
-            
-            $currentDate->modify('+1 day');
-        }
-        
-        return $availableDates;
-    }
-    
-    /**
-     * Récupérer les disponibilités pour un mois
-     */
-    public function getAvailabilityForMonth(int $year, int $month): array
-    {
-        $startDate = new DateTime("$year-$month-01");
-        $endDate = (clone $startDate)->modify('last day of this month');
-        
-        $minDate = new DateTime('tomorrow');
-        $maxDate = (clone $minDate)->modify('+' . BOOKING_ADVANCE_MAX_DAYS . ' days');
-        
-        // Ajuster les bornes
-        if ($startDate < $minDate) {
-            $startDate = clone $minDate;
-        }
-        if ($endDate > $maxDate) {
-            $endDate = clone $maxDate;
-        }
-        
-        $availableDates = [];
-        $currentDate = clone $startDate;
-        
-        while ($currentDate <= $endDate) {
-            $dateStr = $currentDate->format('Y-m-d');
-            $slots = $this->getAvailableForDate($dateStr);
-            
-            $availableDates[$dateStr] = [
-                'available' => !empty($slots),
-                'slots_count' => count($slots)
-            ];
-            
-            $currentDate->modify('+1 day');
-        }
-        
-        return $availableDates;
-    }
-    
+
+    // ════════════════════════════════════════════════════════════════
+    //                   DATES BLOQUÉES (congés, exceptions binaires)
+    // ════════════════════════════════════════════════════════════════
+    // Conservé tel quel — l'admin v3 (§8) utilisera toujours cette
+    // table pour les fermetures complètes (jour OFF, vacances).
+
     /**
      * Vérifier si une date est bloquée
      */
@@ -162,23 +39,23 @@ class Slot
         $stmt->execute([':date' => $date]);
         return (bool) $stmt->fetch();
     }
-    
+
     /**
      * Bloquer une date
      */
     public function blockDate(string $date, ?string $reason = null): bool
     {
         try {
-            $stmt = $this->db->prepare("
-                INSERT INTO blocked_dates (blocked_date, reason) VALUES (:date, :reason)
-            ");
+            $stmt = $this->db->prepare(
+                "INSERT INTO blocked_dates (blocked_date, reason) VALUES (:date, :reason)"
+            );
             $stmt->execute([':date' => $date, ':reason' => $reason]);
             return true;
         } catch (\PDOException $e) {
             return false;
         }
     }
-    
+
     /**
      * Débloquer une date
      */
@@ -188,7 +65,7 @@ class Slot
         $stmt->execute([':date' => $date]);
         return $stmt->rowCount() > 0;
     }
-    
+
     /**
      * Récupérer toutes les dates bloquées
      */
@@ -197,61 +74,23 @@ class Slot
         $stmt = $this->db->query("SELECT * FROM blocked_dates ORDER BY blocked_date");
         return $stmt->fetchAll();
     }
-    
-    /**
-     * Récupérer les créneaux par jour
-     */
-    public function getSlotsByDay(): array
-    {
-        $stmt = $this->db->query("
-            SELECT * FROM available_slots 
-            ORDER BY day_of_week, time_start
-        ");
-        $slots = $stmt->fetchAll();
-        
-        $slotsByDay = [];
-        foreach ($slots as $slot) {
-            $dayNum = $slot['day_of_week'];
-            if (!isset($slotsByDay[$dayNum])) {
-                $slotsByDay[$dayNum] = [
-                    'day_number' => $dayNum,
-                    'day_name' => DAYS_OF_WEEK[$dayNum],
-                    'slots' => []
-                ];
-            }
-            $slot['label'] = Helpers::formatTimeSlot($slot['time_start'], $slot['time_end']);
-            $slotsByDay[$dayNum]['slots'][] = $slot;
-        }
-        
-        return array_values($slotsByDay);
-    }
-    
-    /**
-     * Activer/désactiver un créneau
-     */
-    public function toggleSlot(int $id, bool $active): bool
-    {
-        try {
-            $stmt = $this->db->prepare("UPDATE available_slots SET is_active = :active WHERE id = :id");
-            $stmt->execute([':active' => $active ? 1 : 0, ':id' => $id]);
-            return true;
-        } catch (\PDOException $e) {
-            return false;
-        }
-    }
 
     // ════════════════════════════════════════════════════════════════
-    //                  BOOKING v3 §4 — ALGO CRÉNEAUX
+    //               BOOKING v3 §4 — ALGO CRÉNEAUX
     // ════════════════════════════════════════════════════════════════
-    // Les méthodes ci-dessous remplacent à terme la logique
-    // pre-découpée d'`available_slots` : elles travaillent contre
-    // `availability` (récurrent hebdo), `availability_exceptions`
-    // (overrides par date), `services` (durée + buffer) et
-    // `bookings` (intervalles occupés étendus du buffer).
+    // Méthodes calculant les créneaux contre le nouveau modèle :
+    //   - availability (récurrent hebdo en fenêtres),
+    //   - availability_exceptions (overrides par date),
+    //   - services (durée + buffer),
+    //   - bookings (intervalles occupés étendus du buffer).
     //
-    // Le tunnel v2 (booking/index.php + api/slots.php) consomme
-    // toujours `getAvailableForDate()` etc. — la bascule se fera au
-    // checkpoint §5. Co-existence assumée.
+    // Avant la purge 2.6.0, `getAvailableForDate`,
+    // `getAvailableDates`, `getAvailabilityForMonth`,
+    // `getSlotsByDay`, `toggleSlot` cohabitaient ici en mode legacy
+    // contre `available_slots`. Ces méthodes ont été supprimées avec
+    // le tunnel v2 (`booking/index.php`, `api/slots.php`,
+    // `api/booking.php`) et la table `available_slots` (DROP TABLE
+    // dans `sql/migration-3.0.0.sql`).
 
     /**
      * Résout les fenêtres d'ouverture du jour selon le nouveau modèle.
@@ -280,9 +119,6 @@ class Slot
         $exceptions = $stmt->fetchAll();
 
         if (!empty($exceptions)) {
-            // is_available = 0 sur une exception → journée fermée
-            // (peu importe les autres lignes — règle simple, choisie
-            // côté admin v3).
             foreach ($exceptions as $e) {
                 if ((int) $e['is_available'] === 0) {
                     return [];
@@ -325,10 +161,6 @@ class Slot
      * (lazy expiry : un hold dont payment_expires_at est dépassé
      * NE TIENT PLUS le créneau côté lecture — cf. spec §4).
      *
-     * Anciens bookings sans duration_min/buffer_after_min : on
-     * déduit la durée de (slot_time_end - slot_time_start) et le
-     * buffer à 0.
-     *
      * @return array<int, array{start: string, end_with_buffer: string}>
      */
     public function getActiveBookingsForDate(string $date): array
@@ -347,10 +179,6 @@ class Slot
         $now = date('Y-m-d H:i:s');
         $out = [];
         foreach ($stmt->fetchAll() as $b) {
-            // Lazy-expiry des holds (cf. spec §4 collision sur hold
-            // expiré). Le cron cron/expire-holds.php (§6) repassera
-            // le statut en 'expired' de manière persistante ;
-            // entre-temps, on ne considère pas la ligne ici.
             if ($b['status'] === 'pending_payment'
                 && !empty($b['payment_expires_at'])
                 && $b['payment_expires_at'] < $now) {
@@ -372,12 +200,6 @@ class Slot
 
     /**
      * Algo principal v3 : créneaux disponibles pour un (service, date).
-     * Retourne une liste de `{time_start, time_end, label}` triée par
-     * `time_start` croissant. Liste vide si :
-     *   - service inactif / inconnu,
-     *   - date hors horizon (passée ou > MAX_HORIZON_DAYS),
-     *   - jour bloqué / fermé,
-     *   - aucune fenêtre de la journée n'admet de candidat valide.
      */
     public function computeSlotsForService(int $serviceId, string $date): array
     {
@@ -406,9 +228,6 @@ class Slot
         }
         $bookings = $this->getActiveBookingsForDate($date);
 
-        // MIN_NOTICE_MIN : appliqué à J seulement. Sur J+N, toujours OK.
-        // Si le cutoff (now + MIN_NOTICE) bascule sur le lendemain →
-        // plus aucun candidat aujourd'hui.
         $earliestStart = null;
         if ($date === $today) {
             $cutoff = new \DateTime();
@@ -494,6 +313,39 @@ class Slot
     }
 
     /**
+     * Liste les fenêtres d'ouverture récurrentes hebdomadaires
+     * groupées par jour de la semaine. Sert au back-office (§8 à
+     * venir : CRUD availability) pour afficher le planning courant.
+     *
+     * @return array<int, array{day_number:int, day_name:string,
+     *                          windows: array<int, array<string, mixed>>}>
+     */
+    public function getAvailabilityByDay(): array
+    {
+        $stmt = $this->db->query(
+            "SELECT id, day_of_week, window_start, window_end, is_active
+               FROM availability
+              ORDER BY day_of_week, window_start"
+        );
+        $windows = $stmt->fetchAll();
+
+        $byDay = [];
+        foreach ($windows as $w) {
+            $d = (int) $w['day_of_week'];
+            if (!isset($byDay[$d])) {
+                $byDay[$d] = [
+                    'day_number' => $d,
+                    'day_name'   => DAYS_OF_WEEK[$d] ?? (string) $d,
+                    'windows'    => [],
+                ];
+            }
+            $w['label'] = Helpers::formatTimeSlot($w['window_start'], $w['window_end']);
+            $byDay[$d]['windows'][] = $w;
+        }
+        return array_values($byDay);
+    }
+
+    /**
      * Algo de positionnement des candidats — FONCTION PURE,
      * testable sans BDD (smoke AD-9). Reproduit la spec §4 :
      *
@@ -538,8 +390,6 @@ class Slot
                 foreach ($bookings as $b) {
                     $bs = self::timeToMinutes($b['start']);
                     $be = self::timeToMinutes($b['end_with_buffer']);
-                    // chevauchement strict : intersection non vide
-                    //   [t, tEnd) ∩ [bs, be) ≠ ∅  ⇔  t < be ET tEnd > bs
                     if ($t < $be && $tEnd > $bs) {
                         $clash = true;
                         break;

@@ -68,17 +68,7 @@ define('ADMIN_EMAIL', 'renaud@focuscoach.fr');
 define('ADMIN_NAME', 'Renaud');
 
 // ============================================
-// PARAMETRES RESERVATION (legacy v2 — encore consommé)
-// ============================================
-define('SLOT_DURATION', 30); // Duree en minutes
-define('BOOKING_ADVANCE_MIN_HOURS', 24); // Minimum 24h a l'avance
-define('BOOKING_ADVANCE_MAX_DAYS', 60); // Maximum 60 jours a l'avance
-define('TIMEZONE', 'Europe/Paris');
-
-date_default_timezone_set(TIMEZONE);
-
-// ============================================
-// PARAMETRES RESERVATION v3 (algo créneaux §4)
+// PARAMETRES RESERVATION (Booking v3)
 // ============================================
 // BOOKING_STEP     : pas (minutes) du parcours des fenêtres
 //                    d'ouverture → granularité d'offre des candidats.
@@ -87,10 +77,12 @@ date_default_timezone_set(TIMEZONE);
 //                    et au-delà, toujours OK.
 // MAX_HORIZON_DAYS : horizon de réservation (en jours, depuis
 //                    aujourd'hui).
-// NB : les constantes legacy BOOKING_ADVANCE_MIN_HOURS /
-// BOOKING_ADVANCE_MAX_DAYS sont conservées en parallèle pendant le
-// chantier v3 — elles seront retirées quand §5 aura basculé le
-// tunnel sur le nouvel algo.
+// Les constantes legacy SLOT_DURATION / BOOKING_ADVANCE_MIN_HOURS /
+// BOOKING_ADVANCE_MAX_DAYS ont été supprimées avec la purge 2.6.0
+// (tunnel v2 + api/slots.php + Slot.php legacy retirés).
+define('TIMEZONE', 'Europe/Paris');
+date_default_timezone_set(TIMEZONE);
+
 define('BOOKING_STEP',     15);
 define('MIN_NOTICE_MIN',   120);
 define('MAX_HORIZON_DAYS', 60);
@@ -119,46 +111,42 @@ define('CSRF_TOKEN_NAME', 'booking_csrf_token');
 define('SESSION_NAME', 'renaud_booking_session');
 
 // ============================================
-// TYPES DE SERVICES
-// ============================================
-define('SERVICE_TYPES', [
-    'diagnostic' => 'Diagnostic organisationnel',
-    'optimisation' => 'Optimisation des process',
-    'changement' => 'Accompagnement au changement',
-    'pilotage' => 'Pilotage de la performance',
-    'cohesion' => 'Cohesion d\'equipe',
-    'certification' => 'Certification & Labels',
-    'autre' => 'Autre demande'
-]);
-
-// ============================================
 // STATUTS DE RESERVATION
 // ============================================
+// SERVICE_TYPES (ancien ENUM de l'offre conseil) a été supprimé
+// avec la purge 2.6.0 — les prestations vivent désormais en BDD
+// (table `services`, source de vérité, gérée via /admin).
+//
+// Le champ 'icon' (emoji) de chaque statut a été supprimé en même
+// temps : il n'était plus consommé par aucune vue depuis la
+// bascule SVG Lucide via `Icons::svg()` (cf. CLAUDE.md §10).
+// Les codes couleur Google Calendar restent — ils sont propres
+// à l'API GCal, non liés au design system du site.
+//
+// `pending_payment` et `expired` (nouveaux statuts v3) sont
+// affichés via leur clé brute si absents de cette table — ils ne
+// sont pas exposés à l'admin par défaut, seulement transitionnels.
 define('BOOKING_STATUS', [
     'pending' => [
         'label' => 'En attente',
         'color' => '#f59e0b',
-        'icon' => '🟡',
-        'google_color' => '5'
+        'google_color' => '5',
     ],
     'confirmed' => [
         'label' => 'Confirme',
         'color' => '#10b981',
-        'icon' => '🟢',
-        'google_color' => '10'
+        'google_color' => '10',
     ],
     'cancelled' => [
         'label' => 'Annule',
         'color' => '#ef4444',
-        'icon' => '🔴',
-        'google_color' => '11'
+        'google_color' => '11',
     ],
     'completed' => [
         'label' => 'Termine',
         'color' => '#6b7280',
-        'icon' => '⚫',
-        'google_color' => '8'
-    ]
+        'google_color' => '8',
+    ],
 ]);
 
 // ============================================
