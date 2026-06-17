@@ -13,6 +13,131 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.5.2] — 2026-06-17 — Booking v3 §5 : tunnel multi-pages PHP
+
+Troisième checkpoint du chantier Booking v3. Pose le **squelette
+fonctionnel** du nouveau tunnel sur le modèle multi-pages PHP
+(pas de SPA — cohérent avec la stack vanilla et `booking/manage.php`
+existant). Le tunnel v2 `/booking/` reste en place, le v3 cohabite
+sous `/modules/booking/` ; la bascule du CTA public se fera en fin
+de chantier.
+
+⚠️ **Pas de paiement** dans ce checkpoint — `process.php` crée le
+booking en `status = 'pending'` / `payment_status = 'none'`
+(équivalent legacy v2, validation admin). Stripe Checkout sera
+inséré au §6.
+
+⚠️ **Vérification visuelle requise** côté Renaud : un container
+éphémère ne permet pas de tester le tunnel dans un navigateur. À
+valider en local sur les 3 tailles (375 / 768 / 1280) selon la
+checklist CLAUDE.md.
+
+### 🗂️ `modules/booking/` (AD-6 — module autonome)
+
+6 pages PHP, état dans `$_SESSION['booking_draft']` :
+
+| Page | Rôle |
+|---|---|
+| `index.php`    | Étape 1 — cards prestations par segment (services actifs, groupés sportif/dirigeant/particulier) |
+| `date.php`     | Étape 2 — liste des dates disponibles pour le service choisi (`Slot::getServiceAvailableDates`) |
+| `slot.php`     | Étape 3 — créneaux du jour (`Slot::computeSlotsForService`) |
+| `confirm.php`  | Étape 4 — formulaire identité + récap |
+| `process.php`  | POST — CSRF vérifié, crée le booking via `Booking::create()` mode v3 |
+| `success.php`  | Confirmation + lien vers `manage.php?token=…` (gestion legacy v2) |
+
+Toutes les sorties HTML passent par `Helpers::escape()`,
+`Icons::svg()`, `brandWordmark()`, `cfgField()`, `pwaHead()`,
+`pwaRegister()`, `appVersion()`, `cacheVersion()`, `Helpers::csrfMeta()`,
+`Helpers::csrfField()`, `date()` — conformes au garde-fou Lot 4
+(allowlist d'échappement).
+
+### 🔌 API — `api/booking-v3-slots.php`
+
+Endpoint JSON service-aware (paramètre `?service=<id>` obligatoire,
+retourne 400 sinon) avec trois modes :
+
+- `&date=YYYY-MM-DD` → créneaux du jour (`slots`, `slots_count`),
+- `&month=YYYY-MM` → vue calendrier mensuelle (`dates` indexé par
+  jour avec `available` + `slots_count`),
+- sans param → toutes les dates disponibles sur l'horizon
+  (`MAX_HORIZON_DAYS`).
+
+L'ancien `api/slots.php` reste en place (consommé par le tunnel
+legacy v2, qui continuera de tourner jusqu'à la bascule du CTA en
+fin de chantier).
+
+### 🧱 `Booking::create()` accepte le mode v3
+
+Détection par présence de `$data['service_id'] > 0` (pas de
+signature nouvelle, pas de duplication) :
+
+- **Mode v3** : insère `service_id`, `duration_min`,
+  `buffer_after_min` (figés à la création — indépendants d'une
+  édition ultérieure du catalogue), `payment_status = 'none'`,
+  `status = 'pending'`.
+- **Mode legacy** : signature historique (`service_type` ENUM) —
+  inchangé.
+
+L'invariant UNIQUE `active_key` continue de fermer le double-booking
+au même départ. La **vérification transactionnelle de chevauchement**
+(durées variables, départs différents) sera ajoutée au §6, au même
+endroit que le passage en `pending_payment` (POST de paiement).
+
+### 🎨 `assets/css/booking-v3.css`
+
+Préfixe `.bv3-` (pas de collision avec `.booking-` v2). Mobile-first
+(breakpoints 768 / 1024) :
+
+- cards prestations 1 → 2 → 3 colonnes,
+- steps bar (1 → 4) verticale → horizontale dès 768 px,
+- récap (`<dl>`) 1 col → 2 col (`max-content 1fr`) dès 768 px.
+
+Zéro hex en dur (AD-4) — tokens utilisés : `--navy`, `--navy-deep`,
+`--orange`, `--cream`, `--cream-dark`, `--text-dark`, `--text-muted`,
+`--text-light`, `--success`, `--white`, `--shadow-card`, `--radius-md`,
+`--font-display`.
+
+### 🛡️ Pre-commit étendu
+
+Le hook `.git/hooks/pre-commit` est étendu localement (non versionné
+par git) :
+
+- `hex_files` → ajoute `assets/css/booking-v3.css`,
+- `emoji_targets` → ajoute les 6 pages `modules/booking/*.php`,
+- `escape_targets` → ajoute les 6 pages `modules/booking/*.php`.
+
+**Le hook est miroir dans `scripts/git-hooks/pre-commit`** (versionné)
+pour que Renaud puisse propager la mise à jour côté son poste :
+
+```bash
+cp scripts/git-hooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+À faire avant tout commit local qui touche les nouveaux fichiers,
+sinon les garde-fous AD-4 / AD-5 / Lot 4 ne mordront pas dessus.
+
+### 📁 Arborescence ajoutée
+
+```
+modules/
+└── booking/
+    ├── index.php        — étape 1 (prestations)
+    ├── date.php         — étape 2 (dates)
+    ├── slot.php         — étape 3 (créneaux)
+    ├── confirm.php      — étape 4 (formulaire)
+    ├── process.php      — POST création booking
+    └── success.php      — confirmation
+api/
+└── booking-v3-slots.php — endpoint JSON service-aware
+assets/css/
+└── booking-v3.css       — styles tunnel v3
+scripts/git-hooks/
+└── pre-commit           — miroir versionné du hook local étendu
+```
+
+État d'avancement mis à jour : §5 marqué **livré**.
+
 ## [2.5.1] — 2026-06-17 — Booking v3 §4 : algorithme de calcul des créneaux
 
 Deuxième checkpoint du chantier Booking v3. Pose l'algorithme qui
