@@ -13,6 +13,112 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.6.1] — 2026-06-17 — `reset-dev.sql` + template purgé / BASE_URL ajouté
+
+Tâche courte de mise en ordre juste avant §6 :
+
+1. **`sql/reset-dev.sql`** créé — workflow de reset dev en trois imports.
+2. **`config/config.local.php.template`** purgé de la grille tarifaire mémo
+   (mono-source AD-2 : la BDD est la seule source de vérité des prix).
+3. **`BASE_URL`** ajoutée au template — anticipation §6 (Stripe Checkout
+   exige une URL absolue, fixe par environnement, jamais dérivée du Host).
+4. Dettes connues (reschedule client v3, `README.md` racine) confirmées sans
+   action — restent au changelog.
+
+### 🛠️ `sql/reset-dev.sql`
+
+Script de remise à zéro complète, **DESTRUCTIF, réservé au DÉVELOPPEMENT**.
+Drop toutes les tables manipulées par le projet — v3 (services,
+availability, availability_exceptions, packages, package_purchases,
+stripe_events_processed, bookings) **et** historiques (settings,
+blocked_dates, rgpd_deletion_log, purge_stats, admin_login_attempts) —
+dans l'**ordre inverse des Foreign Keys** :
+
+```
+bookings ──FK──► services
+              └─► package_purchases ──FK──► packages ──FK──► services
+```
+
+→ `bookings` → `package_purchases` → `packages` → `services` → indépendantes.
+
+`available_slots` (table morte v2, peut subsister sur une base partiellement
+migrée) est également droppée en fin.
+
+**Workflow de reset dev** :
+
+```bash
+mysql -u <user> -p <db_dev> < sql/reset-dev.sql
+mysql -u <user> -p <db_dev> < sql/schema.sql
+mysql -u <user> -p <db_dev> < sql/seed.sql
+```
+
+→ base propre, données seed (settings d'identité, 10 fenêtres
+`availability` Lu-Ve, 10 services, 3 packages).
+
+**`schema.sql` reste non destructif** (`CREATE TABLE IF NOT EXISTS`,
+cadrage §5) — c'est `reset-dev.sql` qui porte exclusivement la
+responsabilité de nettoyer. Séparation claire des rôles.
+
+⚠️ À NE JAMAIS appliquer en prod tant qu'un utilisateur réel a posé un
+booking.
+
+### 🧹 `config/config.local.php.template` purgé (mono-source AD-2)
+
+La grille tarifaire mémo (« Sport Flash 80 € · Préparation mentale 100 €…
+Forfait Élan 5× 420 € ») est **retirée**. Une seule source de vérité pour
+les prix : `services.price_cents` + `packages.price_cents` en BDD (peuplée
+par `seed.sql`, éditable via /admin).
+
+Le template ne porte plus que :
+
+```
+DB_HOST, DB_NAME, DB_USER, DB_PASS, DB_CHARSET, DB_PORT
+ADMIN_PASSWORD_HASH
+STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
+BASE_URL              ← nouveau, anticipation §6
+GOOGLE_CREDENTIALS_PATH   (optionnel, commenté)
+```
+
+Le commentaire de la section Stripe pointe vers la BDD comme source de
+vérité (workflow : créer un Price dans le dashboard Stripe → coller le
+`stripe_price_id` dans `/admin` → `health.php` signale les manquants),
+sans répéter les valeurs.
+
+### 🔌 `BASE_URL` (anticipation §6)
+
+Ajoutée comme constante définie au niveau du template — URL canonique
+absolue (avec slash final) de la racine du site :
+
+```php
+define('BASE_URL', 'https://focuscoach.fr/');
+```
+
+Sert à Stripe Checkout (`success_url` / `cancel_url`) et à tout endpoint
+qui produit une URL absolue de retour. **Jamais dérivée du header HTTP
+`Host`** (risque XSS Host-header). Fixe par environnement (prod / staging
+/ dev) — exemples fournis dans le commentaire.
+
+Le déplacement effectif de `BASE_URL` depuis `config/config.php` (où elle
+est encore calculée à partir de `$_SERVER['HTTP_HOST']`) vers une lecture
+**stricte** de `config.local.php` (avec fallback signalé en ORANGE par
+`health.php` si absente) fait partie du périmètre §6 — déjà inscrit dans
+le prompt de reprise.
+
+### 📄 Dettes confirmées (pas d'action ce tour-ci)
+
+- **Reschedule client v3** — désactivé depuis la purge 2.6.0 (dépendait
+  de `calendar-module.js` + `api/slots.php` supprimés). Rebranchement
+  sur `api/booking-v3-slots.php?service=<id>&month=…` à faire après
+  §6/§7. Reste tracé au changelog 2.6.0.
+- **`README.md` racine** — contient encore des références à
+  l'arborescence et constantes legacy supprimées (`SERVICE_TYPES`,
+  `BOOKING_ADVANCE_*`, `assets/js/calendar-module.js`,
+  `Slot::getAvailableDates`, bloc « TYPES DE SERVICES »). À refondre
+  au passage v3.0.0. Reste tracé au changelog 2.6.0.
+
+Bump 2.6.0 → 2.6.1 (semver patch : outil de dev + cleanup template, aucun
+impact sur l'API publique ni le modèle).
+
 ## [2.6.0] — 2026-06-17 — Purge legacy avant §6 (tunnel v2 retiré)
 
 Checkpoint **§5b** du chantier Booking v3 — non prévu dans le

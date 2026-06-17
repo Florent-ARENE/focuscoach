@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.6.0  
-**Dernière mise à jour:** 17 juin 2026 — v2.6.0 (purge legacy : tunnel v2 + `available_slots` + `service_type` retirés)
+**Version:** 2.6.1  
+**Dernière mise à jour:** 17 juin 2026 — v2.6.1 (reset-dev.sql + template purgé / BASE_URL ajouté)
 
 ---
 
@@ -23,6 +23,10 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 17/06/2026 | 2.6.1 | 🛠️ Outil | **`sql/reset-dev.sql` créé** — script de remise à zéro complète, **DESTRUCTIF, dev uniquement**. Drop toutes les tables manipulées par le projet (v3 + historiques) dans l'ordre inverse des FK (`bookings` → `package_purchases` → `packages` → `services`, puis les indépendantes). Workflow de reset dev : `mysql < reset-dev.sql && mysql < schema.sql && mysql < seed.sql` → base propre, données seed (settings, availability, services, packages). `schema.sql` reste non destructif (`CREATE TABLE IF NOT EXISTS`, AD-5 cadrage) — c'est `reset-dev.sql` qui porte exclusivement la responsabilité de nettoyer. À NE JAMAIS appliquer en prod tant qu'un utilisateur réel a posé un booking. |
+| 17/06/2026 | 2.6.1 | 🧹 AD-2 | **`config/config.local.php.template` purgé** — la grille tarifaire mémo (« Sport Flash 80 €… ») est retirée. Source unique = `services.price_cents` en BDD (seed). Le template ne porte plus que : `DB_*`, `ADMIN_PASSWORD_HASH`, `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` / `STRIPE_WEBHOOK_SECRET`, `BASE_URL`, `GOOGLE_CREDENTIALS_PATH` (optionnel). Le commentaire de la section Stripe pointe vers la BDD comme source de vérité, sans répéter les valeurs. |
+| 17/06/2026 | 2.6.1 | 🔌 Config §6 | **`BASE_URL` ajoutée au template** — URL canonique absolue (avec slash final) de la racine du site. Sert à Stripe Checkout (`success_url` / `cancel_url`) et à tout endpoint produisant une URL absolue. **Jamais dérivée du header `Host`** (XSS Host-header). Fixe par environnement (prod / staging / dev) — exemples fournis en commentaire. Le déplacement effectif de `BASE_URL` depuis `config/config.php` (où elle est encore calculée à partir de `$_SERVER['HTTP_HOST']`) vers une lecture stricte de `config.local.php` fera partie du périmètre §6 (paiement Stripe). |
+| 17/06/2026 | 2.6.1 | 📄 Dettes | **Dettes confirmées (pas d'action)** : reschedule client désactivé (tracé en 2.6.0, rebrancher après §6/§7 sur `api/booking-v3-slots.php`) ; `README.md` racine à refondre au passage v3.0.0 (références aux constantes/fichiers legacy supprimés). Les deux restent au changelog comme dette technique connue. |
 | 17/06/2026 | 2.6.0 | ✂️ Purge | **Purge legacy avant §6 — tunnel v2 retiré**. Le user a confirmé phase de dev sans utilisateurs : on dégage la dette legacy plutôt que d'enchaîner Stripe sur une base à deux algos. **Fichiers supprimés** : `booking/index.php`, `booking/manage.php`, `booking/` (dossier vide), `api/slots.php`, `api/booking.php`, `assets/css/booking.css`, `assets/js/booking.js`, `assets/js/calendar-module.js`. `booking/manage.php` est remplacé par `modules/booking/manage.php` (version v3 minimale : récap + cancel + RGPD, reschedule client temporairement désactivé — `Booking::reschedule()` reste utilisable côté admin). |
 | 17/06/2026 | 2.6.0 | 🧱 Modèle | **`classes/Slot.php`** : suppression de toutes les méthodes legacy (`getAvailableForDate`, `getAvailableDates`, `getAvailabilityForMonth`, `getSlotsByDay`, `toggleSlot`). Le fichier ne contient plus que la logique v3 (`computeCandidates` statique pure, `resolveDayWindows`, `getActiveBookingsForDate`, `computeSlotsForService`, `getServiceAvailableDates`, `getServiceAvailabilityForMonth`) + `blocked_dates` (utile). Nouvelle méthode `getAvailabilityByDay()` qui remplace `getSlotsByDay()` pour le back-office, en lisant la table `availability`. |
 | 17/06/2026 | 2.6.0 | 🧱 Modèle | **`classes/Booking.php`** : `create()` accepte uniquement le mode v3 (refus si `service_id` manquant) — la branche legacy `service_type` est supprimée. `getByToken()`, `getById()` et `getAll()` font désormais un **`LEFT JOIN services s ON s.id = b.service_id`** qui expose `service_name` + `service_slug` sur chaque booking. `enrichBooking()` retire l'attribut `service_label` (qui faisait le lookup dans `SERVICE_TYPES`) — `service_name` (issu du JOIN) est la nouvelle voie unique. |
