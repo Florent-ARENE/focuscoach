@@ -318,7 +318,8 @@ class Mailer
      */
     private static function buildAdminNewBookingEmail(array $booking, string $date, string $time): string
     {
-        $serviceName = SERVICE_TYPES[$booking['service_type']] ?? $booking['service_type'];
+        // v3 : nom récupéré via JOIN dans Booking::getById()/getByToken().
+        $serviceName = !empty($booking['service_name']) ? $booking['service_name'] : 'Prestation';
         
         $message = "Nouvelle demande de rendez-vous :\n\n";
         $message .= "👤 Nom : {$booking['visitor_name']}\n";

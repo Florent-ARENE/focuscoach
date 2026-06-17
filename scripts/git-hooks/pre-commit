@@ -57,7 +57,7 @@ fi
 # ============================================
 # Garde-fou 2 — AD-4 : hex en dur modules CSS
 # ============================================
-hex_files="assets/css/booking.css assets/css/manage.css assets/css/admin.css assets/css/home.css assets/css/booking-v3.css"
+hex_files="assets/css/manage.css assets/css/admin.css assets/css/home.css assets/css/booking-v3.css"
 hex_hits=""
 for f in $hex_files; do
     [ -f "$f" ] || continue
@@ -73,12 +73,13 @@ ok "AD-4 zéro hex dans modules CSS"
 # ============================================
 # Garde-fou 3 — AD-5 : zéro emoji décoratif dans le DOM
 # ============================================
-emoji_targets="index.php admin/index.php booking/index.php booking/manage.php \
+emoji_targets="index.php admin/index.php \
                confidentialite.php mentions-legales.php \
                modules/booking/index.php modules/booking/date.php \
                modules/booking/slot.php modules/booking/confirm.php \
                modules/booking/process.php modules/booking/success.php \
-               assets/js/admin.js assets/js/booking.js assets/js/manage.js \
+               modules/booking/manage.php \
+               assets/js/admin.js assets/js/manage.js \
                assets/js/summary-module.js assets/js/home.js assets/js/icons.js"
 emoji_hits=""
 for f in $emoji_targets; do
@@ -124,11 +125,12 @@ fi
 # Cibles : pages avec rendu HTML uniquement (templates publics + admin).
 # Les classes côté serveur (Mailer, GoogleCalendarSync) n'ont pas de
 # <?= ?> et sont hors scope (cf. règle d'or §2.11 sur les emojis emails).
-escape_targets="index.php admin/index.php booking/index.php booking/manage.php \
+escape_targets="index.php admin/index.php \
                 confidentialite.php mentions-legales.php \
                 modules/booking/index.php modules/booking/date.php \
                 modules/booking/slot.php modules/booking/confirm.php \
-                modules/booking/process.php modules/booking/success.php"
+                modules/booking/process.php modules/booking/success.php \
+                modules/booking/manage.php"
 escape_hits=""
 for f in $escape_targets; do
     [ -f "$f" ] || continue

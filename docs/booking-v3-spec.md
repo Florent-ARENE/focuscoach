@@ -18,6 +18,7 @@ code, pas une cible théorique.
 | §3 | Modèle de données (migration + schema + seed) | **livré** (v2.5.0) |
 | §4 | Algorithme de calcul des créneaux | **livré** (v2.5.1) |
 | §5 | Tunnel de réservation (prestation → date → créneau) | **livré** (v2.5.2) |
+| §5b | Purge legacy (tunnel v2 + algo v2 + `service_type` ENUM) | **livré** (v2.6.0) |
 | §6 | Paiement Stripe Checkout + webhook idempotent | à venir |
 | §7 | Forfaits & jetons (espace pack) | à venir |
 | §8 | Admin (CRUD services/availability/packages) | à venir |

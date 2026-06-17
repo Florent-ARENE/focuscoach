@@ -62,7 +62,7 @@ try {
             ':booking_id' => $bookingData['id'],
             ':email_hash' => hash('sha256', strtolower($bookingData['visitor_email'])),
             ':deleted' => 'visitor_name, visitor_email, visitor_phone, visitor_organization, subject, message, ip_address, user_agent, manage_token',
-            ':retained' => 'slot_date, slot_time_start, slot_time_end, service_type, status (anonymisé)',
+            ':retained' => 'slot_date, slot_time_start, slot_time_end, service_id, status (anonymisé)',
             ':ip' => $_SERVER['REMOTE_ADDR'] ?? null
         ]);
     } catch (\PDOException $e) {

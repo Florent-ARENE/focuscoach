@@ -379,10 +379,37 @@ INSERT IGNORE INTO packages
         5,  42000, 365, 1, 30);
 
 -- ============================================
+-- 11. Purge legacy — destructif (v2.6.0)
+-- ============================================
+-- ⚠️ DESTRUCTIF. À appliquer SEULEMENT en environnement de dev,
+-- jamais sur une prod qui contiendrait des bookings de l'offre
+-- conseil (ENUM service_type). Le user a confirmé qu'aucun
+-- utilisateur n'est connecté et que la phase est purement dev :
+-- on peut donc nettoyer le schéma au lieu d'empiler du legacy.
+--
+-- Les opérations ci-dessous :
+--   - libèrent la table `available_slots` après migration vers
+--     `availability` (étape 8 — la copie a déjà eu lieu),
+--   - retirent la colonne `service_type` de `bookings` (l'ENUM de
+--     l'offre conseil — la prestation v3 vit dans `service_id`
+--     et son nom via JOIN sur `services`).
+--
+-- Si tu déploies cette migration sur une base de prod historique
+-- qui contiendrait des bookings de l'offre conseil, supprime ces
+-- DROP / ALTER avant exécution et garde l'archive — ils ne sont
+-- pas indispensables au fonctionnement du tunnel v3.
+-- ============================================
+
+DROP TABLE IF EXISTS available_slots;
+
+ALTER TABLE bookings DROP COLUMN service_type;
+
+
+-- ============================================
 -- Fin de la migration 3.0.0 — modèle de données.
 -- ============================================
--- Tables suivantes touchées par les checkpoints §4-§9 (algo, tunnel,
--- paiement, packs, admin, health) : aucune nouvelle structure
--- attendue, sauf imprévu — auquel cas ajouter ici AVANT que la
--- migration ne tourne en prod.
+-- Tables suivantes touchées par les checkpoints §6-§9 (paiement,
+-- packs, admin, health) : aucune nouvelle structure attendue, sauf
+-- imprévu — auquel cas ajouter ici AVANT que la migration ne
+-- tourne en prod.
 -- ============================================

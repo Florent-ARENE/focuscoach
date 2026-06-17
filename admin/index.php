@@ -120,7 +120,7 @@ $currentPage = $_GET['page'] ?? 'bookings';
                     <span><?= Icons::svg('globe', 18) ?></span>
                     Voir le site
                 </a>
-                <a href="../booking/" class="sidebar-link" target="_blank">
+                <a href="../modules/booking/" class="sidebar-link" target="_blank">
                     <span><?= Icons::svg('calendar-clock', 18) ?></span>
                     Page réservation
                 </a>
