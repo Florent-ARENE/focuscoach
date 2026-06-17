@@ -16,7 +16,7 @@ code, pas une cible théorique.
 | Checkpoint | Module | Statut |
 |---|---|---|
 | §3 | Modèle de données (migration + schema + seed) | **livré** (v2.5.0) |
-| §4 | Algorithme de calcul des créneaux | à venir |
+| §4 | Algorithme de calcul des créneaux | **livré** (v2.5.1) |
 | §5 | Tunnel de réservation (prestation → date → créneau) | à venir |
 | §6 | Paiement Stripe Checkout + webhook idempotent | à venir |
 | §7 | Forfaits & jetons (espace pack) | à venir |
@@ -130,30 +130,100 @@ inspecter `available_slots` à la main.
 
 ---
 
-## 3. Algorithme de calcul des créneaux (§4 — à venir, esquisse)
+## 3. Algorithme de calcul des créneaux (livré v2.5.1)
+
+Implémenté dans `classes/Slot.php` :
+
+- **`computeCandidates(windows, bookings, duration, buffer, step,
+  earliestStart = null)`** — fonction **pure et statique**
+  testable sans BDD (corpus smoke AD-9, Lot 5). Cœur de l'algo.
+- **`resolveDayWindows(date)`** — applique la priorité
+  `blocked_dates` > `availability_exceptions[date]` >
+  `availability[day_of_week]`.
+- **`getActiveBookingsForDate(date)`** — récupère les bookings
+  arbitrant le créneau (`pending`, `confirmed`, `pending_payment`),
+  étend leur intervalle du `buffer_after_min`, **filtre les holds
+  expirés** (`pending_payment` avec `payment_expires_at < NOW()`)
+  — lazy-expiry à la lecture, redondant avec le cron
+  `cron/expire-holds.php` (à créer §6).
+- **`computeSlotsForService(serviceId, date)`** — orchestrateur
+  qui appelle les trois précédents + applique `MIN_NOTICE_MIN` /
+  `MAX_HORIZON_DAYS`.
+- **`getServiceAvailableDates(serviceId, days = null)`** —
+  équivalent v3 de l'ancien `getAvailableDates()`.
+- **`getServiceAvailabilityForMonth(serviceId, year, month)`** —
+  équivalent v3 de `getAvailabilityForMonth()`.
+
+### Pseudo-code (cœur)
 
 Pour `(service, date)` :
 
 1. Résoudre la disponibilité du jour :
-   - si `availability_exceptions[date]` existe → utiliser ces
-     fenêtres,
-   - sinon → `availability[day_of_week]`,
-   - puis retirer `blocked_dates[date]` (si présente → aucun
-     créneau).
+   - si `blocked_dates[date]` → `[]`,
+   - sinon si `availability_exceptions[date]` :
+     - une seule ligne avec `is_available = 0` → `[]`,
+     - sinon → fenêtres de l'exception (peut être plusieurs),
+   - sinon → `availability[day_of_week]` actives.
 2. Charger les bookings actifs du jour (`status IN ('pending',
-   'confirmed', 'pending_payment')`). Chacun occupe
-   `[start, end + buffer_after_min]`.
+   'confirmed', 'pending_payment')`), filtrer les holds expirés.
+   Chacun occupe `[start, end + buffer_after_min)`.
 3. Pour chaque fenêtre `[W_start, W_end]`, parcourir par pas
-   `BOOKING_STEP` (constante, défaut 15 min) :
-   - candidat `t` ; il occupe `[t, t + duration + buffer]`,
-   - valide si `t + duration ≤ W_end` **et** `[t, t + duration +
-     buffer]` ne chevauche aucun intervalle occupé.
-4. Appliquer délai mini (`MIN_NOTICE_MIN`, défaut 120 min) et
-   horizon max (`MAX_HORIZON_DAYS`, défaut 60 j).
-5. Retourner les `t` valides.
+   `BOOKING_STEP` :
+   - candidat `t` ; il occupe `[t, t + duration + buffer)`,
+   - valide si `t + duration ≤ W_end` **et** `t ≥ earliestStart`
+     (sur J seulement) **et** `[t, t + duration + buffer)` ne
+     chevauche aucun intervalle occupé.
+4. Sur J, si `now + MIN_NOTICE_MIN` bascule sur le lendemain →
+   aucun créneau aujourd'hui.
+5. Hors horizon (`date < today` ou `date > today + MAX_HORIZON_DAYS`)
+   → aucun créneau.
+6. Retourner les `(t, t + duration)` valides.
 
-Constantes tunables dans `config/config.php` (pas `config.local`) :
-`BOOKING_STEP`, `MIN_NOTICE_MIN`, `MAX_HORIZON_DAYS`.
+### Conventions d'intervalle
+
+`[start, end)` semi-ouvert. Conséquence pratique : un candidat
+09:45-11:00 et un booking 11:00-12:00 ne se chevauchent **pas**
+(la borne `11:00` est exclue à droite et incluse à gauche → pas
+d'intersection). Convention vérifiée par un cas smoke dédié.
+
+### Constantes tunables
+
+`config/config.php` (pas `config.local.php` — ces valeurs ne sont
+pas des secrets, elles sont identiques en dev / staging / prod) :
+
+| Constante | Défaut | Rôle |
+|---|---|---|
+| `BOOKING_STEP` | 15 | Pas de proposition des candidats (minutes) |
+| `MIN_NOTICE_MIN` | 120 | Délai mini avant un créneau sur J |
+| `MAX_HORIZON_DAYS` | 60 | Horizon de réservation |
+
+⚠️ Les constantes legacy `BOOKING_ADVANCE_MIN_HOURS` /
+`BOOKING_ADVANCE_MAX_DAYS` restent en place et sont consommées
+par les méthodes `getAvailableForDate()` /
+`getAvailabilityForMonth()` du Slot.php v2 — utilisées par
+`booking/index.php` + `api/slots.php` tant que §5 n'a pas
+basculé le tunnel sur le nouvel algo.
+
+### Co-existence v2 ↔ v3 (transitoire)
+
+Slot.php héberge les deux algos en parallèle :
+
+- **v2** (legacy) — `getAvailableForDate`, `getAvailableDates`,
+  `getAvailabilityForMonth`, basés sur `available_slots`
+  pré-découpés et un délai mini en heures
+  (`BOOKING_ADVANCE_MIN_HOURS`). Consommés par le tunnel actuel
+  (`api/slots.php`) — **encore utilisés en prod tant que §5
+  n'a pas basculé**.
+- **v3** — `computeSlotsForService`, `getServiceAvailableDates`,
+  `getServiceAvailabilityForMonth`, basés sur `availability` +
+  `availability_exceptions` + `services.duration_min` + buffer +
+  `BOOKING_STEP` + `MIN_NOTICE_MIN`. Pas encore branchés sur le
+  tunnel (sera fait §5).
+
+Lorsque §5 aura basculé `api/slots.php` (ou créé un nouvel
+endpoint `api/booking-v3-slots.php`) et que `booking/index.php`
+appellera l'algo v3, les méthodes v2 deviendront du code mort à
+purger.
 
 ---
 

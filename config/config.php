@@ -68,7 +68,7 @@ define('ADMIN_EMAIL', 'renaud@focuscoach.fr');
 define('ADMIN_NAME', 'Renaud');
 
 // ============================================
-// PARAMETRES RESERVATION
+// PARAMETRES RESERVATION (legacy v2 — encore consommé)
 // ============================================
 define('SLOT_DURATION', 30); // Duree en minutes
 define('BOOKING_ADVANCE_MIN_HOURS', 24); // Minimum 24h a l'avance
@@ -76,6 +76,24 @@ define('BOOKING_ADVANCE_MAX_DAYS', 60); // Maximum 60 jours a l'avance
 define('TIMEZONE', 'Europe/Paris');
 
 date_default_timezone_set(TIMEZONE);
+
+// ============================================
+// PARAMETRES RESERVATION v3 (algo créneaux §4)
+// ============================================
+// BOOKING_STEP     : pas (minutes) du parcours des fenêtres
+//                    d'ouverture → granularité d'offre des candidats.
+// MIN_NOTICE_MIN   : délai minimum avant un créneau pour qu'il soit
+//                    proposé (en minutes). Appliqué au jour J ; sur J+1
+//                    et au-delà, toujours OK.
+// MAX_HORIZON_DAYS : horizon de réservation (en jours, depuis
+//                    aujourd'hui).
+// NB : les constantes legacy BOOKING_ADVANCE_MIN_HOURS /
+// BOOKING_ADVANCE_MAX_DAYS sont conservées en parallèle pendant le
+// chantier v3 — elles seront retirées quand §5 aura basculé le
+// tunnel sur le nouvel algo.
+define('BOOKING_STEP',     15);
+define('MIN_NOTICE_MIN',   120);
+define('MAX_HORIZON_DAYS', 60);
 
 // ============================================
 // GOOGLE CALENDAR (synchronisation miroir)

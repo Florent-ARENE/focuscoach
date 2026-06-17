@@ -13,6 +13,122 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.5.1] — 2026-06-17 — Booking v3 §4 : algorithme de calcul des créneaux
+
+Deuxième checkpoint du chantier Booking v3. Pose l'algorithme qui
+sera consommé par le tunnel au §5. **Pas d'impact utilisateur
+encore** : le tunnel actuel continue d'utiliser l'algo v2
+(`getAvailableForDate` legacy), les nouvelles méthodes co-existent
+en parallèle dans `Slot.php` jusqu'à la bascule.
+
+### 🧮 `classes/Slot.php` étendu
+
+Méthodes ajoutées (les méthodes v2 sont conservées intactes — AD-3,
+zéro duplication : on étend, on ne recrée pas) :
+
+- **`computeCandidates(windows, bookings, duration, buffer, step,
+  earliestStart = null): array`** — fonction **pure et statique**,
+  testable sans BDD. Cœur de l'algo :
+  > pour chaque fenêtre `[W_start, W_end]`, parcourir par pas
+  > `step` ; candidat `t` valide si `t + duration ≤ W_end`,
+  > `t ≥ earliestStart` (si fourni) et `[t, t + duration + buffer)`
+  > ne chevauche aucun intervalle occupé.
+
+  Convention d'intervalle : **`[start, end)` semi-ouvert** — un
+  candidat 09:45-11:00 et un booking 11:00-12:00 ne se
+  chevauchent **pas** (touche autorisée). Vérifié par un cas
+  smoke dédié.
+
+- **`resolveDayWindows(date): array`** — applique la priorité
+  `blocked_dates[date]` > `availability_exceptions[date]` >
+  `availability[day_of_week]`. Une exception avec
+  `is_available = 0` ferme la journée même si d'autres lignes
+  existent pour la date.
+
+- **`getActiveBookingsForDate(date): array`** — récupère les
+  bookings qui arbitrent le créneau (`status IN ('pending',
+  'confirmed', 'pending_payment')`), étend leur intervalle du
+  `buffer_after_min`, **filtre les holds expirés**
+  (`pending_payment` avec `payment_expires_at < NOW()`) — c'est
+  le **lazy-expiry à la lecture** documenté dans `spec §4`,
+  redondant avec le cron `cron/expire-holds.php` qui viendra au
+  §6 pour persister le statut `expired`.
+
+- **`computeSlotsForService(serviceId, date): array`** —
+  orchestrateur : charge le service, applique
+  `MAX_HORIZON_DAYS`, résout les fenêtres, charge les bookings,
+  calcule `earliestStart` selon `MIN_NOTICE_MIN` (sur J
+  uniquement — si `now + MIN_NOTICE` bascule sur le lendemain,
+  aucun créneau aujourd'hui), délègue à `computeCandidates`.
+
+- **`getServiceAvailableDates(serviceId, days = null): array`**
+  et **`getServiceAvailabilityForMonth(serviceId, year, month):
+  array`** — équivalents v3 des méthodes legacy
+  `getAvailableDates` / `getAvailabilityForMonth`, basés sur le
+  nouveau modèle.
+
+### ⚙️ `config/config.php` — 3 constantes ajoutées
+
+- `BOOKING_STEP = 15` — pas du parcours des fenêtres (minutes).
+  Granularité d'offre des candidats.
+- `MIN_NOTICE_MIN = 120` — délai minimum avant un créneau pour
+  qu'il soit proposé (minutes). Appliqué à J seulement.
+- `MAX_HORIZON_DAYS = 60` — horizon de réservation depuis
+  aujourd'hui (jours).
+
+Les constantes legacy `BOOKING_ADVANCE_MIN_HOURS` (24 h) et
+`BOOKING_ADVANCE_MAX_DAYS` (60 j) restent en place — consommées
+par les méthodes v2 du Slot.php tant que §5 n'a pas basculé le
+tunnel.
+
+### ✅ Tests — AD-9 (smoke)
+
+`tests/smoke.php` étend de 7 cas en Lot 5 (algo créneaux v3,
+logique pure sans BDD) :
+
+1. Fenêtre 09:00-12:00, service 60+15 min, aucun booking,
+   step 15 → 9 candidats (09:00, 09:15, …, 11:00).
+2. Buffer respecté côté candidat : booking 11:00-12:00 ; un
+   service 60+15 min produit 4 candidats (09:00…09:45) ;
+   `09:45-11:00` est valide (touche `11:00` sans chevaucher).
+3. Buffer côté booking : booking 10:00-11:00 + buffer 15 occupe
+   `[10:00, 11:15)` ; aucun candidat possible dans
+   `[09:00, 12:00)` pour un service 60+15 → 0 candidat.
+4. Plusieurs fenêtres (matin 09-12 + après-midi 14-17) : les
+   candidats des deux sont concaténés dans l'ordre temporel.
+5. `earliestStart` filtre les candidats du matin (cas
+   `MIN_NOTICE` sur J).
+6. Défense en profondeur : `duration ≤ 0` ou `step ≤ 0` → liste
+   vide (jamais d'exception, jamais de boucle infinie).
+7. Convention `[start, end)` semi-ouverte vérifiée : un candidat
+   et un booking juxtaposés au même instant **ne** se chevauchent
+   **pas** (la borne droite est exclue).
+
+24/24 cas verts au pre-commit (17 anciens + 7 nouveaux).
+
+Les tests des méthodes BDD-dépendantes (`resolveDayWindows`,
+`getActiveBookingsForDate`, `computeSlotsForService`,
+`getServiceAvailableDates`, `getServiceAvailabilityForMonth`)
+iront dans `tests/integration/` au §10 — nécessitent une vraie
+base MySQL pour reproduire le comportement de
+`bookings.active_key STORED` et des FK.
+
+### 📄 Doc — `docs/booking-v3-spec.md`
+
+§3 réécrite (la section était une « esquisse §4 — à venir ») :
+
+- pseudo-code définitif de l'algo,
+- tableau des constantes tunables,
+- convention d'intervalle semi-ouvert documentée + conséquence
+  pratique (juxtaposition autorisée),
+- **co-existence v2 ↔ v3** explicitée : `Slot.php` héberge les
+  deux algos en parallèle ; le legacy `getAvailableForDate` reste
+  utilisé par `booking/index.php` + `api/slots.php` jusqu'à la
+  bascule §5. Le code mort à purger sera identifié à ce
+  moment-là.
+
+État d'avancement mis à jour : §4 marqué **livré**.
+
 ## [2.5.0] — 2026-06-17 — Booking v3 §3 : modèle de données
 
 Premier checkpoint du chantier **Module de réservation v3** (cible
