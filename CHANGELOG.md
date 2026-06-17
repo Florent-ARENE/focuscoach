@@ -13,6 +13,459 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.5.3] — 2026-06-17 — Cleanup AD-2 : grille tarifaire retirée du template
+
+Patch de cohérence mono-source (AD-2) déclenché par une remarque
+en revue : depuis le §3 du chantier v3, la grille tarifaire vit
+en BDD (`services.price_cents` + `packages.price_cents`) et les
+identifiants Stripe vivent en BDD aussi
+(`services.stripe_price_id` + `packages.stripe_price_id`, à saisir
+en admin §8). Maintenir **en parallèle** la grille tarifaire dans
+`config.local.php.template` (sous forme de commentaires « 80 € /
+100 € / … » et d'une constante `STRIPE_PRICES` placeholder)
+créerait deux sources qui finiraient par diverger dès que Renaud
+ajuste un tarif en admin.
+
+### Vérif avant retrait
+
+`grep -rn STRIPE_PRICES *.php` → 0 hit hors `config/`. La
+constante n'est consommée par **aucun** code applicatif — elle
+n'était qu'un placeholder de doc dans le template.
+
+### Changement
+
+`config/config.local.php.template` : la constante `STRIPE_PRICES`
+et la grille tarifaire commentée sont supprimées et remplacées par
+un commentaire qui pointe vers la source unique (`services` +
+`packages` en BDD, /admin pour la saisie) et qui résume la grille
+actuelle comme un mémo, source de vérité = BDD. Un
+`config.local.php` existant qui inclut encore la constante reste
+fonctionnel — aucun code ne la lit, donc aucun breakage.
+
+### Suite (rappel)
+
+Reprise du chantier v3 en session neuve sur §6 — paiement Stripe
+Checkout + webhook idempotent. Le prompt de reprise §6 est rédigé
+hors-commit (à coller au démarrage de la nouvelle session Claude
+Code) et porte tous les invariants déjà durcis aux §3-§5.
+
+## [2.5.2] — 2026-06-17 — Booking v3 §5 : tunnel multi-pages PHP
+
+Troisième checkpoint du chantier Booking v3. Pose le **squelette
+fonctionnel** du nouveau tunnel sur le modèle multi-pages PHP
+(pas de SPA — cohérent avec la stack vanilla et `booking/manage.php`
+existant). Le tunnel v2 `/booking/` reste en place, le v3 cohabite
+sous `/modules/booking/` ; la bascule du CTA public se fera en fin
+de chantier.
+
+⚠️ **Pas de paiement** dans ce checkpoint — `process.php` crée le
+booking en `status = 'pending'` / `payment_status = 'none'`
+(équivalent legacy v2, validation admin). Stripe Checkout sera
+inséré au §6.
+
+⚠️ **Vérification visuelle requise** côté Renaud : un container
+éphémère ne permet pas de tester le tunnel dans un navigateur. À
+valider en local sur les 3 tailles (375 / 768 / 1280) selon la
+checklist CLAUDE.md.
+
+### 🗂️ `modules/booking/` (AD-6 — module autonome)
+
+6 pages PHP, état dans `$_SESSION['booking_draft']` :
+
+| Page | Rôle |
+|---|---|
+| `index.php`    | Étape 1 — cards prestations par segment (services actifs, groupés sportif/dirigeant/particulier) |
+| `date.php`     | Étape 2 — liste des dates disponibles pour le service choisi (`Slot::getServiceAvailableDates`) |
+| `slot.php`     | Étape 3 — créneaux du jour (`Slot::computeSlotsForService`) |
+| `confirm.php`  | Étape 4 — formulaire identité + récap |
+| `process.php`  | POST — CSRF vérifié, crée le booking via `Booking::create()` mode v3 |
+| `success.php`  | Confirmation + lien vers `manage.php?token=…` (gestion legacy v2) |
+
+Toutes les sorties HTML passent par `Helpers::escape()`,
+`Icons::svg()`, `brandWordmark()`, `cfgField()`, `pwaHead()`,
+`pwaRegister()`, `appVersion()`, `cacheVersion()`, `Helpers::csrfMeta()`,
+`Helpers::csrfField()`, `date()` — conformes au garde-fou Lot 4
+(allowlist d'échappement).
+
+### 🔌 API — `api/booking-v3-slots.php`
+
+Endpoint JSON service-aware (paramètre `?service=<id>` obligatoire,
+retourne 400 sinon) avec trois modes :
+
+- `&date=YYYY-MM-DD` → créneaux du jour (`slots`, `slots_count`),
+- `&month=YYYY-MM` → vue calendrier mensuelle (`dates` indexé par
+  jour avec `available` + `slots_count`),
+- sans param → toutes les dates disponibles sur l'horizon
+  (`MAX_HORIZON_DAYS`).
+
+L'ancien `api/slots.php` reste en place (consommé par le tunnel
+legacy v2, qui continuera de tourner jusqu'à la bascule du CTA en
+fin de chantier).
+
+### 🧱 `Booking::create()` accepte le mode v3
+
+Détection par présence de `$data['service_id'] > 0` (pas de
+signature nouvelle, pas de duplication) :
+
+- **Mode v3** : insère `service_id`, `duration_min`,
+  `buffer_after_min` (figés à la création — indépendants d'une
+  édition ultérieure du catalogue), `payment_status = 'none'`,
+  `status = 'pending'`.
+- **Mode legacy** : signature historique (`service_type` ENUM) —
+  inchangé.
+
+L'invariant UNIQUE `active_key` continue de fermer le double-booking
+au même départ. La **vérification transactionnelle de chevauchement**
+(durées variables, départs différents) sera ajoutée au §6, au même
+endroit que le passage en `pending_payment` (POST de paiement).
+
+### 🎨 `assets/css/booking-v3.css`
+
+Préfixe `.bv3-` (pas de collision avec `.booking-` v2). Mobile-first
+(breakpoints 768 / 1024) :
+
+- cards prestations 1 → 2 → 3 colonnes,
+- steps bar (1 → 4) verticale → horizontale dès 768 px,
+- récap (`<dl>`) 1 col → 2 col (`max-content 1fr`) dès 768 px.
+
+Zéro hex en dur (AD-4) — tokens utilisés : `--navy`, `--navy-deep`,
+`--orange`, `--cream`, `--cream-dark`, `--text-dark`, `--text-muted`,
+`--text-light`, `--success`, `--white`, `--shadow-card`, `--radius-md`,
+`--font-display`.
+
+### 🛡️ Pre-commit étendu
+
+Le hook `.git/hooks/pre-commit` est étendu localement (non versionné
+par git) :
+
+- `hex_files` → ajoute `assets/css/booking-v3.css`,
+- `emoji_targets` → ajoute les 6 pages `modules/booking/*.php`,
+- `escape_targets` → ajoute les 6 pages `modules/booking/*.php`.
+
+**Le hook est miroir dans `scripts/git-hooks/pre-commit`** (versionné)
+pour que Renaud puisse propager la mise à jour côté son poste :
+
+```bash
+cp scripts/git-hooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+À faire avant tout commit local qui touche les nouveaux fichiers,
+sinon les garde-fous AD-4 / AD-5 / Lot 4 ne mordront pas dessus.
+
+### 📁 Arborescence ajoutée
+
+```
+modules/
+└── booking/
+    ├── index.php        — étape 1 (prestations)
+    ├── date.php         — étape 2 (dates)
+    ├── slot.php         — étape 3 (créneaux)
+    ├── confirm.php      — étape 4 (formulaire)
+    ├── process.php      — POST création booking
+    └── success.php      — confirmation
+api/
+└── booking-v3-slots.php — endpoint JSON service-aware
+assets/css/
+└── booking-v3.css       — styles tunnel v3
+scripts/git-hooks/
+└── pre-commit           — miroir versionné du hook local étendu
+```
+
+État d'avancement mis à jour : §5 marqué **livré**.
+
+## [2.5.1] — 2026-06-17 — Booking v3 §4 : algorithme de calcul des créneaux
+
+Deuxième checkpoint du chantier Booking v3. Pose l'algorithme qui
+sera consommé par le tunnel au §5. **Pas d'impact utilisateur
+encore** : le tunnel actuel continue d'utiliser l'algo v2
+(`getAvailableForDate` legacy), les nouvelles méthodes co-existent
+en parallèle dans `Slot.php` jusqu'à la bascule.
+
+### 🧮 `classes/Slot.php` étendu
+
+Méthodes ajoutées (les méthodes v2 sont conservées intactes — AD-3,
+zéro duplication : on étend, on ne recrée pas) :
+
+- **`computeCandidates(windows, bookings, duration, buffer, step,
+  earliestStart = null): array`** — fonction **pure et statique**,
+  testable sans BDD. Cœur de l'algo :
+  > pour chaque fenêtre `[W_start, W_end]`, parcourir par pas
+  > `step` ; candidat `t` valide si `t + duration ≤ W_end`,
+  > `t ≥ earliestStart` (si fourni) et `[t, t + duration + buffer)`
+  > ne chevauche aucun intervalle occupé.
+
+  Convention d'intervalle : **`[start, end)` semi-ouvert** — un
+  candidat 09:45-11:00 et un booking 11:00-12:00 ne se
+  chevauchent **pas** (touche autorisée). Vérifié par un cas
+  smoke dédié.
+
+- **`resolveDayWindows(date): array`** — applique la priorité
+  `blocked_dates[date]` > `availability_exceptions[date]` >
+  `availability[day_of_week]`. Une exception avec
+  `is_available = 0` ferme la journée même si d'autres lignes
+  existent pour la date.
+
+- **`getActiveBookingsForDate(date): array`** — récupère les
+  bookings qui arbitrent le créneau (`status IN ('pending',
+  'confirmed', 'pending_payment')`), étend leur intervalle du
+  `buffer_after_min`, **filtre les holds expirés**
+  (`pending_payment` avec `payment_expires_at < NOW()`) — c'est
+  le **lazy-expiry à la lecture** documenté dans `spec §4`,
+  redondant avec le cron `cron/expire-holds.php` qui viendra au
+  §6 pour persister le statut `expired`.
+
+- **`computeSlotsForService(serviceId, date): array`** —
+  orchestrateur : charge le service, applique
+  `MAX_HORIZON_DAYS`, résout les fenêtres, charge les bookings,
+  calcule `earliestStart` selon `MIN_NOTICE_MIN` (sur J
+  uniquement — si `now + MIN_NOTICE` bascule sur le lendemain,
+  aucun créneau aujourd'hui), délègue à `computeCandidates`.
+
+- **`getServiceAvailableDates(serviceId, days = null): array`**
+  et **`getServiceAvailabilityForMonth(serviceId, year, month):
+  array`** — équivalents v3 des méthodes legacy
+  `getAvailableDates` / `getAvailabilityForMonth`, basés sur le
+  nouveau modèle.
+
+### ⚙️ `config/config.php` — 3 constantes ajoutées
+
+- `BOOKING_STEP = 15` — pas du parcours des fenêtres (minutes).
+  Granularité d'offre des candidats.
+- `MIN_NOTICE_MIN = 120` — délai minimum avant un créneau pour
+  qu'il soit proposé (minutes). Appliqué à J seulement.
+- `MAX_HORIZON_DAYS = 60` — horizon de réservation depuis
+  aujourd'hui (jours).
+
+Les constantes legacy `BOOKING_ADVANCE_MIN_HOURS` (24 h) et
+`BOOKING_ADVANCE_MAX_DAYS` (60 j) restent en place — consommées
+par les méthodes v2 du Slot.php tant que §5 n'a pas basculé le
+tunnel.
+
+### ✅ Tests — AD-9 (smoke)
+
+`tests/smoke.php` étend de 7 cas en Lot 5 (algo créneaux v3,
+logique pure sans BDD) :
+
+1. Fenêtre 09:00-12:00, service 60+15 min, aucun booking,
+   step 15 → 9 candidats (09:00, 09:15, …, 11:00).
+2. Buffer respecté côté candidat : booking 11:00-12:00 ; un
+   service 60+15 min produit 4 candidats (09:00…09:45) ;
+   `09:45-11:00` est valide (touche `11:00` sans chevaucher).
+3. Buffer côté booking : booking 10:00-11:00 + buffer 15 occupe
+   `[10:00, 11:15)` ; aucun candidat possible dans
+   `[09:00, 12:00)` pour un service 60+15 → 0 candidat.
+4. Plusieurs fenêtres (matin 09-12 + après-midi 14-17) : les
+   candidats des deux sont concaténés dans l'ordre temporel.
+5. `earliestStart` filtre les candidats du matin (cas
+   `MIN_NOTICE` sur J).
+6. Défense en profondeur : `duration ≤ 0` ou `step ≤ 0` → liste
+   vide (jamais d'exception, jamais de boucle infinie).
+7. Convention `[start, end)` semi-ouverte vérifiée : un candidat
+   et un booking juxtaposés au même instant **ne** se chevauchent
+   **pas** (la borne droite est exclue).
+
+24/24 cas verts au pre-commit (17 anciens + 7 nouveaux).
+
+Les tests des méthodes BDD-dépendantes (`resolveDayWindows`,
+`getActiveBookingsForDate`, `computeSlotsForService`,
+`getServiceAvailableDates`, `getServiceAvailabilityForMonth`)
+iront dans `tests/integration/` au §10 — nécessitent une vraie
+base MySQL pour reproduire le comportement de
+`bookings.active_key STORED` et des FK.
+
+### 📄 Doc — `docs/booking-v3-spec.md`
+
+§3 réécrite (la section était une « esquisse §4 — à venir ») :
+
+- pseudo-code définitif de l'algo,
+- tableau des constantes tunables,
+- convention d'intervalle semi-ouvert documentée + conséquence
+  pratique (juxtaposition autorisée),
+- **co-existence v2 ↔ v3** explicitée : `Slot.php` héberge les
+  deux algos en parallèle ; le legacy `getAvailableForDate` reste
+  utilisé par `booking/index.php` + `api/slots.php` jusqu'à la
+  bascule §5. Le code mort à purger sera identifié à ce
+  moment-là.
+
+État d'avancement mis à jour : §4 marqué **livré**.
+
+## [2.5.0] — 2026-06-17 — Booking v3 §3 : modèle de données
+
+Premier checkpoint du chantier **Module de réservation v3** (cible
+v3.0.0). Cette release ne change rien à l'expérience utilisateur —
+elle pose le modèle de données qui sera consommé par §4-§10.
+
+Les pré-requis cadrage (`CADRAGE_UNIVERSEL.md` + `INSTRUCTIONS_…` à
+**v1.2**) ont été posés en amont (deux commits dédiés, cf. branche
+`claude/dazzling-goodall-VLGur`).
+
+### 🗄️ SQL — nouvelles tables
+
+- **`services`** — catalogue prestations (CRUD admin). Remplace
+  l'ENUM figé `service_type` de l'offre conseil. Porte `slug`
+  (unique), `segment` ∈ {sportif, dirigeant, particulier}, `name`,
+  `description`, `duration_min`, `buffer_after_min` (temps de
+  compte rendu, défaut 15 min), `price_cents` (0 → séance gratuite
+  / court-circuit Stripe), `stripe_price_id` (renseigné en admin
+  après création du Price), `is_active`, `sort_order`.
+- **`availability`** — planning récurrent hebdomadaire en fenêtres
+  `[window_start, window_end]` au lieu de créneaux pré-découpés.
+  Les créneaux sont calculés au runtime à partir de (fenêtre,
+  service.duration, service.buffer, `BOOKING_STEP`). Unique sur
+  `(day_of_week, window_start, window_end)`.
+- **`availability_exceptions`** — overrides par date.
+  `is_available = 0` → journée fermée ; `is_available = 1` + une
+  fenêtre → cette fenêtre remplace le récurrent pour ce jour.
+- **`packages`** — forfaits à jetons. Réfère 1 service inclus
+  (`fk_packages_service`). `sessions_count`, `validity_days`,
+  `price_cents`, `stripe_price_id`.
+- **`package_purchases`** — achats clients. Porte les crédits
+  (`credits_total`, `credits_used`), le `manage_token` unique
+  d'accès à l'espace pack, le statut ∈ {pending_payment, active,
+  expired, exhausted}. Un seul jeton par client — les séances
+  issues du pack n'ont pas leur propre `manage_token` (cf.
+  invariant § 4 de `docs/booking-v3-spec.md`).
+- **`stripe_events_processed`** — idempotence du webhook Stripe.
+  PK = `event_id`. En tête de `api/stripe-webhook.php` (à créer
+  §6) : `INSERT IGNORE` ; `rowCount() == 0` → event déjà traité →
+  200 no-op.
+
+### 🗄️ SQL — table `bookings` étendue
+
+Colonnes ajoutées (toutes nullable / avec default, donc non
+destructives sur les enregistrements existants) :
+
+- `service_id` (FK NULL — anciens bookings conseil restent NULL),
+- `package_purchase_id` (FK NULL — séance issue d'un pack),
+- `duration_min`, `buffer_after_min` (copiés du service à la
+  création — figent la durée du booking, indépendamment d'une
+  édition ultérieure du catalogue),
+- `payment_status` ∈ {none, pending, paid, refunded},
+- `stripe_session_id`, `amount_paid_cents`,
+- `payment_expires_at` (hold de 15 min pendant Stripe Checkout),
+- `confirmation_email_sent_at` (garde-fou anti double-email sur
+  retry webhook Stripe).
+
+ENUM `status` étendu de `pending_payment` (hold pendant Stripe) et
+`expired` (hold libéré sans confirmation).
+
+### 🛡️ Invariant — `active_key` redéfinie pour inclure `pending_payment`
+
+```sql
+active_key = CASE WHEN status IN ('pending','confirmed','pending_payment')
+                  THEN CONCAT(slot_date, '_', slot_time_start)
+                  ELSE NULL END
+```
+
+Sans cela, deux holds concurrents de 15 min sur le même créneau ne
+seraient pas arbitrés par l'UNIQUE → les deux clients arrivent sur
+Stripe, les deux paient → double booking. La nouvelle colonne
+ferme le cas « même départ ». Le cas « durées variables, départs
+différents qui se chevauchent » sera couvert au §5/§6 par une
+vérification transactionnelle (`SELECT … FOR UPDATE`). Les deux
+gardes coexistent (cf. `docs/booking-v3-spec.md` § 4).
+
+### 🗄️ Migration `sql/migration-3.0.0.sql`
+
+**Non destructive sur les données live.** Ordre :
+
+1. CREATE TABLE des 6 nouvelles tables.
+2. DROP UNIQUE `uq_active_slot` + DROP COLUMN `active_key`.
+3. MODIFY enum `bookings.status` (ajout `pending_payment` +
+   `expired`).
+4. ADD COLUMNs nouvelles sur `bookings`.
+5. ADD `active_key` étendue + UNIQUE.
+6. ADD FKs `fk_bookings_service` + `fk_bookings_package_purchase`
+   (ON DELETE SET NULL → un service ou pack supprimé ne supprime
+   pas les bookings historiques, il les détache).
+7. **Regroupement `available_slots` → `availability`** en SQL pur
+   avec `LAG()` + `SUM() OVER` (prérequis MariaDB ≥ 10.2 ou
+   MySQL ≥ 8). Trous = coupures de fenêtres. **Résultat attendu
+   sur défauts inchangés** (12 × 5 = 60 créneaux 30 min) : 10
+   fenêtres (matin + après-midi × 5 jours).
+8. Seed `services` (10 prestations selon §11 du prompt v3) +
+   `packages` (3 forfaits), **dupliqué** depuis `seed.sql` car les
+   bases déjà déployées ne rejouent jamais `seed.sql` — sans cette
+   duplication, la prod arriverait en 3.0.0 avec un catalogue vide
+   → tunnel cassé.
+
+⚠️ **Sauvegarde obligatoire avant exécution** :
+
+```
+mysqldump --single-transaction --routines --triggers \
+  -u <user> -p <db> > backup-pre-3.0.0-$(date +%F).sql
+```
+
+OVH mutualisé = pas d'atomicité de déploiement. Rollback = restore
+du dump + revert du code.
+
+### 🗄️ SQL — `schema.sql` & `seed.sql`
+
+`sql/schema.sql` consolide la cible install neuve : 6 nouvelles
+tables + nouvelle structure `bookings`. `available_slots`
+conservée en cible (vide) pour réversibilité d'un éventuel rejeu
+de la migration sur install neuve. `service_type` (ancienne ENUM
+offre conseil) gardée pour les bookings archivés — plus utilisée
+par le code v3.
+
+`sql/seed.sql` remplace le seed `available_slots` (60 lignes) par
+10 fenêtres `availability` (Lu-Ve, 09:00-12:00 + 14:00-17:00) et
+ajoute le catalogue `services` + `packages`. `price_cents` reflète
+la grille tarifaire Focus Coach (montants en centimes, alignés sur
+les commentaires `STRIPE_PRICES` du template `config.local.php`) —
+Sport Flash 80 €, Préparation mentale 100 €, Décision Express
+200 €, Manager Miroir 250 €, Coaching Fondateur 280 €, Duo Aligné
+350 €, Déclic 30 70 €, Reset Mental & Rebond 100 €, forfaits 5×
+420 €, Parcours Dirigeant 6× 1 500 €. La séance Découverte reste
+à 0 (gratuite par design → court-circuit Stripe). `stripe_price_id`
+restent NULL — Renaud les renseignera en admin après avoir créé
+les Price côté Stripe. Tant que c'est le cas, `health.php` (§9)
+signalera les services avec `price_cents > 0` mais sans
+`stripe_price_id`, et le tunnel (§6) refusera de démarrer pour
+ces services.
+
+### 📄 Doc — `docs/booking-v3-spec.md`
+
+Mémoire technique du chantier, créée au §3, à enrichir aux
+checkpoints suivants :
+
+- Modèle de données (lien vers schema.sql).
+- Algorithme de regroupement `available_slots` → `availability` +
+  résultat attendu sur défauts.
+- Algorithme de calcul des créneaux (esquisse §4).
+- Invariants de course : `active_key` étendue + vérification
+  transactionnelle de chevauchement + retry sur collision hold
+  expiré.
+- Machines à états `bookings.status` et
+  `package_purchases.status`.
+- Tunnel multi-pages PHP (état dans `$_SESSION['booking_draft']`).
+- Stripe : résilience clés absentes, court-circuit `price_cents
+  == 0`, webhook idempotent, effets de bord (sync GCal, email)
+  rendus idempotents **chacun séparément** plutôt que via le flag
+  d'event (sinon un retry après timeout GCal perdrait la sync).
+- RGPD : `package_purchases` est un nouveau puits de données
+  nominatives, à couvrir par le cron de purge.
+- Procédure de rollback (dump avant migration).
+
+### 📘 Cadrage en amont
+
+Cadrage universel passé à **v1.2** (deux commits dédiés `91ab9b3`
++ `a5f6a29`, sur la branche `claude/dazzling-goodall-VLGur`).
+
+- **`CADRAGE_UNIVERSEL.md` v1.2** : AD-8 étendu au pendant
+  runtime (`health.php`, liveness rapide / check profond séparés,
+  **aucun appel API tiers synchrone** sinon une panne externe
+  ferait passer le déploiement en ROUGE à tort). AD-9 étendu aux
+  tests d'API/endpoints. §8 checklist : 2 lignes ajoutées.
+- **`INSTRUCTIONS_DEMARRAGE_SESSION_UNIVERSEL.md` v1.2** : sources
+  d'autorité recentrées sur l'état réel du repo (commits poussés
+  ou ZIP de réamorçage en filet). Pipeline humain → instance
+  Claude (architecture + rédaction des prompts) → Claude Code
+  (implémentation) → allers-retours → verdict humain, explicité.
+
+Pré-requis §12 du prompt Booking v3 levé.
+
 ## [2.4.8] — 2026-06-16 — `available_slots` idempotent
 
 ### 🗄️ SQL
@@ -53,11 +506,17 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 - **`sql/seed.sql`** — valeurs par défaut, idempotent.
   - `settings` : 11 clés (`site_name`, `admin_name`/`lastname`/
     `activity`/`email`/`phone`/`address`/`siret`, `legal_status`,
-    `google_calendar_enabled`/`id`) en `INSERT ... ON DUPLICATE KEY
-    UPDATE setting_value = setting_value` — **ne touche pas** aux
-    valeurs déjà personnalisées en admin.
+    `google_calendar_enabled`/`id`) en `INSERT IGNORE` — **ne touche
+    pas** aux valeurs déjà personnalisées en admin (la clé unique
+    `idx_setting_key` arbitre côté MySQL).
   - `available_slots` : Lundi-Vendredi, 9h-12h et 14h-17h, par tranches
     de 30 min, en `INSERT IGNORE`.
+  - Note : la version finalement committée (après revue) utilise
+    `INSERT IGNORE` partout pour la lisibilité, et non le
+    `ON DUPLICATE KEY UPDATE setting_value = setting_value` initial
+    (sémantiquement équivalent, mais c'était un no-op explicite
+    déguisé). Cf. commit suivant « refactor(sql): adopter la version
+    revue par Renaud ».
 
 ### 📘 Règle « à tenir à jour »
 - **CLAUDE.md §8.3** réécrite : SQL = source unique. À chaque modif

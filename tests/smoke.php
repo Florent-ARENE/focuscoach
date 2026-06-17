@@ -185,6 +185,111 @@ it('Idempotence reschedule : minute différente => change', function () {
 });
 
 // ============================================
+// LOT 5 — Algo créneaux Booking v3 §4 (logique pure)
+// ============================================
+// `Slot::computeCandidates()` est extrait en méthode statique pour
+// être testable sans BDD : on injecte fenêtres + bookings résolus.
+// Les méthodes BDD-dépendantes (resolveDayWindows,
+// getActiveBookingsForDate, computeSlotsForService) iront dans
+// tests/integration/ (§10).
+echo "\n📐 Lot 5 — Algo créneaux v3 (computeCandidates)\n";
+
+it('Fenêtre 09:00-12:00, service 60+15 min, aucun booking, step 15 → 9 candidats (09:00…11:00)', function () {
+    // Dernier t valide : t + 60 ≤ 12:00 → t ≤ 11:00.
+    // Avec step 15 depuis 09:00 : 09:00, 09:15, 09:30, 09:45,
+    // 10:00, 10:15, 10:30, 10:45, 11:00 → 9 candidats.
+    $windows = [['start' => '09:00:00', 'end' => '12:00:00']];
+    $cands = \App\Slot::computeCandidates($windows, [], 60, 15, 15);
+    expect_true(count($cands) === 9, 'attendu 9 candidats, reçu ' . count($cands));
+    expect_true($cands[0]['time_start']  === '09:00:00');
+    expect_true($cands[0]['time_end']    === '10:00:00');
+    expect_true(end($cands)['time_start'] === '11:00:00');
+});
+
+it('Buffer respecté : booking 11:00-12:00 (end_with_buffer 12:00) bloque les candidats qui chevauchent', function () {
+    // Booking 11:00-12:00 → intervalle occupé [11:00, 12:00). Fenêtre
+    // 09:00-12:00, service 60+15 (occupe 75 min).
+    // - t = 09:00 → [09:00, 10:15) ∩ [11:00, 12:00) = ∅ → OK ✓
+    // - t = 09:15 → [09:15, 10:30) → OK ✓
+    // - t = 09:30 → [09:30, 10:45) → OK ✓
+    // - t = 09:45 → [09:45, 11:00) → OK (touche 11:00 sans intersecter) ✓
+    // - t = 10:00 → [10:00, 11:15) ∩ [11:00, 12:00) = [11:00, 11:15) → invalide
+    // - t = 10:15 → invalide (idem)
+    // - t = 10:30 → invalide
+    // - t = 10:45 → invalide
+    // - t = 11:00 → t + 60 = 12:00 ≤ 12:00 mais [11:00, 12:15) ∩ [11:00, 12:00) ≠ ∅ → invalide
+    // → 4 candidats : 09:00, 09:15, 09:30, 09:45.
+    $windows  = [['start' => '09:00:00', 'end' => '12:00:00']];
+    $bookings = [['start' => '11:00:00', 'end_with_buffer' => '12:00:00']];
+    $cands    = \App\Slot::computeCandidates($windows, $bookings, 60, 15, 15);
+    expect_true(count($cands) === 4, 'attendu 4 candidats, reçu ' . count($cands));
+    $starts = array_column($cands, 'time_start');
+    expect_true($starts === ['09:00:00','09:15:00','09:30:00','09:45:00']);
+});
+
+it('Buffer côté booking respecté : booking 10:00-11:00 + buffer 15 (end_with_buffer 11:15) bloque toute la fenêtre 09-12 pour un service 60+15', function () {
+    // [10:00, 11:15) coupe la fenêtre en deux moitiés trop courtes
+    // pour un service de 75 min cumulés :
+    // - avant : [09:00, 10:00) = 60 min < 60+0 nécessaire pour t+60 ≤ 10:00…
+    //   wait : t = 09:00 → t + 60 = 10:00 → [09:00, 10:15) ∩ [10:00, 11:15) = [10:00, 10:15) ≠ ∅ → KO.
+    // - après : [11:15, 12:00) = 45 min < 60 → aucun candidat ne tient (t + 60 ≤ 12:00 → t ≤ 11:00,
+    //   mais t doit ≥ 11:15 pour ne pas chevaucher → impossible avec step 15).
+    // → 0 candidat.
+    $windows  = [['start' => '09:00:00', 'end' => '12:00:00']];
+    $bookings = [['start' => '10:00:00', 'end_with_buffer' => '11:15:00']];
+    $cands    = \App\Slot::computeCandidates($windows, $bookings, 60, 15, 15);
+    expect_true(count($cands) === 0, 'attendu 0 candidat, reçu ' . count($cands));
+});
+
+it('Plusieurs fenêtres (matin + après-midi) : les candidats des deux sont concaténés dans l\'ordre', function () {
+    // Matin 09:00-12:00 + après-midi 14:00-17:00, service 60+15, step 30.
+    // Matin (t+60≤12:00 → t≤11:00, step 30) : 09:00, 09:30, 10:00, 10:30, 11:00 → 5
+    // Aprem (t+60≤17:00 → t≤16:00, step 30) : 14:00, 14:30, 15:00, 15:30, 16:00 → 5
+    // → 10 candidats.
+    $windows = [
+        ['start' => '09:00:00', 'end' => '12:00:00'],
+        ['start' => '14:00:00', 'end' => '17:00:00'],
+    ];
+    $cands = \App\Slot::computeCandidates($windows, [], 60, 15, 30);
+    expect_true(count($cands) === 10, 'attendu 10 candidats, reçu ' . count($cands));
+    expect_true($cands[0]['time_start']  === '09:00:00');
+    expect_true($cands[4]['time_start']  === '11:00:00');
+    expect_true($cands[5]['time_start']  === '14:00:00');
+    expect_true($cands[9]['time_start']  === '16:00:00');
+});
+
+it('earliestStart filtre les candidats du matin (cas MIN_NOTICE sur J)', function () {
+    // Fenêtre 09:00-12:00, service 30+0 step 15. earliestStart=10:30
+    // → candidats valides à partir de 10:30 : 10:30, 10:45, 11:00, 11:15, 11:30.
+    $windows = [['start' => '09:00:00', 'end' => '12:00:00']];
+    $cands   = \App\Slot::computeCandidates($windows, [], 30, 0, 15, '10:30:00');
+    expect_true(count($cands) === 5, 'attendu 5 candidats, reçu ' . count($cands));
+    expect_true($cands[0]['time_start']  === '10:30:00');
+    expect_true(end($cands)['time_start'] === '11:30:00');
+});
+
+it('duration ≤ 0 ou step ≤ 0 → 0 candidat (défense en profondeur)', function () {
+    $windows = [['start' => '09:00:00', 'end' => '12:00:00']];
+    expect_true(\App\Slot::computeCandidates($windows, [], 0,  15, 15) === []);
+    expect_true(\App\Slot::computeCandidates($windows, [], 60, 15, 0)  === []);
+    expect_true(\App\Slot::computeCandidates($windows, [], -1, 15, 15) === []);
+});
+
+it('Intervalles juxtaposés sans chevauchement : [09:00, 10:00) suivi de [10:00, 11:00) → 09:00 et 10:00 candidats co-existent', function () {
+    // Fenêtre 09:00-12:00, service 60+0 step 60. Un booking 10:00-11:00
+    // (end_with_buffer 11:00). Candidats possibles : 09:00, 11:00.
+    // t = 09:00 → [09:00, 10:00) ne touche pas [10:00, 11:00) (semi-ouvert) ✓
+    // t = 10:00 → [10:00, 11:00) ∩ [10:00, 11:00) ≠ ∅ → KO
+    // t = 11:00 → [11:00, 12:00) ne touche pas [10:00, 11:00) ✓
+    $windows  = [['start' => '09:00:00', 'end' => '12:00:00']];
+    $bookings = [['start' => '10:00:00', 'end_with_buffer' => '11:00:00']];
+    $cands    = \App\Slot::computeCandidates($windows, $bookings, 60, 0, 60);
+    $starts   = array_column($cands, 'time_start');
+    expect_true($starts === ['09:00:00','11:00:00'],
+        'attendu [09:00, 11:00], reçu ' . json_encode($starts));
+});
+
+// ============================================
 // VERDICT
 // ============================================
 echo implode("\n", $cases) . "\n\n";

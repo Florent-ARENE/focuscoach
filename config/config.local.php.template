@@ -48,39 +48,36 @@ define('STRIPE_PUBLISHABLE_KEY', 'REPLACE_WITH_STRIPE_PUBLISHABLE_KEY');
 define('STRIPE_WEBHOOK_SECRET',  'REPLACE_WITH_STRIPE_WEBHOOK_SECRET');
 
 // ──────────────────────────────────────────────
-//  Tarifs Stripe par offre
+//  Tarifs Stripe par offre — vivent en BDD depuis v3.0.0
 // ──────────────────────────────────────────────
-// Chaque offre PAYANTE = un objet Price créé dans le dashboard Stripe
-// (Catalogue de produits > Ajouter un produit > prix unique en EUR).
-// Coller ici le price_id (format price_xxx). Les test/live ont des IDs différents.
+// AD-2 (mono-source) : la grille tarifaire et les `stripe_price_id`
+// vivent désormais dans les tables `services.stripe_price_id` et
+// `packages.stripe_price_id`, gérés via /admin (CRUD §8 à venir).
 //
-// Hors liste, donc PAS de price_id ici :
-//   - Séance découverte (gratuite) → créneau réservable sans paiement
-//   - Club / pro sportif (sur devis) → traité hors Stripe
+// Geste opérationnel après import de la migration 3.0.0 :
+//   1. Dans le dashboard Stripe → Catalogue de produits → créer un
+//      Price unique en EUR par prestation et par forfait.
+//      Format du Price ID : `price_…`.
+//   2. Dans /admin → Services / Forfaits → coller chaque `price_id`
+//      en face de la prestation correspondante.
+//   3. health.php (§9) signalera tout service / forfait actif avec
+//      `price_cents > 0` mais sans `stripe_price_id` — tant que c'est
+//      le cas, le tunnel refuse de démarrer pour ce service (refus
+//      explicite, pas un crash).
 //
-// Les libellés, durées et segments des offres ne vivent PAS ici : ce sont du
-// contenu applicatif (BDD `settings` ou config.php). Les commentaires ci-dessous
-// ne servent qu'au repérage.
-define('STRIPE_PRICES', [
-
-    // ── Sportifs — préparation mentale ──
-    'sport_flash'    => 'price_xxxxxxxxxxxxxx',  // Sport Flash — 45 min — 80 €
-    'sport_seance'   => 'price_xxxxxxxxxxxxxx',  // Préparation Mentale — 1h — 100 €
-    'sport_forfait5' => 'price_xxxxxxxxxxxxxx',  // Forfait Performance — 5 séances — 420 €
-
-    // ── Dirigeants — executive ──
-    'dir_decision'   => 'price_xxxxxxxxxxxxxx',  // Décision Express — 45 min — 200 €
-    'dir_miroir'     => 'price_xxxxxxxxxxxxxx',  // Manager Miroir — 1h — 250 €
-    'dir_fondateur'  => 'price_xxxxxxxxxxxxxx',  // Coaching Fondateur — 1h — 280 €
-    'dir_duo'        => 'price_xxxxxxxxxxxxxx',  // Duo Aligné — 1h30 — 350 €
-    'dir_parcours6'  => 'price_xxxxxxxxxxxxxx',  // Parcours Dirigeant — 6 séances — 1 500 €
-
-    // ── Particuliers — vie / transition ──
-    'part_declic'    => 'price_xxxxxxxxxxxxxx',  // Déclic 30 — 30 min — 70 €
-    'part_reset'     => 'price_xxxxxxxxxxxxxx',  // Reset Mental — 1h — 100 €
-    'part_rebond'    => 'price_xxxxxxxxxxxxxx',  // Rebond — 1h — 100 €
-    'part_forfait5'  => 'price_xxxxxxxxxxxxxx',  // Forfait Élan — 5 séances — 420 €
-]);
+// La séance Découverte (`price_cents = 0`) court-circuite Stripe
+// même quand les clés sont présentes (pas de session Checkout à 0 €).
+//
+// Grille tarifaire actuelle (mémo, source de vérité = BDD) :
+//   Sport Flash 80 € · Préparation mentale 100 € · Forfait Performance 5× 420 €
+//   Décision Express 200 € · Manager Miroir 250 € · Coaching Fondateur 280 €
+//   Duo Aligné 350 € · Parcours Dirigeant 6× 1 500 €
+//   Déclic 30 70 € · Reset Mental 100 € · Rebond 100 € · Forfait Élan 5× 420 €
+//
+// L'ancienne constante `STRIPE_PRICES` du template a été retirée en
+// v2.5.3 (jamais consommée par le code). Si tu maintiens un vieux
+// `config.local.php` qui l'inclut encore, tu peux la supprimer sans
+// risque.
 
 // ──────────────────────────────────────────────
 //  Google Calendar (optionnel — si la sync est activée)

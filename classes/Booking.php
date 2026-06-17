@@ -21,6 +21,14 @@ class Booking
     
     /**
      * Créer une nouvelle réservation
+     *
+     * Modes acceptés :
+     *  - v2 (legacy) : `$data['service_type']` ∈ enum SERVICE_TYPES,
+     *    pas de service_id. status = 'pending'.
+     *  - v3 : `$data['service_id']` (FK services) + `duration_min` +
+     *    `buffer_after_min` figés à la création (indépendants d'une
+     *    édition ultérieure du catalogue). status = 'pending' tant que
+     *    §6 n'a pas branché Stripe — `pending_payment` viendra alors.
      */
     public function create(array $data): array
     {
@@ -33,48 +41,84 @@ class Booking
                 'manage_token' => null
             ];
         }
-        
-        // Générer un token unique pour la gestion client
+
         $manageToken = $this->generateManageToken();
-        
+        $isV3        = isset($data['service_id']) && (int) $data['service_id'] > 0;
+
         try {
-            $stmt = $this->db->prepare("
-                INSERT INTO bookings (
-                    visitor_name, visitor_email, visitor_phone, visitor_organization,
-                    slot_date, slot_time_start, slot_time_end,
-                    service_type, subject, message,
-                    status, manage_token, ip_address, user_agent
-                ) VALUES (
-                    :name, :email, :phone, :organization,
-                    :date, :time_start, :time_end,
-                    :service, :subject, :message,
-                    'pending', :token, :ip, :ua
-                )
-            ");
-            
-            $stmt->execute([
-                ':name' => $data['visitor_name'],
-                ':email' => $data['visitor_email'],
-                ':phone' => $data['visitor_phone'] ?? null,
-                ':organization' => $data['visitor_organization'] ?? null,
-                ':date' => $data['slot_date'],
-                ':time_start' => $data['slot_time_start'],
-                ':time_end' => $data['slot_time_end'],
-                ':service' => $data['service_type'] ?? 'autre',
-                ':subject' => $data['subject'] ?? null,
-                ':message' => $data['message'] ?? null,
-                ':token' => $manageToken,
-                ':ip' => $_SERVER['REMOTE_ADDR'] ?? null,
-                ':ua' => $_SERVER['HTTP_USER_AGENT'] ?? null
-            ]);
-            
+            if ($isV3) {
+                $stmt = $this->db->prepare(
+                    "INSERT INTO bookings (
+                        visitor_name, visitor_email, visitor_phone, visitor_organization,
+                        slot_date, slot_time_start, slot_time_end,
+                        service_id, duration_min, buffer_after_min,
+                        subject, message,
+                        status, payment_status,
+                        manage_token, ip_address, user_agent
+                    ) VALUES (
+                        :name, :email, :phone, :organization,
+                        :date, :time_start, :time_end,
+                        :service_id, :duration_min, :buffer_after_min,
+                        :subject, :message,
+                        'pending', 'none',
+                        :token, :ip, :ua
+                    )"
+                );
+                $stmt->execute([
+                    ':name'             => $data['visitor_name'],
+                    ':email'            => $data['visitor_email'],
+                    ':phone'            => $data['visitor_phone']        ?? null,
+                    ':organization'     => $data['visitor_organization'] ?? null,
+                    ':date'             => $data['slot_date'],
+                    ':time_start'       => $data['slot_time_start'],
+                    ':time_end'         => $data['slot_time_end'],
+                    ':service_id'       => (int) $data['service_id'],
+                    ':duration_min'     => (int) ($data['duration_min']     ?? 0),
+                    ':buffer_after_min' => (int) ($data['buffer_after_min'] ?? 0),
+                    ':subject'          => $data['subject'] ?? null,
+                    ':message'          => $data['message'] ?? null,
+                    ':token'            => $manageToken,
+                    ':ip'               => $_SERVER['REMOTE_ADDR']      ?? null,
+                    ':ua'               => $_SERVER['HTTP_USER_AGENT'] ?? null,
+                ]);
+            } else {
+                $stmt = $this->db->prepare(
+                    "INSERT INTO bookings (
+                        visitor_name, visitor_email, visitor_phone, visitor_organization,
+                        slot_date, slot_time_start, slot_time_end,
+                        service_type, subject, message,
+                        status, manage_token, ip_address, user_agent
+                    ) VALUES (
+                        :name, :email, :phone, :organization,
+                        :date, :time_start, :time_end,
+                        :service, :subject, :message,
+                        'pending', :token, :ip, :ua
+                    )"
+                );
+                $stmt->execute([
+                    ':name'         => $data['visitor_name'],
+                    ':email'        => $data['visitor_email'],
+                    ':phone'        => $data['visitor_phone']        ?? null,
+                    ':organization' => $data['visitor_organization'] ?? null,
+                    ':date'         => $data['slot_date'],
+                    ':time_start'   => $data['slot_time_start'],
+                    ':time_end'     => $data['slot_time_end'],
+                    ':service'      => $data['service_type'] ?? 'autre',
+                    ':subject'      => $data['subject'] ?? null,
+                    ':message'      => $data['message'] ?? null,
+                    ':token'        => $manageToken,
+                    ':ip'           => $_SERVER['REMOTE_ADDR']      ?? null,
+                    ':ua'           => $_SERVER['HTTP_USER_AGENT'] ?? null,
+                ]);
+            }
+
             $bookingId = (int) $this->db->lastInsertId();
-            
+
             return [
-                'success' => true,
-                'message' => 'Votre demande de rendez-vous a été enregistrée.',
-                'booking_id' => $bookingId,
-                'manage_token' => $manageToken
+                'success'      => true,
+                'message'      => 'Votre demande de rendez-vous a été enregistrée.',
+                'booking_id'   => $bookingId,
+                'manage_token' => $manageToken,
             ];
             
         } catch (\PDOException $e) {

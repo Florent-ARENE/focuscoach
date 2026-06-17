@@ -1,0 +1,108 @@
+<?php
+/**
+ * ============================================
+ * BOOKING v3 — ÉTAPE 3 : CHOIX DU CRÉNEAU
+ * ============================================
+ * Liste les créneaux calculés pour (service, date). Server-rendered.
+ * Clic sur un créneau → confirm.php (formulaire identité).
+ */
+require_once __DIR__ . '/../../includes/init.php';
+
+use App\Database;
+use App\Slot;
+use App\Helpers;
+use App\Icons;
+
+$serviceId = isset($_GET['service']) ? (int) Helpers::sanitize($_GET['service']) : 0;
+$date      = isset($_GET['date'])    ? Helpers::sanitize($_GET['date'])         : '';
+
+if ($serviceId <= 0 || !Helpers::isValidDate($date)) {
+    header('Location: index.php');
+    exit;
+}
+
+$db   = Database::getInstance();
+$stmt = $db->prepare(
+    "SELECT id, name, duration_min, buffer_after_min, price_cents
+       FROM services
+      WHERE id = :id AND is_active = 1"
+);
+$stmt->execute([':id' => $serviceId]);
+$service = $stmt->fetch();
+if (!$service) {
+    header('Location: index.php');
+    exit;
+}
+
+$slot  = new Slot();
+$slots = $slot->computeSlotsForService((int) $service['id'], $date);
+
+// Mémoriser dans le draft (au cas où le draft ait été perdu)
+$_SESSION['booking_draft']['service_id']       = (int) $service['id'];
+$_SESSION['booking_draft']['service_name']     = $service['name'];
+$_SESSION['booking_draft']['duration_min']     = (int) $service['duration_min'];
+$_SESSION['booking_draft']['buffer_after_min'] = (int) $service['buffer_after_min'];
+$_SESSION['booking_draft']['price_cents']      = (int) $service['price_cents'];
+
+$pageTitle = 'Choisir un créneau';
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?= Helpers::csrfMeta() ?>
+    <title><?= Helpers::escape($pageTitle) ?> | <?= Helpers::escape(siteConfig()['site_name']) ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/main.css">
+    <link rel="stylesheet" href="../../assets/css/booking-v3.css">
+    <?= pwaHead() ?>
+</head>
+<body>
+    <header class="booking-header">
+        <div class="booking-header-content">
+            <a href="../../" class="booking-logo"><?= brandWordmark() ?></a>
+            <a href="date.php?service=<?= Helpers::escape((string) (int) $service['id']) ?>" class="back-link"><?= Icons::svg('arrow-left', 20, 'icon-inline') ?>Changer de date</a>
+        </div>
+    </header>
+
+    <main class="booking-main">
+        <ol class="bv3-steps" aria-label="Étapes de la réservation">
+            <li class="bv3-step is-done"><span class="bv3-step-num">1</span> Prestation</li>
+            <li class="bv3-step is-done"><span class="bv3-step-num">2</span> Date</li>
+            <li class="bv3-step is-current" aria-current="step"><span class="bv3-step-num">3</span> Créneau</li>
+            <li class="bv3-step"><span class="bv3-step-num">4</span> Vos informations</li>
+        </ol>
+
+        <div class="bv3-summary">
+            <strong><?= Helpers::escape($service['name']) ?></strong>
+            <span class="bv3-summary-sep">·</span>
+            <?= Helpers::escape(Helpers::formatDateFr($date)) ?>
+        </div>
+
+        <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
+
+        <?php if (empty($slots)): ?>
+            <p class="bv3-empty">Aucun créneau disponible ce jour-là. <a href="date.php?service=<?= Helpers::escape((string) (int) $service['id']) ?>">Choisir une autre date</a>.</p>
+        <?php else: ?>
+            <ul class="bv3-slots">
+                <?php foreach ($slots as $s): ?>
+                    <li class="bv3-slot">
+                        <a class="bv3-slot-link"
+                           href="confirm.php?service=<?= Helpers::escape((string) (int) $service['id']) ?>&amp;date=<?= Helpers::escape($date) ?>&amp;start=<?= Helpers::escape($s['time_start']) ?>&amp;end=<?= Helpers::escape($s['time_end']) ?>">
+                            <?= Helpers::escape($s['label']) ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </main>
+
+    <footer class="booking-footer">
+        <p>© <?= date('Y') ?> <?= Helpers::escape(siteConfig()['site_name']) ?></p>
+    </footer>
+
+    <script src="../../assets/js/icons.js"></script>
+    <?= pwaRegister() ?>
+</body>
+</html>

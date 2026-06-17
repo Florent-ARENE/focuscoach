@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+# ============================================
+# PRE-COMMIT — Garde-fous exécutables (AD-8)
+# ============================================
+# Mord automatiquement à chaque `git commit`. Aucun garde-fou rouge
+# ne doit passer en commit (CADRAGE_UNIVERSEL AD-8).
+#
+# Garde-fous vérifiés :
+#   1. AD-1 : alignement VERSION ↔ stamps .md ↔ sw.js CACHE_VERSION
+#   2. AD-3/AD-4 : pas d'hex en dur dans les modules CSS
+#   3. AD-5 : pas d'emoji décoratif dans le DOM (PHP/JS publics)
+#   4. Syntaxe : php -l propre sur tous les .php staged
+#   5. Lot 4 : tout <?= ... ?> passe par une fonction d'échappement allowlistée
+#
+# Sortie : exit 0 = vert (commit autorisé), exit 1 = rouge.
+
+set -e
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+fail() { printf "${RED}✗ %s${NC}\n" "$1" >&2; exit 1; }
+ok()   { printf "${GREEN}✓ %s${NC}\n" "$1"; }
+warn() { printf "${YELLOW}⚠ %s${NC}\n" "$1"; }
+
+# ============================================
+# Garde-fou 1 — AD-1 : version unique
+# ============================================
+if [ -f VERSION ]; then
+    V=$(tr -d '[:space:]' < VERSION)
+    [ -z "$V" ] && fail "VERSION vide"
+
+    check_stamp() {
+        local file="$1"
+        local pattern="$2"
+        if [ -f "$file" ] && ! grep -qE "$pattern" "$file"; then
+            fail "Version $V absente de $file (motif: $pattern)"
+        fi
+    }
+
+    # Stamps .md attendus (motif tolérant : « 2.4.3 » ou « v2.4.3 »)
+    check_stamp "README.md"           "v?${V}"
+    check_stamp "CLAUDE.md"           "v?${V}"
+    check_stamp "README_TECHNIQUE.md" "v?${V}"
+    # sw.js : CACHE_VERSION doit dériver de VERSION
+    check_stamp "sw.js"               "CACHE_VERSION[[:space:]]*=[[:space:]]*['\"]v?${V}['\"]"
+
+    ok "AD-1 stamps version alignés (v$V)"
+else
+    warn "AD-1 : fichier VERSION absent — garde-fou ignoré (créer en Étape 0)"
+fi
+
+# ============================================
+# Garde-fou 2 — AD-4 : hex en dur modules CSS
+# ============================================
+hex_files="assets/css/booking.css assets/css/manage.css assets/css/admin.css assets/css/home.css assets/css/booking-v3.css"
+hex_hits=""
+for f in $hex_files; do
+    [ -f "$f" ] || continue
+    h=$(grep -nE '#[0-9a-fA-F]{3,6}\b' "$f" || true)
+    [ -n "$h" ] && hex_hits="${hex_hits}\n[$f]\n$h"
+done
+if [ -n "$hex_hits" ]; then
+    printf "Hex en dur dans modules CSS :\n%b\n" "$hex_hits" >&2
+    fail "AD-4 hex en dur"
+fi
+ok "AD-4 zéro hex dans modules CSS"
+
+# ============================================
+# Garde-fou 3 — AD-5 : zéro emoji décoratif dans le DOM
+# ============================================
+emoji_targets="index.php admin/index.php booking/index.php booking/manage.php \
+               confidentialite.php mentions-legales.php \
+               modules/booking/index.php modules/booking/date.php \
+               modules/booking/slot.php modules/booking/confirm.php \
+               modules/booking/process.php modules/booking/success.php \
+               assets/js/admin.js assets/js/booking.js assets/js/manage.js \
+               assets/js/summary-module.js assets/js/home.js assets/js/icons.js"
+emoji_hits=""
+for f in $emoji_targets; do
+    [ -f "$f" ] || continue
+    h=$(grep -nP '[\xF0-\xF4]' "$f" || true)
+    [ -n "$h" ] && emoji_hits="${emoji_hits}\n[$f]\n$h"
+done
+if [ -n "$emoji_hits" ]; then
+    printf "Emojis dans le DOM utilisateur :\n%b\n" "$emoji_hits" >&2
+    fail "AD-5 emoji décoratif détecté"
+fi
+ok "AD-5 zéro emoji dans DOM"
+
+# ============================================
+# Garde-fou 4 — Syntaxe PHP des fichiers staged
+# ============================================
+staged_php=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.php$' || true)
+if [ -n "$staged_php" ]; then
+    for f in $staged_php; do
+        [ -f "$f" ] || continue
+        if ! php -l "$f" > /dev/null 2>&1; then
+            php -l "$f" >&2
+            fail "syntaxe PHP : $f"
+        fi
+    done
+    ok "syntaxe PHP OK ($(echo "$staged_php" | wc -l | tr -d ' ') fichier(s) staged)"
+fi
+
+# ============================================
+# Garde-fou 5 — Lot 4 : tout <?= ... ?> passe par une fonction
+# d'échappement (ou helper qui retourne du HTML déjà safe).
+# ============================================
+# Allowlist : retours déjà échappés par contrat.
+#   - Helpers::escape    → htmlspecialchars(ENT_QUOTES, UTF-8)
+#   - cfgField           → escape ou span.cfg-missing déjà safe
+#   - brandWordmark      → <span class="brand-half-*"> + escape interne
+#   - Icons::svg         → SVG inline (path Lucide), nom validé liste blanche
+#   - pwaHead/pwaRegister → HTML statique (no user input)
+#   - appVersion/cacheVersion → lecture VERSION (scalar contrôlé)
+#   - Helpers::csrfMeta/csrfField → tags HTML déjà construits avec escape
+#   - date(...)          → format printf de date(), scalar contrôlé
+#
+# Cibles : pages avec rendu HTML uniquement (templates publics + admin).
+# Les classes côté serveur (Mailer, GoogleCalendarSync) n'ont pas de
+# <?= ?> et sont hors scope (cf. règle d'or §2.11 sur les emojis emails).
+escape_targets="index.php admin/index.php booking/index.php booking/manage.php \
+                confidentialite.php mentions-legales.php \
+                modules/booking/index.php modules/booking/date.php \
+                modules/booking/slot.php modules/booking/confirm.php \
+                modules/booking/process.php modules/booking/success.php"
+escape_hits=""
+for f in $escape_targets; do
+    [ -f "$f" ] || continue
+    h=$(grep -noE '<\?=[[:space:]]*[A-Za-z_$][A-Za-z0-9_:>$()\[\]'"'"'"-]*' "$f" \
+        | grep -vE '<\?=[[:space:]]*(Helpers::escape|brandWordmark|Icons::svg|Icons::|cfgField|pwaHead|pwaRegister|appVersion|cacheVersion|Helpers::csrfMeta|Helpers::csrfField|date\b)' \
+        || true)
+    [ -n "$h" ] && escape_hits="${escape_hits}\n[$f]\n$h"
+done
+if [ -n "$escape_hits" ]; then
+    printf "Sorties <?= ... ?> non échappées (Lot 4) :\n%b\n" "$escape_hits" >&2
+    fail "Lot 4 échappement : <?= sans helper allowlisté"
+fi
+ok "Lot 4 zéro <?= non échappé"
+
+printf "${GREEN}━━━ Garde-fous VERTS ━━━${NC}\n"
+exit 0
