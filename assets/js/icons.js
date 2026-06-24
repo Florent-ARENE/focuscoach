@@ -17,6 +17,7 @@
 
 const Icons = (function () {
     const LIBRARY = {
+        'arrow-left':     '<path d="M19 12H5"/><path d="m12 5-7 7 7 7"/>',
         'arrow-right':    '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
         'check':          '<polyline points="20 6 9 17 4 12"/>',
         'check-circle':   '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',

@@ -91,7 +91,7 @@ class Mailer
         if (empty($token)) {
             return '';
         }
-        return BASE_URL . "booking/manage.php?token=" . $token;
+        return BASE_URL . "modules/booking/manage.php?token=" . $token;
     }
     
     /**
@@ -174,12 +174,12 @@ class Mailer
         $message .= "📅 Date demandée : $slotDate\n";
         $message .= "🕐 Horaire demandé : $slotTime\n\n";
         $message .= "N'hésitez pas à faire une nouvelle demande sur un autre créneau :\n";
-        $message .= BASE_URL . "booking/\n\n";
+        $message .= BASE_URL . "modules/booking/\n\n";
         $message .= "Cordialement,\n" . self::getAdminName();
-        
+
         self::send($booking['visitor_email'], $subject, $message);
     }
-    
+
     /**
      * Notifier le déplacement d'une réservation (par l'admin)
      */
@@ -273,7 +273,7 @@ class Mailer
         $clientMessage .= "Date : $slotDate\n";
         $clientMessage .= "Horaire : $slotTime\n\n";
         $clientMessage .= "Si vous souhaitez prendre un nouveau rendez-vous, vous pouvez le faire ici :\n";
-        $clientMessage .= BASE_URL . "booking/\n\n";
+        $clientMessage .= BASE_URL . "modules/booking/\n\n";
         $clientMessage .= "Cordialement,\n" . self::getAdminName();
         
         self::send($booking['visitor_email'], $clientSubject, $clientMessage);
