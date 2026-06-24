@@ -10,9 +10,10 @@
  * GET /api/booking-v3-slots.php?service=<id>&month=YYYY-MM
  *     → disponibilités du mois (vue calendrier)
  *
- * L'ancien api/slots.php reste en place tant que le tunnel legacy
- * (booking/index.php) le consomme — bascule programmée à la fin
- * du chantier v3.
+ * Seul endpoint slots du projet depuis la purge 2.6.0 (l'ancien
+ * `api/slots.php` et le tunnel legacy `booking/index.php` ont été
+ * retirés). Consommé par les 3 pages d'index/date/slot du tunnel
+ * v3 sous `modules/booking/`.
  */
 
 require_once __DIR__ . '/../includes/init.php';

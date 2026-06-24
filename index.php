@@ -310,7 +310,7 @@ $cfg = siteConfig();
         </div>
     </section>
 
-    <!-- ═══ 7. COACHING FLASH — appel à réservation (vers le module /booking/) ═══ -->
+    <!-- ═══ 7. COACHING FLASH — appel à réservation (vers /modules/booking/) ═══ -->
     <section id="reservation" class="section section--sand">
         <p class="section-eyebrow">Coaching Flash</p>
         <h2 class="section-title">30 minutes pour changer de regard</h2>

@@ -13,6 +13,92 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.6.2] — 2026-06-17 — Patch régressions purge (Mailer liens email + Icons arrow-left)
+
+Patch déclenché par un audit indépendant qui a installé PHP 8.3 dans
+son conteneur pour produire de vraies preuves [O1] (méthodologie
+AD-10 : « vérifier avant de croire »). L'audit a remonté 11 écarts
+entre la doc et le réel, dont 4 actionnables. Les 2 **régressions
+concrètes de la purge 2.6.0** sont corrigées ici. Les 2 autres
+(`APP_ENV` / clé cron RGPD en placeholder, dette doc structurelle)
+restent au registre pour les checkpoints suivants.
+
+### 🔧 Fix — `Mailer.php` : liens email cassés depuis 2.6.0
+
+`getManageLink()` pointait encore vers
+`BASE_URL . "booking/manage.php?token=..."` (chemin supprimé en
+2.6.0 — `booking/manage.php` est devenu `modules/booking/manage.php`).
+Tout email contenant le bloc « Gérer votre rendez-vous » envoyait
+les clients sur une 404. Concrètement, **5 flux email** étaient
+cassés :
+
+- `notifyNewBooking()` → email visiteur via `buildVisitorNewBookingEmail()`,
+- `notifyConfirmation()`,
+- `notifyReschedule()` (déplacement admin),
+- `notifyClientRescheduleRequest()` (déplacement client),
+- `addManageBlock()` lui-même (helper appelé par les 4 ci-dessus).
+
+Plus, dans le même fichier, 2 liens « prendre un nouveau RDV »
+pointaient encore vers `BASE_URL . "booking/"` (tunnel droppé) :
+
+- `notifyCancellation()` (annulation admin),
+- `notifyClientCancellation()` (annulation client).
+
+Les 3 chemins basculent sur `modules/booking/...`. Vérifié par
+`grep -rn "BASE_URL . \"booking/" *.php` post-patch → 0 résultat.
+
+### 🎨 Fix — `Icons` : `arrow-left` ajoutée aux deux miroirs
+
+Le tunnel v3 utilise `Icons::svg('arrow-left', 20, 'icon-inline')`
+6 fois pour les liens « Retour » (`modules/booking/{index, date,
+slot, confirm, success, manage}.php`). Or `arrow-left` n'existait
+ni dans `classes/Icons.php::LIBRARY` ni dans
+`assets/js/icons.js::LIBRARY` — j'avais inventé le nom au §5 sans
+vérifier la liste blanche. Le validateur de nom retourne `''` sur
+clé inconnue (défense en profondeur, cf. `Icons.php:82`) → 6
+rendus d'icône **vides** côté UX.
+
+Path SVG ajouté aux deux miroirs (avant `arrow-right`, ordre
+alphabétique) — symétrique exact d'`arrow-right` :
+
+```
+'arrow-left'  => '<path d="M19 12H5"/><path d="m12 5-7 7 7 7"/>',
+'arrow-right' => '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+```
+
+Validation **runtime [O1]** : un script PHP qui invoque
+`App\Icons::svg('arrow-left', 20, 'icon-test')` retourne 269 bytes
+de SVG bien formé, et `DOMDocument::loadXML()` accepte le résultat
+sans erreur.
+
+### 🧹 Doc inline — commentaires obsolètes corrigés
+
+Le grep résiduel post-patch a montré 4 commentaires mentionnant
+encore `booking/` hors `modules/`. Tri :
+
+- `index.php:313` HTML comment « (vers le module /booking/) » → corrigé en `(vers /modules/booking/)`. Le `href` lui-même était déjà bon depuis 2.6.0, le commentaire mentait.
+- `api/booking-v3-slots.php:14` docblock qui présentait `api/slots.php` et `booking/index.php` comme cohabitants (alors qu'ils sont supprimés depuis 2.6.0) → reformulé pour dire qu'il s'agit du successeur unique.
+- `config/config.php:55` **conservé** : décrit littéralement le regex `(api|admin|booking)` du calcul `BASE_URL` legacy juste en dessous. Factuel dans son contexte. Disparaîtra avec le câblage strict `BASE_URL` du §6.
+- `classes/Slot.php:91` **conservé** : mémo historique légitime (« avant la purge 2.6.0, ces méthodes cohabitaient ici »). Factuel.
+
+### 📋 Audit — 3 autres écarts remontés mais non patchés ici
+
+Suivant l'arbitrage avec le user :
+
+1. **`APP_ENV='development'`** → l'API admin est ouverte sans auth tant qu'on ne bascule pas en production. La clé du cron RGPD en placeholder est dans la même veine. Sera traité dans un checkpoint **pré-prod** à grouper avec **§9 `health.php`** (qui doit déjà vérifier ces invariants en runtime).
+2. **Sections structurelles de la doc** (`README_TECHNIQUE.md` §2 Arborescence et §4 Carte des fonctions ; `README.md` racine) encore en état pré-2.6.0 — le changelog en tête est à jour mais le corps du document ment. Dette déjà tracée en 2.6.0, **à refondre au passage v3.0.0** (pas avant, ça bouge encore beaucoup d'ici §10).
+3. 7 autres points du `RESUME_focuscoach.md` (non listés par le user) restent non actionnables sans accès au `config.local.php` réel ni aux valeurs live de la table `settings` — l'audit les a explicitement étiquetés `[?]` non levables sans accès live.
+
+### ✅ Tests
+
+- `tests/smoke.php` : **24/24 vert** (logique pure inchangée).
+- `php -l` propre sur `Mailer.php`, `Icons.php`, `index.php`, `api/booking-v3-slots.php` (4 fichiers PHP touchés).
+- Validation runtime ad-hoc d'`Icons::svg('arrow-left')` : retour non vide, XML valide via `DOMDocument::loadXML`.
+- Garde-fous AD-1 / AD-4 / AD-5 / Lot 4 VERTS au commit.
+
+Bump 2.6.1 → 2.6.2 (semver patch : corrections de régressions
+non fonctionnelles, zéro changement d'API).
+
 ## [2.6.1] — 2026-06-17 — `reset-dev.sql` + template purgé / BASE_URL ajouté
 
 Tâche courte de mise en ordre juste avant §6 :
