@@ -152,7 +152,7 @@ $statusIcons = [
                             <?= Icons::svg('circle-x', 18, 'icon-inline') ?>Annuler le rendez-vous
                         </button>
                     </div>
-                    <p class="text-muted text-center" style="margin-top:0.75rem; font-size:0.9rem;">
+                    <p class="text-muted text-center bv3-help-note">
                         Pour déplacer ce rendez-vous, contactez directement <?= Helpers::escape(siteConfig()['admin_email']) ?>.
                     </p>
                     <?php else: ?>

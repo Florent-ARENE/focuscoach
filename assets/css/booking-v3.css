@@ -290,6 +290,14 @@
     margin-top: 2rem;
 }
 
+/* ── Helpers utilitaires (évitent les `style=` décoratifs inline,
+   AD-4 — seuls les `display:none` pilotés par JS sont tolérés en
+   ligne, le reste passe par une classe) ───────────────────────── */
+.bv3-help-note {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+}
+
 /* ── Tablette ─────────────────────────────────────── */
 @media (min-width: 768px) {
     .bv3-steps {

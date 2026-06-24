@@ -13,6 +13,84 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.6.3] — 2026-06-17 — Style décoratif retiré + checklist pré-bascule prod
+
+Suite du tour de table déclenché par l'audit indépendant : les deux
+**nuances honnêtes** du rapport sont traitées ici.
+
+### 🎨 Fix AD-4 — `style="…"` décoratif retiré de `manage.php:155`
+
+Le paragraphe d'aide sous le bouton « Annuler le rendez-vous »
+(« Pour déplacer ce rendez-vous, contactez directement
+{admin_email}. ») portait un `style="margin-top:0.75rem;
+font-size:0.9rem;"` inline, en violation directe de l'AD-4 du
+cadrage (« zéro `style=` décoratif, seuls les `display:none`
+fonctionnels sont tolérés »).
+
+Régression introduite au **checkpoint §5b** : le `style=` venait
+du `booking/manage.php` legacy v2 et a **survécu** à la copie vers
+`modules/booking/manage.php` lors de la purge. Pas attrapé par les
+garde-fous existants — le hook ne flague pas tous les `style=`
+ligne par ligne, seulement les patterns CSS hex et emoji DOM.
+
+Patch :
+
+```diff
+- <p class="text-muted text-center" style="margin-top:0.75rem; font-size:0.9rem;">
++ <p class="text-muted text-center bv3-help-note">
+```
+
+Classe utilitaire `.bv3-help-note` ajoutée à
+`assets/css/booking-v3.css` (section « Helpers utilitaires »).
+Vérif post-patch :
+`grep 'style="' modules/booking/*.php | grep -v display:none` →
+**0 résultat**. Les 3 `style="display:none;"` sur les modales
+(`#delete-data-modal`, `#cancel-modal`, `#success-card`) sont
+l'exception fonctionnelle tolérée par CLAUDE.md §1.2.
+
+### 📄 Checklist pré-bascule prod (`docs/booking-v3-spec.md` §7.bis)
+
+L'audit a remonté à juste titre que **déférer `APP_ENV='development'`
+et la clé cron RGPD au futur `health.php` est insuffisant** : tant
+que `health.php` (checkpoint §9) n'est pas livré, il n'y a aucun
+filet automatique. D'ici §9, le filet doit être **humain et
+explicite**.
+
+Nouvelle section §7.bis ajoutée dans `docs/booking-v3-spec.md` —
+checklist à passer point par point avant la bascule prod publique :
+
+- **Code & config** : `APP_ENV = 'production'` ; `config.local.php`
+  hors web ; `ADMIN_PASSWORD_HASH` ≠ placeholder ; clés Stripe
+  **live** ; `BASE_URL` canonique non dérivée du Host ;
+  `scripts/hash-password.php` supprimé après usage ;
+  `google-credentials.json` protégé si la sync est activée.
+- **BDD** : `mysqldump` complet ; migration 3.0.0 appliquée
+  proprement (10 fenêtres + 10 services) ; tous les
+  `stripe_price_id` saisis pour les services payants ; crons
+  RGPD et expire-holds planifiés.
+- **Serveur** : HTTPS forcé ; cookies session `Secure` + `HttpOnly`
+  + `SameSite=Lax` ; webhook Stripe testé en sandbox avant le
+  basculement live ; PWA `CACHE_VERSION` bumpée.
+
+Verdict : ne pas basculer tant qu'**une seule case** est rouge.
+Une fois toutes vertes : test complet en sandbox Stripe
+(prestation gratuite → confirmation directe ; prestation payante
+→ Checkout → webhook → confirmed + email envoyé une seule fois).
+
+Quand `health.php` arrivera au §9, une partie de ces checks
+basculera en garde-fou runtime ; l'autre restera humaine (secrets,
+`ADMIN_PASSWORD`, backup) car elle ne se prouve pas sans accès
+direct au `config.local.php` réel.
+
+### ✅ Tests
+
+- `tests/smoke.php` : **24/24 vert** (logique pure inchangée).
+- 0 hex en dur dans `booking-v3.css` (grep `#[0-9a-fA-F]{3,6}\b` → vide).
+- 0 `style="…"` décoratif résiduel dans `modules/booking/*.php`.
+- Garde-fous AD-1 / AD-4 / AD-5 / Lot 4 VERTS au commit.
+
+Bump 2.6.2 → 2.6.3 (semver patch : fix AD-4 ponctuel + doc).
+
 ## [2.6.2] — 2026-06-17 — Patch régressions purge (Mailer liens email + Icons arrow-left)
 
 Patch déclenché par un audit indépendant qui a installé PHP 8.3 dans

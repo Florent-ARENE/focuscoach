@@ -412,6 +412,84 @@ RGPD existant (qui ne couvre aujourd'hui que `bookings`) :
 
 ---
 
+## 7.bis Checklist pré-bascule prod (sans `health.php`)
+
+Tant que `health.php` (checkpoint §9 du chantier, AD-8 runtime)
+n'est pas livré, il n'y a **aucun filet automatique** pour
+rattraper les invariants ci-dessous. Cette liste est le **filet
+humain explicite** à passer point par point avant de basculer en
+prod publique — pas seulement à confier au futur `health.php`.
+
+Une fois `health.php` livré (§9), une partie de ces checks bascule
+en garde-fou runtime ; l'autre reste humaine (secrets,
+`ADMIN_PASSWORD`, backup) car elle ne se prouve pas sans accès
+secrets.
+
+### Code & config
+
+- [ ] `config/config.php` : **`APP_ENV = 'production'`** (et donc
+      `APP_DEBUG = false`). En `development`, `APP_DEBUG` expose
+      des messages d'erreur PHP au client — inacceptable en prod.
+- [ ] `config/config.local.php` créé, **non commité**, hors web
+      (vérifier `Require all denied` côté `.htaccess` de `config/`).
+- [ ] `ADMIN_PASSWORD_HASH` = vrai hash bcrypt généré via
+      `scripts/hash-password.php` (jamais le placeholder
+      `$2y$10$xxxx…`).
+- [ ] `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` /
+      `STRIPE_WEBHOOK_SECRET` en valeurs **live**
+      (`sk_live_…`, `pk_live_…`, `whsec_…`), pas test.
+- [ ] `BASE_URL` fixée à l'URL canonique de prod (HTTPS, slash
+      final). Pas dérivée du `Host` (XSS Host-header) — le câblage
+      strict de la lecture est livré au §6.
+- [ ] `scripts/hash-password.php` **supprimé du serveur** après
+      usage (utilitaire one-shot, le bandeau du formulaire le
+      rappelle).
+- [ ] Si `GOOGLE_SYNC_ENABLED = true` :
+      `config/google-credentials.json` en place, hors web,
+      protégé par `.htaccess` (`Require all denied`).
+
+### Base de données
+
+- [ ] **`mysqldump`** complet effectué avant toute migration
+      structurante (cf. §8 ci-dessous).
+- [ ] Migration `sql/migration-3.0.0.sql` appliquée → vérifier les
+      10 fenêtres `availability` (`SELECT day_of_week, COUNT(*)
+      FROM availability GROUP BY day_of_week`) et les 10 services
+      seedés.
+- [ ] Chaque service / package actif à `price_cents > 0` a un
+      `stripe_price_id` non vide et au bon format (`price_…`),
+      saisi en admin après création du Price côté dashboard
+      Stripe. Tant qu'un slot manque, le tunnel refuse de
+      démarrer pour ce service.
+- [ ] Cron RGPD `cron/purge-rgpd.php` planifié dans le panneau
+      OVH avec sa **clé** réelle (pas le placeholder du template).
+- [ ] Cron `cron/expire-holds.php` planifié toutes les 5 min
+      (sera livré au §6 — à ajouter à la checklist au moment de
+      sa création).
+
+### Serveur
+
+- [ ] HTTPS forcé côté `.htaccess` (`RewriteRule … https://…`),
+      cookies de session `Secure` + `HttpOnly` + `SameSite=Lax`
+      vérifiés en runtime (DevTools → Application → Cookies).
+- [ ] Endpoint webhook Stripe (`api/stripe-webhook.php`, livré
+      au §6) déclaré dans le dashboard Stripe → `secret`
+      (whsec_…) recopié dans `STRIPE_WEBHOOK_SECRET`. **Tester
+      avec `stripe listen --forward-to https://…/api/stripe-webhook.php`**
+      en sandbox AVANT de basculer en live.
+- [ ] PWA : `sw.js` rafraîchi (`CACHE_VERSION` bumpée au dernier
+      release) — le hook `bump-version.php` le fait automatiquement.
+
+### Verdict final
+
+Ne pas basculer publiquement tant qu'**une seule case** est
+rouge. Une fois toutes vertes, faire un test complet en sandbox
+Stripe (prestation gratuite → confirmation directe ; prestation
+payante → Checkout → webhook → confirmed + email envoyé une
+seule fois).
+
+---
+
 ## 8. Rollback de la migration 3.0.0
 
 ⚠️ Migration structurante (6 tables + colonnes `bookings`) sur
