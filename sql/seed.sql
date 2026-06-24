@@ -22,6 +22,12 @@
 -- les badges [À compléter dans Paramètres] sur les pages publiques.
 -- ============================================
 
+-- Charset de connexion (cf. schema.sql / CHANGELOG 2.6.7). SANS ce
+-- SET NAMES, un import via un client défaut latin1/cp850 corrompt
+-- toutes les chaînes accentuées (« Préparation » → « PrÃ©paration »,
+-- « — » → « ÔÇö »). À garder en 1ʳᵉ ligne exécutable du fichier.
+SET NAMES utf8mb4;
+
 -- ── Paramètres / identité ──
 INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
 ('site_name',               'Focus Coach'),

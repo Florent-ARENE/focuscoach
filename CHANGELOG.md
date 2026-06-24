@@ -13,6 +13,30 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.6.7] — 2026-06-25 — Fondation : import SQL robuste au charset (`SET NAMES`) + hook fail-closed
+
+Fix de **reproductibilité de fondation** (pas une correction de données
+live : la base locale était déjà saine après re-import utf8mb4). Sans ce
+patch, un simple `mysql < seed.sql` depuis un client au charset par
+défaut latin1/cp850 (cas du client Windows) **re-corrompt** toutes les
+chaînes accentuées à chaque clone — invisible sur les `COUNT(*)`, visible
+seulement sur le contenu.
+
+- **`sql/schema.sql` + `sql/seed.sql`** : `SET NAMES utf8mb4;` ajouté en
+  1ʳᵉ ligne exécutable. Garantit que l'import interprète les octets du
+  fichier en UTF-8 quel que soit le charset par défaut du client.
+  Inoffensif sous phpMyAdmin. **Prouvé `[O1]`** : re-import **sans** le
+  flag `--default-character-set` → `HEX` propre (`é`=C3A9, `—`=E28094)
+  sur `services.name`, `settings.legal_status` **et** les `COMMENT`
+  accentués du schéma. Vérif sur le **contenu** (HEX), pas les comptes.
+- **`scripts/git-hooks/pre-commit`** : garde-fou AD-5 rendu
+  **fail-closed**. Un self-check en tête vérifie que le grep détecte
+  réellement un emoji test (😀) ; si le build PCRE ne compile pas le
+  motif hors-BMP, le commit est **bloqué avec un message clair** au lieu
+  de passer en silence (le `|| true` de la boucle ne peut plus masquer
+  une panne de garde-fou). Test end-to-end : un vrai emoji dans un
+  fichier cible → commit bloqué (EXIT 1). Source + copie installée alignées.
+
 ## [2.6.6] — 2026-06-25 — Outillage : smoke lisible en navigateur + fix faux positif emoji du pre-commit
 
 Deux corrections d'outillage, sans impact fonctionnel sur l'app.

@@ -32,6 +32,13 @@
 --   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 -- USE virtualburenaud;
 
+-- Charset de connexion pour l'import. Garantit que les octets du
+-- fichier sont interprétés en UTF-8 quel que soit le charset par
+-- défaut du client (ex. mysql.exe Windows → cp850 sans ce SET NAMES
+-- → mojibake sur les COMMENT accentués). Inoffensif sous phpMyAdmin
+-- (qui le pose déjà). Cf. CHANGELOG 2.6.7.
+SET NAMES utf8mb4;
+
 
 -- ============================================
 -- TABLE : services — catalogue prestations (CRUD admin)

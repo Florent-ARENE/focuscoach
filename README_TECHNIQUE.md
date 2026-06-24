@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.6.6  
-**Dernière mise à jour:** 25 juin 2026 — v2.6.6 (smoke : rendu HTTP `<pre>`, CLI inchangé)
+**Version:** 2.6.7  
+**Dernière mise à jour:** 25 juin 2026 — v2.6.7 (`SET NAMES utf8mb4` import + hook fail-closed)
 
 ---
 
@@ -23,6 +23,7 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 25/06/2026 | 2.6.7 | 🧱 Fondation | **Import SQL robuste au charset + hook fail-closed.** `SET NAMES utf8mb4;` en 1ʳᵉ ligne de `sql/schema.sql` et `sql/seed.sql` : un import via client défaut latin1/cp850 (mysql.exe Windows) corrompait les chaînes accentuées à chaque clone (invisible sur `COUNT`, visible sur le contenu). Prouvé `[O1]` par re-import **sans flag** → `HEX` propre (`é`=C3A9, `—`=E28094) sur `services.name`, `settings.legal_status` et les `COMMENT` du schéma. Hook : garde-fou AD-5 **fail-closed** (self-check emoji 😀 en tête ; si le grep ne compile pas le motif hors-BMP → blocage avec message clair, plus de fail-open silencieux via `\|\| true`). |
 | 25/06/2026 | 2.6.6 | 🛠️ Outillage | **Fix faux positif emoji du `pre-commit`.** Le garde-fou AD-5 faisait `grep -nP '[\xF0-\xF4]'` : en locale UTF-8 (Git Bash Windows), PCRE interprète `\xF4` comme le codepoint U+00F4 = `ô` → faux positifs sur « Rôle », « contrôle », « côté »… bloquant chaque commit français. Remplacé par `[\x{10000}-\x{10FFFF}]` (hors-BMP = 4 octets UTF-8 = emoji modernes), robuste à la locale. Source + copie installée alignés. |
 | 25/06/2026 | 2.6.6 | 🛠️ Outillage | **`tests/smoke.php` lisible en navigateur.** En HTTP, sortie enveloppée `<!doctype html> … <pre>` + `Content-Type: text/html; charset=utf-8` → les retours à la ligne du corpus sont préservés (avant : pavé sur une seule ligne, le HTML écrasant les `\n`). **Gardé par `PHP_SAPI`** : en CLI, sortie strictement inchangée (mêmes octets, exit codes 0/1) → aucun impact CI/perf. **Zéro CSS ajouté** (pas de `<style>`, pas de `main.css`) — on ne tire pas le design system de l'app dans un outil de test (§2.2 / AD-4). Le `Warning: Constant BASE_URL already defined` reste le signal pré-§6 connu (garde manquante `config/config.php:60`). Smoke 24/24 vert. |
 | 17/06/2026 | 2.6.5 | 📄 AD-7 / AD-10 | **Trou laissé par 2.6.4 corrigé** — l'audit indépendant a remonté à juste titre que `README_TECHNIQUE.md` gardait des sections **non neutralisées** qui décrivaient du code mort comme vivant, hors des 2 encarts posés en 2.6.4. Mon grep post-2.6.4 était scopé `README.md` seulement, j'aurais dû le refaire sur les deux fichiers. **3 zones traitées ici** : (1) **§ Relations entre fichiers** (le diagramme ASCII `booking/index.php → api/booking.php → calendar-module.js → api/slots.php` était précisément l'artefact le plus trompeur pour une session §6) → **3ᵉ encart** d'obsolescence cohérent avec les 2 autres ; (2) **§ Chargement CSS par page** → corrigée directement (table petite et stable) — `booking/index.php` retiré, `booking/manage.php` → `modules/booking/manage.php`, `booking.css` → `booking-v3.css`, ajout des 5 nouvelles pages v3 (`index.php`/`date.php`/`slot.php`/`confirm.php`/`success.php`) ; (3) **exemple `brandWordmark()`** ligne 518 — `<span class="accent">` (classe supprimée en 2.4.2) → `.brand-half-a` / `.brand-half-b` avec explication du split par milieu de caractères. |
