@@ -13,6 +13,115 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.6.4] — 2026-06-17 — Neutralisation des sections doc obsolètes
+
+Patch déclenché par la proposition « juste milieu » de l'audit
+indépendant, **validée** : neutraliser le mensonge dans la doc
+structurelle sans gâcher le travail de refonte qui sera fait au
+§10 (quand les §6-§9 auront stabilisé l'arborescence et les
+méthodes du chantier Booking v3).
+
+L'audit a correctement séparé deux choses qui se ressemblaient
+dans le rapport initial :
+
+- **Les tables de changelog** qui citent `booking/`,
+  `api/slots.php`, `getAvailableSlots`, etc. → **factuelles dans
+  leur contexte historique**, on les garde (AD-7 : l'historique
+  ne doit pas être réécrit).
+- **Les sections d'existant** (« Arborescence », « Carte des
+  fonctions », etc.) → **mentent au présent**, à neutraliser.
+
+### 📄 Encarts d'obsolescence — `README_TECHNIQUE.md`
+
+Deux sections neutralisées par un encart standardisé :
+
+- **§ Arborescence complète** — listait `booking/`, `api/slots.php`,
+  `api/booking.php`, `assets/css/booking.css`, `assets/js/booking.js`,
+  `assets/js/calendar-module.js` (supprimés en 2.6.0) ; ignorait
+  `modules/booking/`, `api/booking-v3-slots.php`,
+  `assets/css/booking-v3.css`, `sql/reset-dev.sql`,
+  `scripts/git-hooks/`, `cadrage/`, `docs/booking-v3-spec.md`.
+- **§ Carte des fonctions** — listait `Slot::getAvailableSlots`,
+  `Slot::getAvailableDates`, `CalendarModule (JS)`, `create()` mode
+  legacy, `service_label` (tous supprimés en 2.6.0) ; ignorait
+  `Slot::computeCandidates`, `resolveDayWindows`,
+  `getActiveBookingsForDate`, `computeSlotsForService`,
+  `getServiceAvailableDates`, `getServiceAvailabilityForMonth`,
+  `getAvailabilityByDay`, le mode v3 de `Booking::create()`, le
+  `LEFT JOIN services` dans `getByToken`/`getById`/`getAll`.
+
+L'encart pointe explicitement vers les 3 sources de vérité d'ici
+la régénération v3.0.0 : le code réel, `CHANGELOG.md`,
+`docs/booking-v3-spec.md`.
+
+### 📄 Encarts d'obsolescence — `README.md` racine
+
+Cinq sections neutralisées par le même encart (script Python en
+heredoc pour patcher en une passe, sans risque de désynchroniser
+les bornes ligne à ligne) :
+
+1. **§ Arborescence des fichiers**
+2. **§ Relations entre fichiers** (diagramme de flux + dépendances
+   des classes)
+3. **§ Carte des fonctions**
+4. **§ Utilisation** (interface `/booking/` legacy)
+5. **§ API Reference** (`/api/slots.php`, `/api/booking.php`
+   supprimés)
+
+Les sections **§ Présentation**, **§ Changelog**, **§ Installation**,
+**§ Configuration**, **§ Tutoriel Google Service Account** et
+**§ Dépannage** restent intactes — elles décrivent des aspects
+encore valides ou strictement historiques.
+
+### 🔧 Fix précis — table des constantes & exemple Dépannage
+
+Trois mensonges précis subsistaient hors encarts :
+
+- Table `config/config.php` (`README.md` §Configuration) listait
+  `BOOKING_DURATION` (jamais existée dans le code — vérifié par
+  `grep -rn BOOKING_DURATION` → 0 hit hors doc), et
+  `BOOKING_ADVANCE_MIN_HOURS` / `BOOKING_ADVANCE_MAX_DAYS`
+  (supprimées en 2.6.0). Remplacées par les vraies constantes v3 :
+  `BOOKING_STEP` (15), `MIN_NOTICE_MIN` (120), `MAX_HORIZON_DAYS` (60).
+  Note explicite ajoutée sous la table.
+- Section Dépannage : exemple `/api/slots.php?date=2026-02-15`
+  (endpoint supprimé) → `/api/booking-v3-slots.php?service=<id>&date=YYYY-MM-DD`.
+- Même endroit : « Vérifiez les `WORKING_HOURS` dans `config.php` »
+  (constante qui n'a jamais existé) → « Vérifier les fenêtres
+  d'ouverture dans la table `availability` ».
+
+### Stats — `README.md`
+
+- Avant : **922 lignes**, ~310 décrivaient du code mort.
+- Après : **612 lignes**, mensonge structurel neutralisé.
+
+### Vérif post-patch
+
+```
+grep -nE 'getAvailableSlots|getAvailableDates|/api/slots\.|
+  /api/booking\.php|booking/index|booking/manage|calendar-module|
+  SERVICE_TYPES|BOOKING_ADVANCE|available_slots|CalendarModule|
+  BOOKING_DURATION|SLOT_DURATION|WORKING_HOURS' README.md
+  | grep -v 'changelog historique ni encart'
+```
+
+→ **0 résultat**.
+
+Smoke 24/24 vert (logique pure inchangée).
+
+### Pourquoi 2.6.4 maintenant et pas après §6
+
+L'auditeur a raison sur le timing : **§6 est précisément le
+moment où une session va consommer le plus l'arborescence et la
+carte des fonctions** comme source de vérité du « qui existe ».
+Laisser ces sections mentir au démarrage du chantier Stripe
+maximise le risque qu'un agent (ou un humain) parte d'une carte
+fausse — exactement le piège AD-10. Patch doc-only, zéro risque,
+fait avant que §6 ne s'appuie dessus.
+
+Bump 2.6.3 → 2.6.4 (semver patch : doc-only, zéro touche au
+code applicatif).
+
 ## [2.6.3] — 2026-06-17 — Style décoratif retiré + checklist pré-bascule prod
 
 Suite du tour de table déclenché par l'audit indépendant : les deux

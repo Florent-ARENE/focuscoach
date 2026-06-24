@@ -1,6 +1,6 @@
 # 📅 Focus Coach — Système de Réservation
 
-**Version:** 2.6.3
+**Version:** 2.6.4
 **Date:** 16 juin 2026
 **Auteur:** Développé avec Claude AI
 **Stack:** PHP 7.4+ / MySQL / JavaScript vanilla / **PWA installable**
@@ -241,277 +241,70 @@ Système de réservation de rendez-vous complet comprenant :
 
 ## 📁 Arborescence des fichiers
 
-```
-renaud-booking/
-│
-├── 📄 index.html                    # Site vitrine (page d'accueil)
-├── 📄 confidentialite.php           # 🔒 Politique de confidentialité (RGPD art. 13)
-├── 📄 mentions-legales.php          # 🔒 Mentions légales (LCEN art. 6)
-├── 📄 .htaccess                     # Règles Apache (UTF-8, sécurité)
-├── 📄 README.md                     # Documentation utilisateur
-├── 📄 README_TECHNIQUE.md           # Documentation technique (développeur/IA)
-│
-├── 📁 config/                       # Configuration
-│   ├── 📄 config.php                # Config principale (constantes)
-│   └── 📄 config.local.php          # Config locale (identifiants BDD) ⚠️ jamais écrasé
-│
-├── 📁 classes/                      # Classes PHP (namespace App\)
-│   ├── 📄 Database.php              # Singleton PDO
-│   ├── 📄 Booking.php               # Gestion des réservations
-│   ├── 📄 Slot.php                  # Gestion des créneaux
-│   ├── 📄 Settings.php              # Paramètres en BDD
-│   ├── 📄 Mailer.php                # Envoi d'emails
-│   ├── 📄 Helpers.php               # Fonctions utilitaires
-│   └── 📄 GoogleCalendarSync.php    # Sync Google Calendar (standalone)
-│
-├── 📁 includes/                     # Fichiers inclus
-│   └── 📄 init.php                  # Bootstrap (autoloader, session)
-│
-├── 📁 api/                          # Endpoints API REST
-│   ├── 📄 slots.php                 # GET créneaux disponibles
-│   ├── 📄 booking.php               # POST nouvelle réservation
-│   ├── 📄 admin.php                 # API admin (CRUD réservations)
-│   ├── 📄 manage.php                # API gestion client (espace perso)
-│   ├── 📄 rgpd-delete-data.php      # 🔒 Logique effacement RGPD (inclus par manage.php)
-│   ├── 📄 test-email.php            # Diagnostic envoi emails admin
-│   ├── 📄 test-settings.php         # Test configuration BDD
-│   ├── 📄 test-admin.php            # Test classes admin
-│   ├── 📄 test-gcal.php             # Test Google Calendar
-│   └── 📄 test-post.php             # Test sauvegarde settings
-│
-├── 📁 booking/                      # Module réservation visiteur
-│   ├── 📄 index.php                 # Interface de réservation (+ mention RGPD)
-│   └── 📄 manage.php                # Espace client (+ bouton suppression données)
-│
-├── 📁 admin/                        # Module administration
-│   └── 📄 index.php                 # Interface admin
-│
-├── 📁 assets/                       # Ressources statiques
-│   ├── 📁 css/
-│   │   ├── 📄 main.css              # Styles communs (design system)
-│   │   ├── 📄 booking.css           # Styles réservation
-│   │   ├── 📄 manage.css            # Styles espace client
-│   │   └── 📄 admin.css             # Styles admin
-│   └── 📁 js/
-│       ├── 📄 calendar-module.js    # Module calendrier partagé
-│       ├── 📄 booking.js            # JS réservation
-│       ├── 📄 manage.js             # JS espace client (+ events RGPD)
-│       └── 📄 admin.js              # JS admin
-│
-├── 📁 cron/                         # 🔒 Tâches planifiées RGPD
-│   ├── 📄 purge-rgpd.php            # Purge automatique (3 niveaux)
-│   └── 📄 .htaccess                 # Protection accès direct
-│
-├── 📁 sql/                          # Scripts SQL
-│   ├── 📄 database.sql              # Création des tables (référence)
-│   ├── 📄 migration-2.2.0.sql       # Migration : ajout manage_token
-│   ├── 📄 migration-rgpd.sql        # 🔒 Migration : tables conformité RGPD
-│   ├── 📄 migration-2.3.0.sql       # ⚙️ Migration : nouvelles clés settings
-│   └── 📄 fix-html-encoding.sql     # Correction encodage HTML en BDD
-│
-└── 📁 docs/                         # 🔒 Documentation RGPD (hors site public)
-    ├── 📄 registre-des-traitements.md   # Registre obligatoire art. 30
-    └── 📄 test-interet-legitime.md      # Justification collecte IP/UA
-```
+> ⚠️ **Section obsolète depuis 2.6.0 — régénérée au §10 du chantier Booking v3.**
+>
+> Cette section décrivait l'état pré-purge (tunnel v2, `booking/`,
+> `api/slots.php`, `api/booking.php`, `assets/css/booking.css`,
+> `assets/js/booking.js`, `assets/js/calendar-module.js`, table
+> `available_slots`, ENUM `service_type`, méthodes legacy
+> `Slot::getAvailableSlots`/`getAvailableDates`, helper JS
+> `CalendarModule`…). Tous ces éléments ont été retirés en 2.6.0.
+>
+> Le chantier Booking v3 continue : §6 ajoutera
+> `api/stripe-webhook.php` + `cron/expire-holds.php`, §7
+> `modules/booking/pack.php`, §9 `health.php`. Reconstruire le
+> détail maintenant serait jeté avant la livraison v3.0.0.
+>
+> **Sources de vérité d'ici là** : le code réel,
+> `CHANGELOG.md` (historique daté des ajouts/suppressions depuis
+> la 2.4.x) et `docs/booking-v3-spec.md` (modèle, modules ajoutés,
+> état d'avancement).
 
 ---
 
 ## 🔗 Relations entre fichiers
 
-### Diagramme de flux
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         VISITEUR                                │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  index.html (Site vitrine)                                      │
-│  └── Lien "Prendre RDV" → booking/index.php                     │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  booking/index.php                                              │
-│  ├── includes/init.php (bootstrap)                              │
-│  ├── assets/css/booking.css                                     │
-│  └── assets/js/booking.js                                       │
-│       ├── GET api/slots.php → Slot.php                          │
-│       └── POST api/booking.php → Booking.php                    │
-│                                   ├── Mailer.php (emails)       │
-│                                   └── GoogleCalendarSync.php    │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                       ADMINISTRATEUR                            │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  admin/index.php                                                │
-│  ├── includes/init.php (bootstrap)                              │
-│  ├── assets/css/admin.css                                       │
-│  └── assets/js/admin.js                                         │
-│       └── api/admin.php                                         │
-│            ├── Booking.php (CRUD)                               │
-│            ├── Slot.php (créneaux)                              │
-│            ├── Settings.php (paramètres)                        │
-│            ├── Mailer.php (notifications)                       │
-│            └── GoogleCalendarSync.php                           │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                    CLIENT (espace personnel)                     │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  booking/manage.php                                             │
-│  ├── includes/init.php (bootstrap)                              │
-│  ├── assets/css/manage.css                                      │
-│  └── assets/js/manage.js                                        │
-│       ├── GET  api/manage.php?token=xxx → Booking.php           │
-│       ├── POST api/manage.php?action=reschedule                 │
-│       ├── POST api/manage.php?action=cancel                     │
-│       └── POST api/manage.php?action=delete_data  🔒 RGPD      │
-│                └── require api/rgpd-delete-data.php             │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                    CRON (tâches planifiées)  🔒                  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  cron/purge-rgpd.php                                            │
-│  ├── includes/init.php (bootstrap)                              │
-│  └── Database.php (requêtes directes)                           │
-│       ├── Étape 1 : Troncature IP > 90 jours                   │
-│       ├── Étape 2 : Suppression IP/UA > 180 jours              │
-│       └── Étape 3 : Suppression RDV > 365 jours                │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Dépendances des classes
-
-```
-┌──────────────────┐
-│   init.php       │ ← Point d'entrée commun
-├──────────────────┤
-│ - Session        │
-│ - Autoloader     │
-│ - config.php     │
-│ - config.local   │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐     ┌──────────────────┐
-│   Database.php   │◄────│   Toutes les     │
-│   (Singleton)    │     │   classes        │
-└──────────────────┘     └──────────────────┘
-         │
-         ▼
-┌──────────────────┐
-│   Settings.php   │◄──── Stockage paramètres
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────────────────────────────┐
-│         GoogleCalendarSync.php           │
-│  ├── Settings (pour calendar ID)         │
-│  ├── openssl (signature JWT)             │
-│  └── curl (appels API Google)            │
-└──────────────────────────────────────────┘
-```
+> ⚠️ **Section obsolète depuis 2.6.0 — régénérée au §10 du chantier Booking v3.**
+>
+> Cette section décrivait l'état pré-purge (tunnel v2, `booking/`,
+> `api/slots.php`, `api/booking.php`, `assets/css/booking.css`,
+> `assets/js/booking.js`, `assets/js/calendar-module.js`, table
+> `available_slots`, ENUM `service_type`, méthodes legacy
+> `Slot::getAvailableSlots`/`getAvailableDates`, helper JS
+> `CalendarModule`…). Tous ces éléments ont été retirés en 2.6.0.
+>
+> Le chantier Booking v3 continue : §6 ajoutera
+> `api/stripe-webhook.php` + `cron/expire-holds.php`, §7
+> `modules/booking/pack.php`, §9 `health.php`. Reconstruire le
+> détail maintenant serait jeté avant la livraison v3.0.0.
+>
+> **Sources de vérité d'ici là** : le code réel,
+> `CHANGELOG.md` (historique daté des ajouts/suppressions depuis
+> la 2.4.x) et `docs/booking-v3-spec.md` (modèle, modules ajoutés,
+> état d'avancement).
 
 ---
 
 ## 🗺️ Carte des fonctions
 
-### Database.php
-
-| Méthode | Description | Retour |
-|---------|-------------|--------|
-| `getInstance()` | Obtenir l'instance PDO (singleton) | `PDO` |
-
-### Booking.php
-
-| Méthode | Description | Retour |
-|---------|-------------|--------|
-| `create(array $data)` | Créer une réservation | `['success' => bool, 'message' => string, 'booking_id' => int]` |
-| `getById(int $id)` | Récupérer par ID | `?array` |
-| `getAll(array $filters)` | Liste avec filtres | `array` |
-| `updateStatus(int $id, string $status, ?string $notes)` | Changer le statut | `['success' => bool, 'message' => string]` |
-| `updateGoogleEventId(int $id, string $eventId)` | Stocker l'ID Google | `bool` |
-| `delete(int $id)` | Supprimer | `bool` |
-| `isSlotTaken(string $date, string $time)` | Vérifier si créneau pris | `bool` |
-| `isSlotAvailable(string $date, string $time, ?int $excludeId)` | Vérifier disponibilité (avec exclusion) | `bool` |
-| `reschedule(int $id, string $newDate, string $newTimeStart, string $newTimeEnd)` | Déplacer une réservation (admin) | `['success' => bool, 'message' => string, ...]` |
-| `getByToken(string $token)` | Récupérer par token client | `?array` |
-| `clientReschedule(string $token, string $newDate, ...)` | Déplacement par client (repasse en pending) | `['success' => bool, ...]` |
-| `clientCancel(string $token)` | Annulation par client | `['success' => bool, ...]` |
-| `getStats()` | Statistiques admin | `array` |
-| `getPublicStats()` | Statistiques publiques (visiteurs) | `array` |
-| `getBookingsByDateRange(string $start, string $end)` | Stats par date pour calendrier | `array` |
-
-### Slot.php
-
-| Méthode | Description | Retour |
-|---------|-------------|--------|
-| `getAvailableSlots(string $date)` | Créneaux pour une date | `array` |
-| `getAvailableDates(?int $days)` | Dates disponibles | `array` |
-| `isDateBlocked(string $date)` | Date bloquée ? | `bool` |
-| `blockDate(string $date, ?string $reason)` | Bloquer une date | `bool` |
-| `unblockDate(string $date)` | Débloquer | `bool` |
-| `getBlockedDates()` | Liste dates bloquées | `array` |
-
-### Settings.php
-
-| Méthode | Description | Retour |
-|---------|-------------|--------|
-| `get(string $key, $default)` | Lire un paramètre | `mixed` |
-| `set(string $key, $value)` | Écrire un paramètre | `bool` |
-| `getAll()` | Tous les paramètres | `array` |
-| `setMultiple(array $settings)` | Écrire plusieurs | `bool` |
-| `isGoogleCalendarEnabled()` | Sync activée ? | `bool` |
-| `getGoogleCalendarId()` | ID calendrier | `string` |
-
-### Mailer.php
-
-| Méthode | Description | Retour |
-|---------|-------------|--------|
-| `notifyNewBooking(array $booking)` | Email nouvelle demande (avec lien gestion) | `bool` |
-| `notifyConfirmation(array $booking)` | Email confirmation (avec lien gestion) | `bool` |
-| `notifyCancellation(array $booking)` | Email annulation (par admin) | `bool` |
-| `notifyReschedule(array $oldBooking, array $newBooking)` | Email déplacement (par admin) | `bool` |
-| `notifyClientRescheduleRequest(array $booking, ...)` | Email demande déplacement (par client) | `bool` |
-| `notifyClientCancellation(array $booking)` | Email annulation (par client) | `bool` |
-
-### GoogleCalendarSync.php
-
-| Méthode | Description | Retour |
-|---------|-------------|--------|
-| `isEnabled()` | Sync active et fonctionnelle ? | `bool` |
-| `getCalendarId()` | ID du calendrier | `string` |
-| `createEvent(array $booking)` | Créer événement | `?string` (event ID) |
-| `updateEvent(string $eventId, array $booking)` | Modifier événement | `bool` |
-| `deleteEvent(string $eventId)` | Supprimer événement | `bool` |
-| `testConnection()` | Tester l'accès | `['success' => bool, ...]` |
-
-### Helpers.php
-
-| Méthode | Description | Retour |
-|---------|-------------|--------|
-| `sanitize(string $input)` | Nettoyer entrée | `string` |
-| `isValidEmail(string $email)` | Valider email | `bool` |
-| `isValidDate(string $date)` | Valider date | `bool` |
-| `isValidTime(string $time)` | Valider heure | `bool` |
-| `formatDateFr(string $date)` | Formater en français | `string` |
-| `jsonResponse(array $data, int $code)` | Réponse JSON | `void` |
-| `getJsonInput()` | Lire JSON POST | `array` |
-| `generateCsrfToken()` | Générer token CSRF | `string` |
-| `verifyCsrfToken(string $token)` | Vérifier token | `bool` |
+> ⚠️ **Section obsolète depuis 2.6.0 — régénérée au §10 du chantier Booking v3.**
+>
+> Cette section décrivait l'état pré-purge (tunnel v2, `booking/`,
+> `api/slots.php`, `api/booking.php`, `assets/css/booking.css`,
+> `assets/js/booking.js`, `assets/js/calendar-module.js`, table
+> `available_slots`, ENUM `service_type`, méthodes legacy
+> `Slot::getAvailableSlots`/`getAvailableDates`, helper JS
+> `CalendarModule`…). Tous ces éléments ont été retirés en 2.6.0.
+>
+> Le chantier Booking v3 continue : §6 ajoutera
+> `api/stripe-webhook.php` + `cron/expire-holds.php`, §7
+> `modules/booking/pack.php`, §9 `health.php`. Reconstruire le
+> détail maintenant serait jeté avant la livraison v3.0.0.
+>
+> **Sources de vérité d'ici là** : le code réel,
+> `CHANGELOG.md` (historique daté des ajouts/suppressions depuis
+> la 2.4.x) et `docs/booking-v3-spec.md` (modèle, modules ajoutés,
+> état d'avancement).
 
 ---
 
@@ -556,14 +349,19 @@ renaud-booking/
 
 | Constante | Description | Valeur par défaut |
 |-----------|-------------|-------------------|
-| `BASE_URL` | URL de base du site | Auto-détecté |
+| `BASE_URL` | URL canonique du site (lue depuis `config.local.php`) | À fixer par environnement |
 | `TIMEZONE` | Fuseau horaire | `Europe/Paris` |
-| `APP_DEBUG` | Mode debug | `true` |
+| `APP_DEBUG` | Mode debug (dépend de `APP_ENV`) | `true` en `development` |
 | `EMAIL_ENABLED` | Activer emails | `true` |
-| `ADMIN_EMAIL` | Email admin | `admin@example.com` |
-| `BOOKING_DURATION` | Durée RDV (minutes) | `30` |
-| `BOOKING_ADVANCE_MIN_HOURS` | Délai minimum | `24` |
-| `BOOKING_ADVANCE_MAX_DAYS` | Délai maximum | `60` |
+| `ADMIN_EMAIL` | Email admin (fallback `siteConfig()`) | `admin@example.com` |
+| `BOOKING_STEP` | Pas de calcul des créneaux (min) | `15` |
+| `MIN_NOTICE_MIN` | Délai minimum avant un créneau sur J (min) | `120` |
+| `MAX_HORIZON_DAYS` | Horizon de réservation (jours) | `60` |
+
+> Les constantes legacy `SLOT_DURATION`, `BOOKING_ADVANCE_MIN_HOURS`,
+> `BOOKING_ADVANCE_MAX_DAYS` et `SERVICE_TYPES` ont été retirées en
+> 2.6.0 (purge avant §6). Les durées et tarifs vivent désormais en
+> BDD dans la table `services` (cf. `docs/booking-v3-spec.md`).
 
 ### Fichier config/config.local.php
 
@@ -724,161 +522,47 @@ Un Service Account permet à votre application d'accéder à l'API Google Calend
 
 ## 📖 Utilisation
 
-### Interface visiteur (/booking/)
-
-1. Sélectionner une date dans le calendrier
-2. Choisir un créneau horaire disponible
-3. Remplir le formulaire (nom, email, message...)
-4. Confirmer la demande
-5. Recevoir un email de confirmation
-
-### Interface admin (/admin/)
-
-**Connexion** : Mot de passe défini dans `config.local.php`
-
-**Onglet Réservations** :
-- Liste des réservations avec filtres (statut, date)
-- Actions : Confirmer, Annuler, Déplacer, Supprimer
-- Déplacement : Choisir nouvelle date/heure parmi créneaux disponibles
-- Suppression possible même pour les RDV confirmés
-- Détails complets de chaque réservation
-
-**Onglet Paramètres** :
-- Nom du site
-- Email administrateur
-- Configuration Google Calendar
+> ⚠️ **Section obsolète depuis 2.6.0 — régénérée au §10 du chantier Booking v3.**
+>
+> Cette section décrivait l'état pré-purge (tunnel v2, `booking/`,
+> `api/slots.php`, `api/booking.php`, `assets/css/booking.css`,
+> `assets/js/booking.js`, `assets/js/calendar-module.js`, table
+> `available_slots`, ENUM `service_type`, méthodes legacy
+> `Slot::getAvailableSlots`/`getAvailableDates`, helper JS
+> `CalendarModule`…). Tous ces éléments ont été retirés en 2.6.0.
+>
+> Le chantier Booking v3 continue : §6 ajoutera
+> `api/stripe-webhook.php` + `cron/expire-holds.php`, §7
+> `modules/booking/pack.php`, §9 `health.php`. Reconstruire le
+> détail maintenant serait jeté avant la livraison v3.0.0.
+>
+> **Sources de vérité d'ici là** : le code réel,
+> `CHANGELOG.md` (historique daté des ajouts/suppressions depuis
+> la 2.4.x) et `docs/booking-v3-spec.md` (modèle, modules ajoutés,
+> état d'avancement).
 
 ---
 
 ## 📡 API Reference
 
-### GET /api/slots.php
-
-Récupérer les créneaux disponibles.
-
-```bash
-# Créneaux pour une date
-GET /api/slots.php?date=2026-02-15
-
-# Dates disponibles pour un mois
-GET /api/slots.php?month=2026-02
-
-# Statistiques publiques
-GET /api/slots.php?stats=1
-```
-
-**Réponse stats** :
-```json
-{
-  "stats": {
-    "confirmed_this_week": 3,
-    "pending": 2,
-    "confirmed_this_month": 8
-  }
-}
-```
-
-### POST /api/booking.php
-
-Créer une réservation.
-
-```json
-{
-  "visitor_name": "Jean Dupont",
-  "visitor_email": "jean@example.com",
-  "visitor_phone": "0612345678",
-  "visitor_organization": "Ma Société",
-  "slot_date": "2026-02-15",
-  "slot_time_start": "10:00",
-  "slot_time_end": "10:30",
-  "service_type": "diagnostic",
-  "subject": "Audit initial",
-  "message": "Message optionnel"
-}
-```
-
-### API Admin /api/admin.php
-
-| Action | Méthode | Description |
-|--------|---------|-------------|
-| `?action=list` | GET | Liste des réservations |
-| `?action=get&id=X` | GET | Détails d'une réservation |
-| `?action=update` | POST | Modifier statut |
-| `?action=delete` | POST | Supprimer |
-| `?action=reschedule` | POST | Déplacer une réservation |
-| `?action=stats` | GET | Statistiques |
-| `?action=settings` | GET/POST | Paramètres |
-
-**POST /api/admin.php?action=reschedule** :
-```json
-{
-  "id": 123,
-  "new_date": "2026-02-20",
-  "new_time_start": "14:00",
-  "new_time_end": "14:30"
-}
-```
-
-### API Client /api/manage.php
-
-API pour l'espace client (gestion autonome du RDV).
-
-| Action | Méthode | Description |
-|--------|---------|-------------|
-| `?token=xxx` | GET | Récupérer les détails du RDV |
-| `?action=reschedule` | POST | Demander un déplacement (repasse en pending) |
-| `?action=cancel` | POST | Annuler le RDV |
-| `?action=delete_data` | POST | 🔒 Supprimer les données personnelles (RGPD art. 17) |
-
-**GET /api/manage.php?token=xxx** :
-```json
-{
-  "success": true,
-  "booking": {
-    "id": 123,
-    "visitor_name": "Jean Dupont",
-    "slot_date": "2026-02-15",
-    "slot_time_start": "10:00:00",
-    "status": "confirmed",
-    "formatted_date": "Samedi 15 février 2026",
-    ...
-  }
-}
-```
-
-**POST /api/manage.php?action=reschedule** :
-```json
-{
-  "token": "a3f8b2c1d4e5...",
-  "new_date": "2026-02-20",
-  "new_time_start": "14:00",
-  "new_time_end": "14:30"
-}
-```
-
-**POST /api/manage.php?action=cancel** :
-```json
-{
-  "token": "a3f8b2c1d4e5..."
-}
-```
-
-**POST /api/manage.php?action=delete_data** 🔒 :
-```json
-{
-  "token": "a3f8b2c1d4e5...",
-  "confirm_email": "jean@example.com"
-}
-```
-Réponse :
-```json
-{
-  "success": true,
-  "message": "Vos données personnelles ont été supprimées.",
-  "deleted_fields": ["nom", "email", "téléphone", "organisation", "objet", "message", "adresse IP"],
-  "retained_info": "Seules les données anonymisées (date, type de service) sont conservées."
-}
-```
+> ⚠️ **Section obsolète depuis 2.6.0 — régénérée au §10 du chantier Booking v3.**
+>
+> Cette section décrivait l'état pré-purge (tunnel v2, `booking/`,
+> `api/slots.php`, `api/booking.php`, `assets/css/booking.css`,
+> `assets/js/booking.js`, `assets/js/calendar-module.js`, table
+> `available_slots`, ENUM `service_type`, méthodes legacy
+> `Slot::getAvailableSlots`/`getAvailableDates`, helper JS
+> `CalendarModule`…). Tous ces éléments ont été retirés en 2.6.0.
+>
+> Le chantier Booking v3 continue : §6 ajoutera
+> `api/stripe-webhook.php` + `cron/expire-holds.php`, §7
+> `modules/booking/pack.php`, §9 `health.php`. Reconstruire le
+> détail maintenant serait jeté avant la livraison v3.0.0.
+>
+> **Sources de vérité d'ici là** : le code réel,
+> `CHANGELOG.md` (historique daté des ajouts/suppressions depuis
+> la 2.4.x) et `docs/booking-v3-spec.md` (modèle, modules ajoutés,
+> état d'avancement).
 
 ---
 
@@ -907,9 +591,9 @@ Réponse :
 
 ### Le calendrier n'affiche pas les créneaux
 
-1. Vérifiez les `WORKING_HOURS` dans `config.php`
-2. Vérifiez que la date n'est pas bloquée
-3. Testez avec `/api/slots.php?date=2026-02-15`
+1. Vérifier les fenêtres d'ouverture dans la table `availability` (planning hebdo récurrent depuis 2.6.0)
+2. Vérifier que la date n'est pas dans `blocked_dates` ni écrasée par `availability_exceptions`
+3. Tester avec `/api/booking-v3-slots.php?service=<id>&date=YYYY-MM-DD`
 
 ### Problème d'encodage (accents)
 
