@@ -13,6 +13,110 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.6.5] — 2026-06-17 — Trou doc 2.6.4 fermé (Relations + CSS + brandWordmark)
+
+Patch déclenché par un nouveau passage de l'audit indépendant qui
+a re-classé chaque hit du grep résiduel et trouvé que **mon
+contrôle post-2.6.4 était scopé `README.md` seulement**. L'auditeur
+a re-grep `README_TECHNIQUE.md` et trouvé 3 zones **non
+neutralisées** qui décrivaient du code mort comme vivant :
+
+1. **`## 🔗 Relations entre fichiers`** — diagramme ASCII pré-purge
+   (`booking/index.php → api/booking.php → calendar-module.js →
+   api/slots.php`) + table de dépendances qui pointait vers les
+   mêmes fichiers supprimés.
+2. **`### Chargement CSS par page`** — table avec `booking/index.php
+   | main.css + booking.css` et `booking/manage.php | … booking.css`,
+   alors que ces chemins n'existent plus.
+3. **Exemple `brandWordmark()`** ligne 518 — utilisait encore
+   `<span class="accent">` (classe supprimée en 2.4.2 quand le
+   wordmark est passé au split bicolore par milieu de caractères).
+
+L'auditeur a explicitement reconnu que son périmètre initial
+n'incluait pas « Relations entre fichiers » et « Chargement CSS »,
+donc que mon 2.6.4 a fait exactement ce qui était nommé — le
+sous-dimensionnement vient de son audit. Mais c'est aussi mon
+erreur de ne pas avoir re-fait mon grep sur les **deux** fichiers
+de doc. Je le corrige ici.
+
+### 📄 3ᵉ encart d'obsolescence — `## 🔗 Relations entre fichiers`
+
+Traité comme les 2 précédents : encart standardisé qui pointe vers
+les sources de vérité (code réel + CHANGELOG + spec). L'encart
+mentionne explicitement le **vrai flux v3** pour que la lecture
+ne soit pas seulement « obsolète, va voir ailleurs » mais qu'elle
+donne un repère immédiat :
+
+> `modules/booking/{index,date,slot,confirm}.php → api/booking-v3-slots.php`
+> (lecture) et `modules/booking/process.php → Booking::create() v3`
+> (écriture), avec retour Stripe Checkout à venir au §6
+> (`api/stripe-webhook.php` + `cron/expire-holds.php`).
+
+Et signale que la nouvelle dépendance importante est le **`LEFT
+JOIN services`** dans `Booking::getByToken`/`getById`/`getAll`
+(introduit en 2.6.0 avec la purge `service_type`).
+
+### 📄 Correction directe — `### Chargement CSS par page`
+
+L'auditeur proposait au choix encart ou correction directe pour
+cette section. Choix : **correction directe** parce que la table
+est petite, l'information stable, et la valeur immédiate (un agent
+qui cherche « quelle CSS pour `modules/booking/index.php` » trouve
+la réponse au lieu d'un encart). Table mise à jour :
+
+| Page | Feuilles `<link>` |
+|------|-------------------|
+| `index.php` (accueil) | `main.css` + `home.css` |
+| `mentions-legales.php` / `confidentialite.php` | `main.css` + `home.css` |
+| `modules/booking/index.php` (étape 1 prestation) | `main.css` + `booking-v3.css` |
+| `modules/booking/date.php` (étape 2 date) | `main.css` + `booking-v3.css` |
+| `modules/booking/slot.php` (étape 3 créneau) | `main.css` + `booking-v3.css` |
+| `modules/booking/confirm.php` (étape 4 formulaire) | `main.css` + `booking-v3.css` |
+| `modules/booking/success.php` (confirmation) | `main.css` + `booking-v3.css` |
+| `modules/booking/manage.php` (espace client par token) | `main.css` + `booking-v3.css` + `manage.css` |
+| `admin/index.php` | `main.css` + `admin.css` |
+
+Avant : 2 lignes mentionnaient `booking/...` (supprimé) et
+`booking.css` (supprimé). Après : 7 lignes décrivent l'archi
+réelle, le `manage.php` v3 est correctement listé avec
+`booking-v3.css` + `manage.css` (les deux feuilles qu'il charge
+effectivement).
+
+### 📄 Correction d'exemple — `brandWordmark()`
+
+L'exemple ligne 518 disait :
+
+> Ex : « Focus Coach » → `Focus<span class="accent">Coach</span>`.
+
+Faux depuis 2.4.2 (la classe `.accent` a été supprimée à ce
+moment-là, remplacée par le split bicolore par milieu). Corrigé en :
+
+> Le mot est split par **milieu de caractères** (snap sur espace ±2)
+> et les deux moitiés sont rendues dans `<span class="brand-half-a">`
+> (orange par défaut) et `<span class="brand-half-b">` (navy par
+> défaut). Ex : « Focus Coach » →
+> `<span class="brand-half-a">Focus </span><span class="brand-half-b">Coach</span>`.
+
+### ✅ Tests + vérif post-patch sur les **deux** fichiers
+
+```
+=== README.md — hors changelog/encarts ===
+(aucun)
+
+=== README_TECHNIQUE.md — hors changelog/encarts ===
+11 hits restants — tous DANS un encart d'obsolescence (qui CITE
+volontairement les éléments supprimés à des fins pédagogiques)
+ou dans la nouvelle table CSS qui liste les VRAIS chemins
+modules/booking/.
+```
+
+Plus aucun mensonge structurel ouvert dans la doc avant l'ouverture
+du §6.
+
+Smoke 24/24 vert (logique pure inchangée).
+
+Bump 2.6.4 → 2.6.5 (semver patch : doc-only).
+
 ## [2.6.4] — 2026-06-17 — Neutralisation des sections doc obsolètes
 
 Patch déclenché par la proposition « juste milieu » de l'audit
