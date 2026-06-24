@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.6.4  
-**Dernière mise à jour:** 17 juin 2026 — v2.6.4 (neutralisation des sections doc obsolètes via encarts)
+**Version:** 2.6.5  
+**Dernière mise à jour:** 17 juin 2026 — v2.6.5 (encart Relations entre fichiers + table CSS corrigée + exemple brandWordmark)
 
 ---
 
@@ -23,6 +23,8 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 17/06/2026 | 2.6.5 | 📄 AD-7 / AD-10 | **Trou laissé par 2.6.4 corrigé** — l'audit indépendant a remonté à juste titre que `README_TECHNIQUE.md` gardait des sections **non neutralisées** qui décrivaient du code mort comme vivant, hors des 2 encarts posés en 2.6.4. Mon grep post-2.6.4 était scopé `README.md` seulement, j'aurais dû le refaire sur les deux fichiers. **3 zones traitées ici** : (1) **§ Relations entre fichiers** (le diagramme ASCII `booking/index.php → api/booking.php → calendar-module.js → api/slots.php` était précisément l'artefact le plus trompeur pour une session §6) → **3ᵉ encart** d'obsolescence cohérent avec les 2 autres ; (2) **§ Chargement CSS par page** → corrigée directement (table petite et stable) — `booking/index.php` retiré, `booking/manage.php` → `modules/booking/manage.php`, `booking.css` → `booking-v3.css`, ajout des 5 nouvelles pages v3 (`index.php`/`date.php`/`slot.php`/`confirm.php`/`success.php`) ; (3) **exemple `brandWordmark()`** ligne 518 — `<span class="accent">` (classe supprimée en 2.4.2) → `.brand-half-a` / `.brand-half-b` avec explication du split par milieu de caractères. |
+| 17/06/2026 | 2.6.5 | ✅ AD-9 | Smoke 24/24 vert (logique pure inchangée). Vérif post-patch des **deux** fichiers de doc cette fois : `grep -nE 'getAvailableSlots\|/api/slots\.\|booking/index\|calendar-module\|class="accent"\|...'` sur README.md → **0 hit** hors changelog + encarts ; sur README_TECHNIQUE.md → 11 hits restants, tous **dans des encarts d'obsolescence qui CITENT volontairement les éléments supprimés** ou dans la nouvelle table CSS qui liste les **vrais** chemins `modules/booking/`. Plus aucun mensonge structurel ouvert dans la doc avant §6. |
 | 17/06/2026 | 2.6.4 | 📄 AD-7 / AD-10 | **Neutralisation des sections doc obsolètes** (proposition de l'audit indépendant, validation utilisateur). Les sections « Arborescence complète » et « Carte des fonctions » de **`README_TECHNIQUE.md`** + les 5 sections legacy de **`README.md`** racine (« Arborescence des fichiers », « Relations entre fichiers », « Carte des fonctions », « Utilisation », « API Reference ») sont remplacées par un encart standardisé qui pointe vers la source de vérité (code réel + `CHANGELOG.md` + `docs/booking-v3-spec.md`) — la régénération complète attendra le §10 (quand les §6-§9 auront stabilisé l'arborescence et les méthodes). Les tables de **changelog** historiques restent intactes (les entrées datées qui citent `booking/`, `api/slots.php`, `getAvailableSlots`, etc. sont factuelles dans leur contexte historique — AD-7). |
 | 17/06/2026 | 2.6.4 | 📄 Fix doc précis | **Table des constantes `config.php`** (`README.md` §Configuration) : `BOOKING_DURATION` (jamais existé dans le code, faux depuis l'origine), `BOOKING_ADVANCE_MIN_HOURS` (supprimée 2.6.0), `BOOKING_ADVANCE_MAX_DAYS` (supprimée 2.6.0) → remplacées par les vraies constantes v3 (`BOOKING_STEP`, `MIN_NOTICE_MIN`, `MAX_HORIZON_DAYS`). Note explicite sous la table sur les constantes retirées. Section Dépannage : exemple `api/slots.php?date=…` (endpoint supprimé) → `api/booking-v3-slots.php?service=<id>&date=YYYY-MM-DD`. Mention `WORKING_HOURS` (constante inexistante) → mention de la table `availability` (planning v3 réel). |
 | 17/06/2026 | 2.6.4 | ✅ AD-9 | Smoke 24/24 vert (logique pure inchangée). Vérif post-patch : `grep -E 'getAvailableSlots\|/api/slots\.\|booking/index\|booking/manage\|calendar-module\|SERVICE_TYPES\|BOOKING_ADVANCE\|available_slots\|CalendarModule\|BOOKING_DURATION\|SLOT_DURATION\|WORKING_HOURS' README.md` hors changelog historique et hors encarts → **0 résultat**. README.md passé de 922 à 612 lignes (~310 lignes de mensonge retirées). |
@@ -195,62 +197,28 @@
 
 ## 🔗 Relations entre fichiers
 
-### Flux de données principal
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Visiteur  │────►│ booking/    │────►│ api/        │
-│   (browser) │     │ index.php   │     │ booking.php │
-└─────────────┘     └─────────────┘     └─────────────┘
-                           │                   │
-                           │                   ▼
-                           │            ┌─────────────┐
-                           │            │ Booking.php │
-                           │            └─────────────┘
-                           │                   │
-                           ▼                   ▼
-                    ┌─────────────┐     ┌─────────────┐
-                    │ calendar-   │     │ Mailer.php  │
-                    │ module.js   │     └─────────────┘
-                    └─────────────┘            │
-                           │                   ▼
-                           ▼            ┌─────────────┐
-                    ┌─────────────┐     │ Google      │
-                    │ api/        │     │ Calendar    │
-                    │ slots.php   │     └─────────────┘
-                    └─────────────┘
-```
-
-### Dépendances des fichiers
-
-| Fichier | Dépend de | Utilisé par |
-|---------|-----------|-------------|
-| `init.php` | `config.php` | Tous les fichiers PHP |
-| `Database.php` | - | Toutes les classes |
-| `Booking.php` | `Database`, `Helpers` | `api/booking.php`, `api/admin.php`, `api/manage.php` |
-| `Slot.php` | `Database`, `Booking` | `api/slots.php` |
-| `Settings.php` | `Database` | `api/admin.php`, `Mailer.php`, `GoogleCalendarSync.php` |
-| `Mailer.php` | `Helpers`, `Settings` | `api/booking.php`, `api/admin.php`, `api/manage.php` |
-| `Helpers.php` | - | Partout |
-| `GoogleCalendarSync.php` | `Settings` | `api/booking.php`, `api/admin.php` |
-| `calendar-module.js` | - | `booking.js`, `manage.js` |
-| `rgpd-delete-data.php` | `Database`, `Booking`, `Helpers`, `Mailer`, `GoogleCalendarSync` | `api/manage.php` (via require) |
-| `purge-rgpd.php` | `init.php`, `Database` | CRON OVH (exécution planifiée) |
-| `confidentialite.php` | `init.php` | `index.html` (lien footer), `booking/index.php` (lien mention) |
-| `mentions-legales.php` | `init.php` | `index.html` (lien footer), `confidentialite.php` (lien footer) |
-
-### Chaîne des includes
-
-```php
-// Tout fichier PHP commence par :
-define('BOOKING_APP', true);
-require_once __DIR__ . '/../includes/init.php';
-
-// init.php charge :
-// 1. config/config.php (qui charge config.local.php)
-// 2. Autoloader PSR-4 (classes/)
-// 3. Session
-```
+> ⚠️ **Section obsolète depuis 2.6.0 — régénérée au §10 du chantier Booking v3.**
+>
+> Le diagramme de flux décrivait le pipeline pré-purge
+> `booking/index.php → api/booking.php → calendar-module.js →
+> api/slots.php` — **tous ces fichiers ont été supprimés en
+> 2.6.0**. Le vrai flux v3 est `modules/booking/{index,date,slot,
+> confirm}.php → api/booking-v3-slots.php` (lecture) et
+> `modules/booking/process.php → Booking::create() v3` (écriture),
+> avec retour Stripe Checkout à venir au §6 (`api/stripe-webhook.php`
+> + `cron/expire-holds.php`).
+>
+> La table de dépendances mentionnait aussi `api/slots.php`,
+> `api/booking.php`, `calendar-module.js` (supprimés) et ignorait
+> les nouvelles relations (`Slot.php` → `api/booking-v3-slots.php`,
+> JOIN `services` dans `Booking::getByToken`/`getById`/`getAll`,
+> `modules/booking/manage.php` → `api/manage.php`).
+>
+> **Sources de vérité d'ici la régénération v3.0.0** : le code
+> réel (les `require_once` en tête de chaque fichier donnent
+> l'arborescence des dépendances directement), `CHANGELOG.md`
+> (historique des renommages depuis 2.4.x), et
+> `docs/booking-v3-spec.md` (modèle de données + pipeline §6).
 
 ---
 
@@ -515,7 +483,7 @@ dur** dans les pages.
 Helpers associés :
 - `siteConfig()` → tableau fusionnant BDD + fallbacks `config.php` (+ champs dérivés `full_name`, `logo_name`).
 - `cfgField($valeur, $placeholder)` → affiche la valeur ou un placeholder rouge `[À compléter]` si vide.
-- `brandWordmark()` → wordmark deux tons à partir de `site_name` (dernier mot en accent). Ex : « Focus Coach » → `Focus<span class="accent">Coach</span>`.
+- `brandWordmark()` → wordmark deux tons à partir de `site_name`. Le mot est split par **milieu de caractères** (snap sur espace ±2) et les deux moitiés sont rendues dans `<span class="brand-half-a">` (orange par défaut) et `<span class="brand-half-b">` (navy par défaut). Ex : « Focus Coach » → `<span class="brand-half-a">Focus </span><span class="brand-half-b">Coach</span>`. Refacto 2.4.2 — remplace l'ancien `.accent` (supprimé).
 
 ### Chargement CSS par page
 
@@ -523,8 +491,12 @@ Helpers associés :
 |------|-------------------|
 | `index.php` (accueil) | `main.css` + `home.css` |
 | `mentions-legales.php` / `confidentialite.php` | `main.css` + `home.css` (classes `.legal-*`) |
-| `booking/index.php` | `main.css` + `booking.css` |
-| `booking/manage.php` | `main.css` + `booking.css` + `manage.css` |
+| `modules/booking/index.php` (étape 1 prestation) | `main.css` + `booking-v3.css` |
+| `modules/booking/date.php` (étape 2 date) | `main.css` + `booking-v3.css` |
+| `modules/booking/slot.php` (étape 3 créneau) | `main.css` + `booking-v3.css` |
+| `modules/booking/confirm.php` (étape 4 formulaire) | `main.css` + `booking-v3.css` |
+| `modules/booking/success.php` (confirmation) | `main.css` + `booking-v3.css` |
+| `modules/booking/manage.php` (espace client par token) | `main.css` + `booking-v3.css` + `manage.css` |
 | `admin/index.php` | `main.css` + `admin.css` |
 
 > Re-skin global : les pages booking/admin/manage consomment les tokens `:root`
