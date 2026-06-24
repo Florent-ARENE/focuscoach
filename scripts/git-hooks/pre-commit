@@ -81,6 +81,17 @@ emoji_targets="index.php admin/index.php \
                modules/booking/manage.php \
                assets/js/admin.js assets/js/manage.js \
                assets/js/summary-module.js assets/js/home.js assets/js/icons.js"
+
+# Self-check (fail-closed explicite) : ce grep compile-t-il le motif
+# emoji astral ET détecte-t-il un vrai emoji (😀 = F0 9F 98 80) ? Sinon
+# (build PCRE sans support hors-BMP, ou -P indisponible), on BLOQUE
+# avec un message clair — JAMAIS un passage silencieux (fail-open).
+# Le « || true » de la boucle ci-dessous ne masque alors plus une
+# panne de garde-fou : on a prouvé d'abord qu'il détecte. Cf. 2.6.7.
+if ! printf '\xF0\x9F\x98\x80' | grep -qP '[\x{10000}-\x{10FFFF}]' 2>/dev/null; then
+    fail "Garde-fou AD-5 inopérant : ce grep ne détecte pas l'emoji test (build PCRE sans support hors-BMP, ou -P absent). Commit bloqué par sécurité (fail-closed). Mets à jour grep/PCRE ou adapte le motif emoji du hook."
+fi
+
 emoji_hits=""
 for f in $emoji_targets; do
     [ -f "$f" ] || continue
