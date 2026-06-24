@@ -13,6 +13,36 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.6.6] — 2026-06-25 — Outillage : smoke lisible en navigateur + fix faux positif emoji du pre-commit
+
+Deux corrections d'outillage, sans impact fonctionnel sur l'app.
+
+- **`scripts/git-hooks/pre-commit` (garde-fou AD-5 emoji)** : le motif
+  `grep -nP '[\xF0-\xF4]'` visait les octets de tête UTF-8 des emoji
+  (4 octets). Mais en **locale UTF-8** (Git Bash Windows), PCRE
+  interprète `\xF4` comme le **codepoint U+00F4 = `ô`** → faux positifs
+  sur tout fichier français (« Rôle », « contrôle », « côté »,
+  « plutôt »…), bloquant **chaque** commit. Remplacé par
+  `[\x{10000}-\x{10FFFF}]` (tout caractère hors-BMP = 4 octets UTF-8 =
+  emoji modernes), **robuste à la locale** : détecte 🛡️🔐✅, ignore
+  les accents/flèches/`✓` (BMP). Hook source **et** copie installée
+  mis à jour.
+- **`tests/smoke.php`** : en mode HTTP, la sortie est désormais
+  enveloppée dans `<!doctype html> … <pre>` + en-tête
+  `Content-Type: text/html; charset=utf-8`. Avant, le HTML écrasait
+  les retours à la ligne du corpus → tout s'affichait sur une seule
+  ligne (pavé illisible). Le `<pre>` rend la sortie aussi lisible
+  que le terminal (lots, `✓` par ligne, verdict).
+- **Gardé par `PHP_SAPI`** : en CLI, sortie **strictement inchangée**
+  (mêmes octets, mêmes exit codes 0/1) → aucun impact sur la CI ni
+  la perf. Le bloc HTML est simplement sauté hors navigateur.
+- **Zéro CSS ajouté** : pas de `<style>`, pas de `main.css` chargé —
+  on ne tire pas le design system de l'app dans un outil de test
+  (CLAUDE.md §2.2, AD-4). Le `<pre>` natif suffit.
+- Le `Warning: Constant BASE_URL already defined` affiché au-dessus
+  reste le signal pré-§6 connu (garde `if (!defined())` absente de
+  `config/config.php` ligne 60) — hors scope de ce patch.
+
 ## [2.6.5] — 2026-06-17 — Trou doc 2.6.4 fermé (Relations + CSS + brandWordmark)
 
 Patch déclenché par un nouveau passage de l'audit indépendant qui

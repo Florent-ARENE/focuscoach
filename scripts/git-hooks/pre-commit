@@ -84,7 +84,12 @@ emoji_targets="index.php admin/index.php \
 emoji_hits=""
 for f in $emoji_targets; do
     [ -f "$f" ] || continue
-    h=$(grep -nP '[\xF0-\xF4]' "$f" || true)
+    # Détecte tout caractère hors-BMP (codepoint ≥ U+10000) = encodé sur
+    # 4 octets UTF-8 = les emoji modernes (🛡️ 🔐 ✅ …). Robuste à la locale.
+    # ⚠ NE PAS revenir à '[\xF0-\xF4]' : en locale UTF-8 (Git Bash Windows),
+    # PCRE interprète \xF4 comme le codepoint U+00F4 = « ô » → faux positifs
+    # sur « Rôle », « contrôle », « côté »… (cf. CHANGELOG 2.6.6).
+    h=$(grep -nP '[\x{10000}-\x{10FFFF}]' "$f" || true)
     [ -n "$h" ] && emoji_hits="${emoji_hits}\n[$f]\n$h"
 done
 if [ -n "$emoji_hits" ]; then
