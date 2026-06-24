@@ -24,6 +24,22 @@ require_once __DIR__ . '/../includes/init.php';
 
 use App\Helpers;
 
+// ── Rendu navigateur (optionnel) ───────────────────────────────
+// En CLI : sortie texte strictement inchangée (exit codes, perf, CI
+// intacts — le bloc est sauté). En HTTP : enveloppe <pre> + UTF-8
+// pour préserver les retours à la ligne (sinon le HTML les écrase →
+// tout sur une seule ligne). Aucun CSS ajouté : on ne charge pas le
+// design system de l'app dans un outil de test (cf. CLAUDE.md §2.2).
+$smokeWeb = PHP_SAPI !== 'cli';
+if ($smokeWeb) {
+    if (!headers_sent()) {
+        header('Content-Type: text/html; charset=utf-8');
+    }
+    echo "<!doctype html>\n<html lang=\"fr\"><head><meta charset=\"utf-8\">"
+       . "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+       . "<title>Smoke tests — Focus Coach</title></head><body>\n<pre>\n";
+}
+
 $passed = 0;
 $failed = 0;
 $cases  = [];
@@ -294,9 +310,12 @@ it('Intervalles juxtaposés sans chevauchement : [09:00, 10:00) suivi de [10:00,
 // ============================================
 echo implode("\n", $cases) . "\n\n";
 $total = $passed + $failed;
-if ($failed === 0) {
-    echo "✅ $passed/$total cas verts\n";
-    exit(0);
+echo $failed === 0
+    ? "✅ $passed/$total cas verts\n"
+    : "❌ $failed/$total cas ROUGES\n";
+
+if ($smokeWeb) {
+    echo "</pre>\n</body></html>";
 }
-echo "❌ $failed/$total cas ROUGES\n";
-exit(1);
+
+exit($failed === 0 ? 0 : 1);
