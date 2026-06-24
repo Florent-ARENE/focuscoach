@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.6.2  
-**Dernière mise à jour:** 17 juin 2026 — v2.6.2 (patch régressions purge : Mailer liens email + Icons arrow-left)
+**Version:** 2.6.3  
+**Dernière mise à jour:** 17 juin 2026 — v2.6.3 (style décoratif retiré de manage.php + checklist pré-bascule prod)
 
 ---
 
@@ -23,6 +23,8 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 17/06/2026 | 2.6.3 | 🎨 AD-4 | **`style="margin-top:...; font-size:...;"` décoratif retiré de `modules/booking/manage.php:155`** (paragraphe d'aide sous le bouton Annuler). Classe utilitaire `.bv3-help-note` ajoutée à `assets/css/booking-v3.css`. Régression introduite au §5b (le `style=` venait du `manage.php` legacy v2 et a survécu à la copie vers v3) — remontée par l'audit indépendant [O1] et confirmée localement par `grep 'style="' modules/booking/*.php | grep -v display:none` → 0 résiduel post-patch. Les 3 `style="display:none;"` restants sur les modales (`#delete-data-modal`, `#cancel-modal`, `#success-card`) sont l'exception fonctionnelle pilotée par JS tolérée par CLAUDE.md §1.2. |
+| 17/06/2026 | 2.6.3 | 📄 Doc | **Checklist pré-bascule prod ajoutée** comme nouvelle section `§7.bis` de `docs/booking-v3-spec.md`. L'audit a remonté à juste titre qu'on ne peut pas confier `APP_ENV='development'` + clé cron RGPD en placeholder au seul `health.php` futur (qui n'arrive qu'au §9) : d'ici là, le filet est humain. La section liste les invariants Code & config (APP_ENV, ADMIN_PASSWORD_HASH, clés Stripe live, BASE_URL canonique, hash-password.php supprimé du serveur, google-credentials sécurisé), BDD (`mysqldump`, migration appliquée, `stripe_price_id` complets, crons RGPD et expire-holds planifiés) et Serveur (HTTPS forcé, cookies session durcis, webhook testé en sandbox, sw.js bumpé). Verdict : ne pas basculer tant qu'une case est rouge. |
 | 17/06/2026 | 2.6.2 | 🔧 Fix | **Liens email — régression purge 2.6.0 corrigée**. `classes/Mailer.php::getManageLink()` pointait encore vers `BASE_URL . "booking/manage.php?token=..."` (page droppée). Cassait tous les emails contenant le bloc « Gérer votre rendez-vous » (visiteur nouvelle demande, confirmation, déplacement admin, déplacement client). Idem pour les 2 liens « nouveau RDV » dans `notifyCancellation()` et `notifyClientCancellation()` qui pointaient vers `booking/`. Les 3 chemins basculent sur `modules/booking/...`. Remontée par un audit indépendant [O1, RESUME_focuscoach.md]. |
 | 17/06/2026 | 2.6.2 | 🎨 Icons | **`arrow-left` ajoutée aux deux miroirs**. `classes/Icons.php` (LIBRARY) et `assets/js/icons.js` (LIBRARY) — le nom était utilisé 6 fois dans le tunnel v3 (`modules/booking/{index,date,slot,confirm,success,manage}.php` pour les liens « Retour ») mais absent des deux miroirs → `Icons::svg('arrow-left')` retournait une chaîne vide (fallback du validateur de nom), d'où les rendus vides observés. Path SVG Lucide officiel symétrique d'`arrow-right` : `<path d="M19 12H5"/><path d="m12 5-7 7 7 7"/>`. Validation [O1] : `Icons::svg('arrow-left', 20, 'icon-test')` produit 269 bytes de SVG bien formé (DOMDocument::loadXML accepte). Remontée par un audit indépendant. |
 | 17/06/2026 | 2.6.2 | 🧹 Doc inline | **Commentaires obsolètes corrigés**. `index.php:313` HTML comment « (vers le module /booking/) » → `(vers /modules/booking/)`. `api/booking-v3-slots.php:14` docblock qui présentait `api/slots.php` et `booking/index.php` comme cohabitants (alors qu'ils sont supprimés depuis 2.6.0) → reformulé comme leur successeur unique. Conservés tels quels (factuels) : `config/config.php:55` (décrit le regex `(api|admin|booking)` du calcul `BASE_URL` legacy, à dégager au §6) et `classes/Slot.php:91` (mémo historique « avant la purge 2.6.0… »). |
