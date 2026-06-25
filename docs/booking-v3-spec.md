@@ -369,10 +369,12 @@ fermer le risque XSS Host-header et garantir la cohérence
 prod/dev/staging, `BASE_URL` vit dans `config.local.php` (variable
 par environnement, fixe — **jamais** dérivée du header `Host`).
 
-⚠️ État actuel (§3) : `config/config.php` dérive encore `BASE_URL`
-de `$_SERVER['HTTP_HOST']`. À corriger au §6 (déplacement dans
-`config.local.php` + fallback si absente : refus de démarrer le
-tunnel Stripe + signal `health.php`).
+✅ Livré (2.6.8, §6) : `config/config.php` ne dérive plus `BASE_URL`
+du `Host`. La dérivation `$_SERVER['HTTP_HOST']` est **retirée** ;
+`BASE_URL` est lue strictement depuis `config.local.php`. Si elle est
+absente/mal formée, `config.php` répond **500 au démarrage** via
+`configProblems()` (refus net) — le warning « Constant BASE_URL
+already defined » disparaît par construction (plus de 2ᵉ `define`).
 
 ### Webhook idempotent
 
@@ -438,9 +440,10 @@ secrets.
 - [ ] `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` /
       `STRIPE_WEBHOOK_SECRET` en valeurs **live**
       (`sk_live_…`, `pk_live_…`, `whsec_…`), pas test.
-- [ ] `BASE_URL` fixée à l'URL canonique de prod (HTTPS, slash
-      final). Pas dérivée du `Host` (XSS Host-header) — le câblage
-      strict de la lecture est livré au §6.
+- [ ] `config.local.php` définit `BASE_URL` à l'URL canonique de prod
+      (HTTPS, slash final). Depuis 2.6.8, **si absente → 500 au
+      démarrage** (voulu). Jamais dérivée du `Host` (XSS Host-header) :
+      le câblage strict de la lecture est livré (§6).
 - [ ] `scripts/hash-password.php` **supprimé du serveur** après
       usage (utilitaire one-shot, le bandeau du formulaire le
       rappelle).

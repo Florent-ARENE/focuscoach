@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.6.7  
-**Dernière mise à jour:** 25 juin 2026 — v2.6.7 (`SET NAMES utf8mb4` import + hook fail-closed)
+**Version:** 2.7.0  
+**Dernière mise à jour:** 25 juin 2026 — v2.7.0 (module diagnostic AD-11 : hub + 5 pages, lecture seule)
 
 ---
 
@@ -23,6 +23,8 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 25/06/2026 | 2.7.0 | 🩺 Module diagnostic | **`modules/diagnostic/` (AD-11) — hub + 5 pages, lecture seule, auth admin, secrets masqués.** `health` (PHP/extensions/BDD/tables/config/fuseaux/BASE_URL, résilient si BDD down via `diag_try_pdo` qui ne `die()` pas), `config-check` (constantes par sévérité, secrets jamais affichés), `alignment` (VERSION↔stamps, enum `bookings.status`⇄`active_key`⇄`BOOKING_STATUS`, catalogue seed⇄migration), `api-console` (fetch **client** d'un endpoint GET — évite le loopback serveur non fiable ici), `smoke` (corpus en `<iframe>`). CSS `diagnostic.css` 100 % tokens + un seul bloc `DIAG-FALLBACK` (garde-fou hex étendu). +4 icônes Lucide dans les 2 miroirs. **Fix [O1]** : `diag_head()` n'utilise plus `siteConfig()` (qui touche la BDD et `die()`) mais la constante `SITE_NAME` → header résilient. Tests 2 sens prouvés : BASE_URL absent → 500 ; BDD KO → health 200 « Inaccessible » ; stamp altéré → dérive ; statut hors enum → signalé ; hex hors fallback → pre-commit bloque ; lecture seule (0 écriture), 0 fuite de secret. |
+| 25/06/2026 | 2.6.8 | 🔒 §6 BASE_URL | **`BASE_URL` stricte, jamais dérivée du `Host`.** `config/config.php` ne dérive plus l'URL de `$_SERVER['HTTP_HOST']`/`SCRIPT_NAME` (bloc retiré) ; `BASE_URL` est lue exclusivement depuis `config.local.php` (anti XSS Host-header, valide en webhook/cron). Sanction au démarrage via `\App\configProblems()` (C1, source unique) : config requise manquante/mal formée → **HTTP 500 + message clair** (refus net). Le warning « Constant BASE_URL already defined » disparaît par construction (plus de 2ᵉ `define`) — smoke CLI 0 warning, 30/30. ⚠️ Migration : `config.local.php` **doit** définir `BASE_URL` sinon 500. Doc : template + `docs/booking-v3-spec.md` (§ BASE_URL livrée + checklist). |
 | 25/06/2026 | 2.6.7 | 🧱 Fondation | **Import SQL robuste au charset + hook fail-closed.** `SET NAMES utf8mb4;` en 1ʳᵉ ligne de `sql/schema.sql` et `sql/seed.sql` : un import via client défaut latin1/cp850 (mysql.exe Windows) corrompait les chaînes accentuées à chaque clone (invisible sur `COUNT`, visible sur le contenu). Prouvé `[O1]` par re-import **sans flag** → `HEX` propre (`é`=C3A9, `—`=E28094) sur `services.name`, `settings.legal_status` et les `COMMENT` du schéma. Hook : garde-fou AD-5 **fail-closed** (self-check emoji 😀 en tête ; si le grep ne compile pas le motif hors-BMP → blocage avec message clair, plus de fail-open silencieux via `\|\| true`). |
 | 25/06/2026 | 2.6.6 | 🛠️ Outillage | **Fix faux positif emoji du `pre-commit`.** Le garde-fou AD-5 faisait `grep -nP '[\xF0-\xF4]'` : en locale UTF-8 (Git Bash Windows), PCRE interprète `\xF4` comme le codepoint U+00F4 = `ô` → faux positifs sur « Rôle », « contrôle », « côté »… bloquant chaque commit français. Remplacé par `[\x{10000}-\x{10FFFF}]` (hors-BMP = 4 octets UTF-8 = emoji modernes), robuste à la locale. Source + copie installée alignés. |
 | 25/06/2026 | 2.6.6 | 🛠️ Outillage | **`tests/smoke.php` lisible en navigateur.** En HTTP, sortie enveloppée `<!doctype html> … <pre>` + `Content-Type: text/html; charset=utf-8` → les retours à la ligne du corpus sont préservés (avant : pavé sur une seule ligne, le HTML écrasant les `\n`). **Gardé par `PHP_SAPI`** : en CLI, sortie strictement inchangée (mêmes octets, exit codes 0/1) → aucun impact CI/perf. **Zéro CSS ajouté** (pas de `<style>`, pas de `main.css`) — on ne tire pas le design system de l'app dans un outil de test (§2.2 / AD-4). Le `Warning: Constant BASE_URL already defined` reste le signal pré-§6 connu (garde manquante `config/config.php:60`). Smoke 24/24 vert. |
@@ -182,11 +184,16 @@
 > `available_slots`, ENUM `service_type`…). Tous ces éléments ont été
 > retirés en 2.6.0. À l'inverse, elle ignore `modules/booking/`,
 > `api/booking-v3-slots.php`, `assets/css/booking-v3.css`,
-> `sql/reset-dev.sql`, `scripts/git-hooks/`, `cadrage/`, `docs/booking-v3-spec.md`.
+> `sql/reset-dev.sql`, `scripts/git-hooks/`, `cadrage/`, `docs/booking-v3-spec.md`,
+> et — depuis 2.7.0 — **`modules/diagnostic/`** (hub + pages health /
+> config-check / alignment / api-console / smoke, AD-11) et
+> **`assets/css/diagnostic.css`**.
 >
 > Et le chantier continue : §6 ajoutera `api/stripe-webhook.php` et
-> `cron/expire-holds.php`, §7 ajoutera `modules/booking/pack.php`,
-> §9 ajoutera `health.php`. Reconstruire le détail maintenant serait
+> `cron/expire-holds.php`, §7 ajoutera `modules/booking/pack.php`.
+> *(La santé runtime promise « §9 » est livrée en 2.7.0 comme page du
+> module diagnostic — `modules/diagnostic/health.php` —, pas un
+> `health.php` racine.)* Reconstruire le détail maintenant serait
 > jeté avant la livraison v3.0.0.
 >
 > **Sources de vérité d'ici là** :

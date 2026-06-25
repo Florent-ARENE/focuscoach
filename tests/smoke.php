@@ -306,6 +306,57 @@ it('Intervalles juxtaposés sans chevauchement : [09:00, 10:00) suivi de [10:00,
 });
 
 // ============================================
+// LOT 6 — configProblems() (config requise, 2 sens)
+// ============================================
+// Fonction pure testée par INJECTION de callables (isDefined/valueOf) :
+// on simule présence/absence/format d'une clé sans toucher aux vraies
+// constantes ni tuer le process. Prouve qu'elle LÈVE quand il faut ET
+// se TAIT quand tout va bien.
+echo "\n🧩 Lot 6 — configProblems (2 sens)\n";
+
+// Jeu « tout présent et bien formé » : helper de fabrication.
+$allOk = function (array $overrides = []): array {
+    $values = array_merge([
+        'DB_HOST' => '127.0.0.1', 'DB_NAME' => 'db', 'DB_USER' => 'root',
+        'DB_PASS' => '', 'BASE_URL' => 'https://x/', 'ADMIN_PASSWORD_HASH' => '$2y$10$x',
+    ], $overrides);
+    return $values;
+};
+$probe = function (array $values, array $undefined = []) {
+    $isDefined = fn($k) => !in_array($k, $undefined, true) && array_key_exists($k, $values);
+    $valueOf   = fn($k) => $values[$k] ?? null;
+    return \App\configProblems($isDefined, $valueOf);
+};
+
+it('Config complète et bien formée → aucun problème (se tait)', function () use ($allOk, $probe) {
+    expect_true($probe($allOk()) === [], 'attendu [], reçu ' . json_encode($probe($allOk())));
+});
+
+it('BASE_URL absente → listée (lève)', function () use ($allOk, $probe) {
+    $p = $probe($allOk(), ['BASE_URL']);
+    expect_true(in_array('BASE_URL manquant ou vide', $p, true), json_encode($p));
+});
+
+it('ADMIN_PASSWORD_HASH absent → listé (lève)', function () use ($allOk, $probe) {
+    $p = $probe($allOk(), ['ADMIN_PASSWORD_HASH']);
+    expect_true(in_array('ADMIN_PASSWORD_HASH manquant ou vide', $p, true), json_encode($p));
+});
+
+it('BASE_URL = ftp://x → erreur de format (lève)', function () use ($allOk, $probe) {
+    $p = $probe($allOk(['BASE_URL' => 'ftp://x']));
+    expect_true(in_array('BASE_URL doit commencer par http:// ou https://', $p, true), json_encode($p));
+});
+
+it('DB_PASS vide mais défini → toléré (pas fatal en local)', function () use ($allOk, $probe) {
+    expect_true($probe($allOk(['DB_PASS' => ''])) === [], 'DB_PASS vide ne doit pas être fatal');
+});
+
+it('Contre-test : STRIPE_SECRET_KEY absent → liste vide (optionnel, jamais fatal)', function () use ($allOk, $probe) {
+    // STRIPE_* n'est jamais requis : même absent, configProblems ne le signale pas.
+    expect_true($probe($allOk(), ['STRIPE_SECRET_KEY']) === [], 'Stripe ne doit jamais être fatal');
+});
+
+// ============================================
 // VERDICT
 // ============================================
 echo implode("\n", $cases) . "\n\n";

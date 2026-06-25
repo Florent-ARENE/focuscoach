@@ -65,6 +65,13 @@ class Database
                 self::$instance->exec("SET time_zone = '" . date('P') . "'");
 
             } catch (PDOException $e) {
+                // BACKLOG (dette racine, repérée en 2.7.0) : ce die() n'est
+                // PAS rattrapable → toute page touchant la BDD meurt dur si
+                // la BDD tombe (y compris siteConfig() via Settings). Le
+                // module diagnostic le contourne avec son propre connect
+                // résilient (diag_try_pdo). À terme : faire remonter une
+                // exception ici (laisser l'appelant décider du dégradé), et
+                // en faire un indicateur de santé. Cf. CHANGELOG 2.7.0.
                 if (APP_DEBUG) {
                     die('Erreur de connexion : ' . $e->getMessage());
                 }
