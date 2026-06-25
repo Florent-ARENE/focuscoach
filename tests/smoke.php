@@ -386,6 +386,18 @@ it('paymentMode : price_id absent → bypass (dégradé, validation admin)', fun
 });
 
 // ============================================
+// LOT 8 — StripeClient garde-fous (sans réseau)
+// ============================================
+echo "\n🔌 Lot 8 — StripeClient (garde-fous hors-ligne)\n";
+
+it('createCheckoutSession : Stripe non configuré (placeholder) → error, aucun appel', function () {
+    // En contexte test, STRIPE_SECRET_KEY = placeholder → stripeEnabled() false.
+    $r = \App\StripeClient::createCheckoutSession('price_x', 'https://x/ok', 'https://x/ko', ['booking_id' => 1]);
+    expect_true(isset($r['error']), 'attendu une erreur, reçu ' . json_encode($r));
+    expect_true($r['error'] === 'Stripe non configuré', 'message: ' . ($r['error'] ?? ''));
+});
+
+// ============================================
 // VERDICT
 // ============================================
 echo implode("\n", $cases) . "\n\n";
