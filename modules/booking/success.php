@@ -3,23 +3,68 @@
  * ============================================
  * BOOKING v3 — CONFIRMATION
  * ============================================
- * Affiche le récap du booking créé. Lien vers l'espace de gestion
- * (manage.php?token=…) — toujours côté booking legacy tant que §7
- * n'a pas ajouté pack.php / refacto manage.
+ * Deux chemins :
+ *  - Retour Stripe (?cs={CHECKOUT_SESSION_ID}) → on relit le booking par
+ *    stripe_session_id : la SOURCE DE VÉRITÉ du paiement est la BDD (donc le
+ *    webhook), JAMAIS le simple retour navigateur. Tant que le webhook n'a pas
+ *    confirmé, on affiche « paiement en cours ».
+ *  - Mode bypass (gratuit / Stripe off) → $_SESSION['booking_result'].
  */
 require_once __DIR__ . '/../../includes/init.php';
 
 use App\Helpers;
 use App\Icons;
+use App\Booking;
 
-$result = $_SESSION['booking_result'] ?? null;
-if (!$result || empty($result['booking_id'])) {
+$cs          = isset($_GET['cs']) ? Helpers::sanitize((string) $_GET['cs']) : '';
+$booking     = null;
+$manageToken = null;
+
+if ($cs !== '' && $cs !== '{CHECKOUT_SESSION_ID}') {
+    $booking = (new Booking())->getByStripeSession($cs);
+    if ($booking) {
+        $manageToken = $booking['manage_token'] ?? null;
+        $_SESSION['booking_draft'] = [];
+    }
+} elseif (!empty($_SESSION['booking_result']['booking_id'])) {
+    $r = $_SESSION['booking_result'];
+    $d = $r['draft'];
+    $booking = [
+        'service_name'    => $d['service_name']    ?? '',
+        'duration_min'    => $d['duration_min']    ?? 0,
+        'slot_date'       => $d['slot_date'],
+        'slot_time_start' => $d['slot_time_start'],
+        'slot_time_end'   => $d['slot_time_end'],
+        'status'          => 'pending',
+        'payment_status'  => 'none',
+    ];
+    $manageToken = $r['manage_token'] ?? null;
+}
+
+if (!$booking) {
     header('Location: index.php');
     exit;
 }
-$draft = $result['draft'];
 
-$pageTitle = 'Demande envoyée';
+$status = $booking['status'] ?? 'pending';
+$paid   = ($status === 'confirmed' && ($booking['payment_status'] ?? '') === 'paid');
+
+if ($paid) {
+    $pageTitle = 'Paiement confirmé';
+    $subtitle  = 'Votre paiement a été reçu et votre rendez-vous est confirmé. '
+               . 'Un email de confirmation vous a été envoyé.';
+    $badge     = ['confirmed', 'check-circle', 'Confirmé'];
+} elseif ($status === 'pending_payment') {
+    $pageTitle = 'Paiement en cours';
+    $subtitle  = 'Nous finalisons la confirmation de votre paiement. Votre rendez-vous '
+               . 'sera confirmé dans un instant — vous recevrez un email.';
+    $badge     = ['pending', 'hourglass', 'En cours de confirmation'];
+} else {
+    $pageTitle = 'Demande envoyée';
+    $subtitle  = 'Votre demande de rendez-vous a été enregistrée. Vous recevrez un email '
+               . 'de confirmation dès que votre créneau sera validé.';
+    $badge     = ['pending', 'hourglass', 'En attente'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -43,29 +88,26 @@ $pageTitle = 'Demande envoyée';
 
     <main class="booking-main">
         <div class="bv3-success">
-            <div class="bv3-success-icon"><?= Icons::svg('check', 32) ?></div>
+            <div class="bv3-success-icon"><?= Icons::svg($paid ? 'check-circle' : 'check', 32) ?></div>
             <h1 class="page-title"><?= Helpers::escape($pageTitle) ?></h1>
-            <p class="page-subtitle">
-                Votre demande de rendez-vous a été enregistrée. Vous recevrez un email
-                de confirmation dès que votre créneau sera validé.
-            </p>
+            <p class="page-subtitle"><?= Helpers::escape($subtitle) ?></p>
 
             <dl class="bv3-recap-list">
                 <dt>Prestation</dt>
-                <dd><?= Helpers::escape($draft['service_name']) ?> · <?= Helpers::escape((string) (int) $draft['duration_min']) ?> min</dd>
+                <dd><?= Helpers::escape((string) ($booking['service_name'] ?? '')) ?> · <?= Helpers::escape((string) (int) ($booking['duration_min'] ?? 0)) ?> min</dd>
                 <dt>Date</dt>
-                <dd><?= Helpers::escape(Helpers::formatDateFr($draft['slot_date'])) ?></dd>
+                <dd><?= Helpers::escape(Helpers::formatDateFr($booking['slot_date'])) ?></dd>
                 <dt>Horaire</dt>
-                <dd><?= Helpers::escape(Helpers::formatTimeSlot($draft['slot_time_start'], $draft['slot_time_end'])) ?></dd>
+                <dd><?= Helpers::escape(Helpers::formatTimeSlot($booking['slot_time_start'], $booking['slot_time_end'])) ?></dd>
                 <dt>Statut</dt>
                 <dd>
-                    <span class="status-badge pending"><?= Icons::svg('hourglass', 14, 'icon-inline') ?>En attente</span>
+                    <span class="status-badge <?= Helpers::escape($badge[0]) ?>"><?= Icons::svg($badge[1], 14, 'icon-inline') ?><?= Helpers::escape($badge[2]) ?></span>
                 </dd>
             </dl>
 
-            <?php if (!empty($result['manage_token'])): ?>
+            <?php if (!empty($manageToken)): ?>
             <p class="bv3-manage-link">
-                <a class="btn btn-secondary" href="manage.php?token=<?= Helpers::escape($result['manage_token']) ?>">
+                <a class="btn btn-secondary" href="manage.php?token=<?= Helpers::escape($manageToken) ?>">
                     Gérer mon rendez-vous
                 </a>
             </p>

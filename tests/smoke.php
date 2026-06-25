@@ -386,6 +386,49 @@ it('paymentMode : price_id absent → bypass (dégradé, validation admin)', fun
 });
 
 // ============================================
+// LOT 8 — StripeClient garde-fous (sans réseau)
+// ============================================
+echo "\n🔌 Lot 8 — StripeClient (garde-fous hors-ligne)\n";
+
+it('createCheckoutSession : Stripe non configuré (placeholder) → error, aucun appel', function () {
+    // En contexte test, STRIPE_SECRET_KEY = placeholder → stripeEnabled() false.
+    $r = \App\StripeClient::createCheckoutSession('price_x', 'https://x/ok', 'https://x/ko', ['booking_id' => 1]);
+    expect_true(isset($r['error']), 'attendu une erreur, reçu ' . json_encode($r));
+    expect_true($r['error'] === 'Stripe non configuré', 'message: ' . ($r['error'] ?? ''));
+});
+
+// ============================================
+// LOT 9 — Webhook Stripe : vérif de signature HMAC (pur)
+// ============================================
+echo "\n📡 Lot 9 — Webhook signature (HMAC corps brut)\n";
+
+$wsecret = 'whsec_test_smoke';
+$wpayload = '{"id":"evt_1","type":"checkout.session.completed"}';
+$wts = (string) time();
+$wsig = 't=' . $wts . ',v1=' . hash_hmac('sha256', $wts . '.' . $wpayload, $wsecret);
+
+it('Signature valide → acceptée', function () use ($wpayload, $wsig, $wsecret) {
+    expect_true(\App\StripeClient::verifyWebhookSignature($wpayload, $wsig, $wsecret));
+});
+it('Signature falsifiée → rejetée', function () use ($wpayload, $wts, $wsecret) {
+    expect_false(\App\StripeClient::verifyWebhookSignature($wpayload, 't=' . $wts . ',v1=deadbeef', $wsecret));
+});
+it('Payload altéré (même signature) → rejeté', function () use ($wpayload, $wsig, $wsecret) {
+    expect_false(\App\StripeClient::verifyWebhookSignature($wpayload . 'X', $wsig, $wsecret));
+});
+it('Secret placeholder → rejeté', function () use ($wpayload, $wsig) {
+    expect_false(\App\StripeClient::verifyWebhookSignature($wpayload, $wsig, 'REPLACE_WITH_STRIPE_WEBHOOK_SECRET'));
+});
+it('Timestamp hors tolérance → rejeté (anti-rejeu)', function () use ($wpayload, $wsecret) {
+    $old = (string) (time() - 1000);
+    $sig = 't=' . $old . ',v1=' . hash_hmac('sha256', $old . '.' . $wpayload, $wsecret);
+    expect_false(\App\StripeClient::verifyWebhookSignature($wpayload, $sig, $wsecret));
+});
+it('En-tête vide → rejeté', function () use ($wpayload, $wsecret) {
+    expect_false(\App\StripeClient::verifyWebhookSignature($wpayload, '', $wsecret));
+});
+
+// ============================================
 // VERDICT
 // ============================================
 echo implode("\n", $cases) . "\n\n";

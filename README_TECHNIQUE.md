@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.7.0  
-**Dernière mise à jour:** 25 juin 2026 — v2.7.0 (module diagnostic AD-11 : hub + 5 pages, lecture seule)
+**Version:** 2.8.0  
+**Dernière mise à jour:** 25 juin 2026 — v2.8.0 (§6 tunnel Stripe : Checkout + webhook HMAC + holds)
 
 ---
 
@@ -23,6 +23,7 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 25/06/2026 | 2.8.0 | 💳 §6 Tunnel Stripe | **Paiement Stripe (Checkout + webhook + holds), prouvé sans produits réels.** S1 routage (`stripeEnabled`/`paymentMode` ; 0 €→bypass). S2 anti-double-booking transactionnel (**`GET_LOCK` par jour** + `FOR UPDATE` + prédicat semi-ouvert + hold `pending_payment` + retry 23000/40001) — **prouvé sous concurrence réelle** (race tranchée, 0 deadlock). S3 `StripeClient::createCheckoutSession` (cURL direct, échec maîtrisé, SSL jamais désactivé). S4 `api/stripe-webhook.php` (CSRF-exempt, **HMAC corps brut**, idempotence `stripe_events_processed`, `amount_paid_cents`, email idempotent via claim atomique `confirmation_email_sent_at`, GCal inline non bloquant). S5 `Booking::expireStaleHolds()` + `cron/expire-holds.php` (CLI/`CRON_SECRET`, balaie tous les holds échus ; lectures sans effet de bord). S6 câblage `process.php` (route + libère le hold si Checkout KO) + `success.php` (statut RÉEL en BDD, le retour navigateur ne prouve pas le paiement) + `health.php` surface mode dégradé / `stripe_price_id` manquant. Smoke 44/44. NB local : cURL EasyPHP sans CA bundle → vrais appels Stripe nécessitent `curl.cainfo`. |
 | 25/06/2026 | 2.7.0 | 🩺 Module diagnostic | **`modules/diagnostic/` (AD-11) — hub + 5 pages, lecture seule, auth admin, secrets masqués.** `health` (PHP/extensions/BDD/tables/config/fuseaux/BASE_URL, résilient si BDD down via `diag_try_pdo` qui ne `die()` pas), `config-check` (constantes par sévérité, secrets jamais affichés), `alignment` (VERSION↔stamps, enum `bookings.status`⇄`active_key`⇄`BOOKING_STATUS`, catalogue seed⇄migration), `api-console` (fetch **client** d'un endpoint GET — évite le loopback serveur non fiable ici), `smoke` (corpus en `<iframe>`). CSS `diagnostic.css` 100 % tokens + un seul bloc `DIAG-FALLBACK` (garde-fou hex étendu). +4 icônes Lucide dans les 2 miroirs. **Fix [O1]** : `diag_head()` n'utilise plus `siteConfig()` (qui touche la BDD et `die()`) mais la constante `SITE_NAME` → header résilient. Tests 2 sens prouvés : BASE_URL absent → 500 ; BDD KO → health 200 « Inaccessible » ; stamp altéré → dérive ; statut hors enum → signalé ; hex hors fallback → pre-commit bloque ; lecture seule (0 écriture), 0 fuite de secret. |
 | 25/06/2026 | 2.6.8 | 🔒 §6 BASE_URL | **`BASE_URL` stricte, jamais dérivée du `Host`.** `config/config.php` ne dérive plus l'URL de `$_SERVER['HTTP_HOST']`/`SCRIPT_NAME` (bloc retiré) ; `BASE_URL` est lue exclusivement depuis `config.local.php` (anti XSS Host-header, valide en webhook/cron). Sanction au démarrage via `\App\configProblems()` (C1, source unique) : config requise manquante/mal formée → **HTTP 500 + message clair** (refus net). Le warning « Constant BASE_URL already defined » disparaît par construction (plus de 2ᵉ `define`) — smoke CLI 0 warning, 30/30. ⚠️ Migration : `config.local.php` **doit** définir `BASE_URL` sinon 500. Doc : template + `docs/booking-v3-spec.md` (§ BASE_URL livrée + checklist). |
 | 25/06/2026 | 2.6.7 | 🧱 Fondation | **Import SQL robuste au charset + hook fail-closed.** `SET NAMES utf8mb4;` en 1ʳᵉ ligne de `sql/schema.sql` et `sql/seed.sql` : un import via client défaut latin1/cp850 (mysql.exe Windows) corrompait les chaînes accentuées à chaque clone (invisible sur `COUNT`, visible sur le contenu). Prouvé `[O1]` par re-import **sans flag** → `HEX` propre (`é`=C3A9, `—`=E28094) sur `services.name`, `settings.legal_status` et les `COMMENT` du schéma. Hook : garde-fou AD-5 **fail-closed** (self-check emoji 😀 en tête ; si le grep ne compile pas le motif hors-BMP → blocage avec message clair, plus de fail-open silencieux via `\|\| true`). |
@@ -189,8 +190,10 @@
 > config-check / alignment / api-console / smoke, AD-11) et
 > **`assets/css/diagnostic.css`**.
 >
-> Et le chantier continue : §6 ajoutera `api/stripe-webhook.php` et
-> `cron/expire-holds.php`, §7 ajoutera `modules/booking/pack.php`.
+> et — depuis 2.8.0 (§6) — **`classes/StripeClient.php`**,
+> **`api/stripe-webhook.php`**, **`cron/expire-holds.php`** (tunnel Stripe).
+>
+> Et le chantier continue : §7 ajoutera `modules/booking/pack.php`.
 > *(La santé runtime promise « §9 » est livrée en 2.7.0 comme page du
 > module diagnostic — `modules/diagnostic/health.php` —, pas un
 > `health.php` racine.)* Reconstruire le détail maintenant serait
