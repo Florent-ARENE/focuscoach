@@ -221,6 +221,15 @@
 .diag-link__title { font-weight: 600; }
 .diag-link__desc { font-size: 0.82rem; color: var(--diag-muted); }
 
+/* ── Iframe (corpus smoke embarqué) ── */
+.diag-frame {
+  width: 100%;
+  min-height: 60vh;
+  border: 1px solid var(--diag-border);
+  border-radius: 8px;
+  background: var(--diag-surface);
+}
+
 /* ── Tablette+ : grilles à 2 colonnes ── */
 @media (min-width: 768px) {
   .diag-wrap { padding: 1.5rem; }

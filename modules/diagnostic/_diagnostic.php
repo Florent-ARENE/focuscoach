@@ -104,8 +104,11 @@ function diag_mask_secret($value): string
 /** Coquille HTML d'ouverture. $showBack=false pour le hub. */
 function diag_head(string $title, bool $showBack = true): string
 {
+    // ⚠ Pas de siteConfig() ici : il touche la BDD (Settings → Database::
+    // getInstance() qui die() si la BDD tombe), ce qui rendrait health/
+    // alignment non résilients. On lit la constante SITE_NAME (sans BDD).
     $base = Helpers::escape(BASE_URL);
-    $site = Helpers::escape(siteConfig()['site_name']);
+    $site = Helpers::escape(defined('SITE_NAME') ? SITE_NAME : 'Focus Coach');
     $t    = Helpers::escape($title);
 
     $html = '<!doctype html><html lang="fr"><head><meta charset="utf-8">'
@@ -127,4 +130,27 @@ function diag_head(string $title, bool $showBack = true): string
 function diag_foot(): string
 {
     return '</main></body></html>';
+}
+
+/**
+ * Connexion PDO RÉSILIENTE pour le diagnostic : try/catch local qui NE
+ * die() PAS (contrairement à Database::getInstance()), pour que health /
+ * alignment restent non-fatals si la BDD tombe. Aligne le fuseau comme
+ * l'app. Retourne ['pdo' => ?PDO, 'error' => ?string (SQLSTATE, jamais de
+ * secret)]. Lecture seule côté appelant.
+ */
+function diag_try_pdo(): array
+{
+    try {
+        $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=%s', DB_HOST, DB_PORT, DB_NAME, DB_CHARSET);
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT => 5,
+        ]);
+        $pdo->exec("SET time_zone = '" . date('P') . "'");
+        return ['pdo' => $pdo, 'error' => null];
+    } catch (\PDOException $e) {
+        // Jamais le message brut (host/user) : SQLSTATE seul.
+        return ['pdo' => null, 'error' => 'SQLSTATE ' . (string) $e->getCode()];
+    }
 }

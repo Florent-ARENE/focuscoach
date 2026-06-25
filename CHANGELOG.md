@@ -13,6 +13,41 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.7.0] — 2026-06-25 — Module diagnostic standard (AD-11)
+
+Nouveau module `modules/diagnostic/` (MINOR) : outil interne **lecture
+seule**, protégé par auth admin, secrets toujours masqués. Concrétise
+l'AD-11 ajouté au cadrage en 2.6.8 (C3).
+
+- **Hub** (`index.php`) + **5 pages** :
+  - `health.php` — PHP/extensions, BDD joignable, 12 tables, `configProblems()`,
+    fuseaux MySQL/PHP, `BASE_URL`. **Résilient** : connexion via `diag_try_pdo()`
+    (try/catch local, ne `die()` pas comme `Database::getInstance()`) → si la
+    BDD tombe, la page affiche « Inaccessible » au lieu de planter.
+  - `config-check.php` — constantes par sévérité (requis / optionnel-défaut /
+    optionnel-piloté) ; **secrets jamais affichés** (statut « défini / absent »).
+  - `alignment.php` — `VERSION` ↔ stamps (README/CLAUDE/README_TECHNIQUE/sw.js) ;
+    enum `bookings.status` ⇄ `active_key` ⇄ `BOOKING_STATUS` ; catalogue
+    `seed.sql` ⇄ `migration-3.0.0.sql`.
+  - `api-console.php` — interroge un endpoint GET **côté navigateur** (`fetch`),
+    affiche le JSON ; un loopback serveur→Apache s'est révélé non fiable en
+    imbriqué sur cet hôte (choix documenté).
+  - `smoke.php` — corpus `tests/smoke.php` embarqué en `<iframe>` (le navigateur
+    le charge directement, pas de loopback).
+- **CSS** `assets/css/diagnostic.css` : 100 % tokens, un seul bloc
+  `DIAG-FALLBACK-START…END` autorisé aux hex (garde-fou pre-commit étendu, C3).
+- **Helpers mutualisés** (`_diagnostic.php`, AD-3) : auth, coquille HTML,
+  cartes/lignes/badges d'état, masquage de secret, PDO résilient.
+- **Fix `[O1]`** : `diag_head()` n'appelle plus `siteConfig()` (qui touche la
+  BDD via `Settings` → `Database::getInstance()` qui `die()`) mais la constante
+  `SITE_NAME` — sinon health/alignment n'étaient pas résilients à une BDD down.
+- **Tests dans les 2 sens `[O1]`** : `BASE_URL` absente → 500 (sanction C2) ;
+  creds BDD fausses → health **200** « Inaccessible » (non fatal) ; stamp version
+  altéré → `alignment` montre la dérive ; statut hors enum → signalé ; hex hors
+  bloc fallback → pre-commit **bloque** ; param API invalide → JSON d'erreur ;
+  lecture seule (`grep INSERT/UPDATE/DELETE/DROP` = 0) ; aucun secret en clair ;
+  smoke 30/30. Chaque anomalie restaurée, `git status` propre.
+
 ## [2.6.8] — 2026-06-25 — §6 : `BASE_URL` stricte (jamais dérivée du `Host`)
 
 > **⚠️ Migration** : dès 2.6.8, `config/config.local.php` **doit** définir
