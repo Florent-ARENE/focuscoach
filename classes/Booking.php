@@ -67,8 +67,32 @@ class Booking
             return $this->bookingResult(false, 'Prestation requise (service_id manquant).');
         }
 
+        // Verrou applicatif par JOUR : sérialise EXPLICITEMENT le check+insert
+        // concurrent pour cette date → la garde anti-chevauchement devient
+        // atomique, SANS dépendre des gap locks InnoDB. Ceux-ci ferment certes
+        // la race, mais via des deadlocks (40001) prouvés en test de concurrence
+        // (deux starts différents qui se chevauchent sur un créneau vide). Avec
+        // ce verrou, le perdant attend, voit la résa, et reçoit « créneau déjà
+        // réservé » — pas une erreur générique. Toujours relâché (finally).
+        $lockName = substr('fc_book_day_' . $data['slot_date'], 0, 64);
+        if (!$this->acquireDayLock($lockName)) {
+            return $this->bookingResult(false, 'Réservation momentanément occupée, réessayez dans un instant.');
+        }
+        try {
+            return $this->insertAttemptLoop($data, $status, $paymentStatus, max(0, $holdMinutes));
+        } finally {
+            $this->releaseDayLock($lockName);
+        }
+    }
+
+    /**
+     * Boucle d'INSERT sous le verrou de jour DÉJÀ acquis. Réessaie UNE fois sur
+     * hold échu de même start (23000 → re-qualification) ou deadlock InnoDB
+     * (40001, transitoire). Sinon traduit l'erreur en message UX.
+     */
+    private function insertAttemptLoop(array $data, string $status, string $paymentStatus, int $holdMinutes): array
+    {
         $manageToken = $this->generateManageToken();
-        $holdMinutes = max(0, $holdMinutes);
         $expiresExpr = $holdMinutes > 0
             ? 'DATE_ADD(NOW(), INTERVAL ' . (int) $holdMinutes . ' MINUTE)'
             : 'NULL';
@@ -145,13 +169,17 @@ class Booking
                 if ($this->db->inTransaction()) {
                     $this->db->rollBack();
                 }
-                if ($e->getCode() === '23000') {
+                $code = $e->getCode();
+                if ($code === '23000') {
                     // Collision active_key (même start). Hold échu → re-qualifier + réessayer une fois.
                     if ($attempt === 1
                         && $this->expireStaleHoldAt($data['slot_date'], $data['slot_time_start'])) {
                         continue;
                     }
                     return $this->bookingResult(false, 'Ce créneau vient d\'être réservé. Veuillez en choisir un autre.');
+                }
+                if ($code === '40001' && $attempt === 1) {
+                    continue; // deadlock InnoDB transitoire → réessayer une fois (filet ; le GET_LOCK le rend rarissime)
                 }
                 $msg = APP_DEBUG ? 'Erreur : ' . $e->getMessage() : 'Une erreur est survenue.';
                 return $this->bookingResult(false, $msg);
@@ -218,6 +246,27 @@ class Booking
             'booking_id'   => null,
             'manage_token' => null,
         ];
+    }
+
+    /**
+     * Acquiert le verrou nommé MySQL (GET_LOCK), par jour. Retourne true s'il
+     * est obtenu dans le délai. Session-scoped : libéré explicitement
+     * (releaseDayLock) ou à la fermeture de connexion.
+     */
+    private function acquireDayLock(string $name, int $timeoutSec = 10): bool
+    {
+        $stmt = $this->db->prepare("SELECT GET_LOCK(:name, :timeout)");
+        $stmt->bindValue(':name', $name);
+        $stmt->bindValue(':timeout', $timeoutSec, \PDO::PARAM_INT);
+        $stmt->execute();
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /** Relâche le verrou nommé. */
+    private function releaseDayLock(string $name): void
+    {
+        $stmt = $this->db->prepare("SELECT RELEASE_LOCK(:name)");
+        $stmt->execute([':name' => $name]);
     }
 
     /**
