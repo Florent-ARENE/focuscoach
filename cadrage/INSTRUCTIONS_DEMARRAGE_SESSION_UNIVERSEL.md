@@ -19,6 +19,7 @@
 - La **base indexée reflète le repo, mais avec du retard** : si elle montre un état antérieur aux derniers commits poussés (ou au ZIP fourni), c'est **elle** qui est en retard — le signaler, travailler sur l'état confirmé.
 - **ZIP plus ancien que l'état poussé / indexé** → signaler le décalage et **demander lequel est le HEAD** avant de conclure. Ne jamais supposer.
 - **Version = source unique** : lire le fichier **`VERSION`** (du repo ou du ZIP). Ne jamais se fier à un numéro codé en dur ailleurs.
+- **Les fichiers de cadrage eux-mêmes obéissent à cette règle.** Pour modifier le socle (`CADRAGE_UNIVERSEL.md`, ce document), partir de leur **état confirmé** (repo / ZIP), **jamais d'un souvenir de session** : réécrire de mémoire un artefact qu'on aurait pu lire, c'est risquer de produire une version divergente — le document anti-dérive deviendrait sa propre victime (AD-2). Si le fichier fourni semble en retard sur le HEAD (stamp incohérent avec son corps, ou antérieur à un commit connu), **le signaler et le relire depuis le ZIP/repo** avant d'éditer.
 
 ## 3. Lecture des fichiers
 
@@ -51,5 +52,5 @@ Ordre de consultation : **état réel du repo** (commits poussés par Claude Cod
 
 ---
 
-*Document de démarrage UNIVERSEL — **v1.2 (figé)**, coordonné avec `CADRAGE_UNIVERSEL.md` v1.2. Socle commun ; chaque projet le complète sans le réécrire.*
-*Changelog : **v1.2** — sources d'autorité recentrées sur l'état réel du repo (commits poussés / ZIP de réamorçage) ; ZIP repositionné comme filet quand la synchro de l'instance est en retard ; pipeline humain → cette instance (architecture + prompts) → Claude Code (implémentation) → allers-retours → verdict humain, explicité ; socle ajouté à la table de référence ; étiquetage de preuve étendu à mes propres sorties. **v1.1** — proof-labeling (AD-10) + verdict humain + challenge des dépendances externes ; cascade Universel→Projet→CLAUDE.md. **v1.0** — protocole de session initial.*
+*Document de démarrage UNIVERSEL — **v1.4 (figé)**, coordonné avec `CADRAGE_UNIVERSEL.md` v1.4. Socle commun ; chaque projet le complète sans le réécrire.*
+*Changelog : **v1.4** — **recoordonné avec `CADRAGE_UNIVERSEL.md` v1.4** ; saut v1.2→v1.4 assumé : le corps référençait déjà **AD-11** (module diagnostic) depuis la v1.3 du socle alors que le stamp était resté v1.2 — **dérive de version corrigée**. Ajout §2 : **les fichiers de cadrage eux-mêmes se modifient depuis leur état confirmé (repo/ZIP), jamais de mémoire** (sinon le document anti-dérive se contredit — AD-2). **v1.2** — sources d'autorité recentrées sur l'état réel du repo (commits poussés / ZIP de réamorçage) ; ZIP repositionné comme filet quand la synchro de l'instance est en retard ; pipeline humain → cette instance (architecture + prompts) → Claude Code (implémentation) → allers-retours → verdict humain, explicité ; socle ajouté à la table de référence ; étiquetage de preuve étendu à mes propres sorties. **v1.1** — proof-labeling (AD-10) + verdict humain + challenge des dépendances externes ; cascade Universel→Projet→CLAUDE.md. **v1.0** — protocole de session initial.*
