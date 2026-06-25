@@ -65,12 +65,7 @@ $pageTitle = 'Choisir une date';
     <?= booking_header('index.php', 'Changer de prestation') ?>
 
     <main class="booking-main">
-        <ol class="bv3-steps" aria-label="Étapes de la réservation">
-            <li class="bv3-step is-done"><span class="bv3-step-num">1</span> Prestation</li>
-            <li class="bv3-step is-current" aria-current="step"><span class="bv3-step-num">2</span> Date</li>
-            <li class="bv3-step"><span class="bv3-step-num">3</span> Créneau</li>
-            <li class="bv3-step"><span class="bv3-step-num">4</span> Vos informations</li>
-        </ol>
+        <?= booking_steps(2, [1 => 'index.php']) ?>
 
         <div class="bv3-summary">
             <strong><?= Helpers::escape($service['name']) ?></strong>
@@ -81,6 +76,17 @@ $pageTitle = 'Choisir une date';
         <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
         <p class="page-subtitle text-center">Choisissez le jour qui vous convient. Les créneaux précis apparaîtront ensuite.</p>
 
+        <?php /* Calendrier (progressive enhancement) : rempli par booking-calendar.js
+                 depuis l'API mois. Sans JS, il reste `hidden` et la liste de secours
+                 ci-dessous prend le relais. */ ?>
+        <div id="bv3-calendar" class="bv3-cal"
+             data-service="<?= Helpers::escape((string) (int) $service['id']) ?>"
+             data-min-month="<?= Helpers::escape(date('Y-m')) ?>"
+             data-max-month="<?= Helpers::escape(date('Y-m', strtotime('+' . (int) MAX_HORIZON_DAYS . ' days'))) ?>"
+             data-today="<?= Helpers::escape(date('Y-m-d')) ?>"
+             hidden></div>
+
+        <div id="bv3-dates-fallback">
         <?php if (empty($dates)): ?>
             <p class="bv3-empty">Aucune date disponible sur les <?= Helpers::escape((string) (int) MAX_HORIZON_DAYS) ?> prochains jours. Merci de revenir plus tard.</p>
         <?php else: ?>
@@ -97,11 +103,13 @@ $pageTitle = 'Choisir une date';
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
+        </div>
     </main>
 
     <?= booking_footer() ?>
 
     <script src="../../assets/js/icons.js"></script>
+    <script src="../../assets/js/booking-calendar.js"></script>
     <?= pwaRegister() ?>
 </body>
 </html>

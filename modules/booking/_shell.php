@@ -42,3 +42,32 @@ function booking_footer(): string
 {
     return siteFooter(false);
 }
+
+/**
+ * Barre d'étapes (1 Prestation · 2 Date · 3 Créneau · 4 Vos informations).
+ * Mutualisée (était recopiée dans date/slot/confirm — AD-3). Les étapes
+ * DÉJÀ franchies deviennent des liens cliquables pour revenir en arrière.
+ *
+ * @param int                $current Étape courante (1-4).
+ * @param array<int,string>  $hrefs   href (déjà sûrs) des étapes franchies,
+ *                                     indexés par numéro d'étape.
+ */
+function booking_steps(int $current, array $hrefs = []): string
+{
+    $labels = [1 => 'Prestation', 2 => 'Date', 3 => 'Créneau', 4 => 'Vos informations'];
+    $html   = '<ol class="bv3-steps" aria-label="Étapes de la réservation">';
+    foreach ($labels as $n => $label) {
+        $body = '<span class="bv3-step-num">' . $n . '</span> ' . $label;
+        if ($n < $current) {
+            $inner = isset($hrefs[$n])
+                ? '<a class="bv3-step-link" href="' . $hrefs[$n] . '">' . $body . '</a>'
+                : $body;
+            $html .= '<li class="bv3-step is-done">' . $inner . '</li>';
+        } elseif ($n === $current) {
+            $html .= '<li class="bv3-step is-current" aria-current="step">' . $body . '</li>';
+        } else {
+            $html .= '<li class="bv3-step">' . $body . '</li>';
+        }
+    }
+    return $html . '</ol>';
+}

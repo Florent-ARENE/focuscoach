@@ -63,12 +63,10 @@ $pageTitle = 'Choisir un créneau';
     <?= booking_header('date.php?service=' . (int) $service['id'], 'Changer de date') ?>
 
     <main class="booking-main">
-        <ol class="bv3-steps" aria-label="Étapes de la réservation">
-            <li class="bv3-step is-done"><span class="bv3-step-num">1</span> Prestation</li>
-            <li class="bv3-step is-done"><span class="bv3-step-num">2</span> Date</li>
-            <li class="bv3-step is-current" aria-current="step"><span class="bv3-step-num">3</span> Créneau</li>
-            <li class="bv3-step"><span class="bv3-step-num">4</span> Vos informations</li>
-        </ol>
+        <?= booking_steps(3, [
+            1 => 'index.php',
+            2 => 'date.php?service=' . (int) $service['id'],
+        ]) ?>
 
         <div class="bv3-summary">
             <strong><?= Helpers::escape($service['name']) ?></strong>

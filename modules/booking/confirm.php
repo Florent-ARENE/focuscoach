@@ -74,12 +74,11 @@ $pageTitle = 'Vos informations';
     <?= booking_header('slot.php?service=' . (int) $service['id'] . '&amp;date=' . Helpers::escape($date), 'Changer de créneau') ?>
 
     <main class="booking-main">
-        <ol class="bv3-steps" aria-label="Étapes de la réservation">
-            <li class="bv3-step is-done"><span class="bv3-step-num">1</span> Prestation</li>
-            <li class="bv3-step is-done"><span class="bv3-step-num">2</span> Date</li>
-            <li class="bv3-step is-done"><span class="bv3-step-num">3</span> Créneau</li>
-            <li class="bv3-step is-current" aria-current="step"><span class="bv3-step-num">4</span> Vos informations</li>
-        </ol>
+        <?= booking_steps(4, [
+            1 => 'index.php',
+            2 => 'date.php?service=' . (int) $service['id'],
+            3 => 'slot.php?service=' . (int) $service['id'] . '&amp;date=' . Helpers::escape($date),
+        ]) ?>
 
         <div class="bv3-recap">
             <h2 class="bv3-recap-title"><?= Icons::svg('calendar', 20, 'icon-inline') ?>Récapitulatif</h2>

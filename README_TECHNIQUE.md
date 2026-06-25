@@ -3,8 +3,8 @@
 > **Document orienté développeur / IA**  
 > Mémoire vivante du projet - Mis à jour à chaque itération
 
-**Version:** 2.8.1  
-**Dernière mise à jour:** 26 juin 2026 — v2.8.1 (UI tunnel : footer mutualisé `siteFooter()` + sticky footer + wordmark centralisé)
+**Version:** 2.8.2  
+**Dernière mise à jour:** 26 juin 2026 — v2.8.2 (calendrier de date vanilla + barre d'étapes navigable ; cf. v2.8.1 footer mutualisé)
 
 ---
 
@@ -23,6 +23,7 @@
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
+| 26/06/2026 | 2.8.2 | 🗓️ Calendrier date | **Sélecteur de date = calendrier mensuel (vanilla, zéro lib) + barre d'étapes navigable.** **Nouveau** `assets/js/booking-calendar.js` (~135 l) : rend un calendrier sur l'**API mois existante** (`api/booking-v3-slots.php?service=X&month=YYYY-MM` → `{dates:{date:{available,slots_count}}}`, aucune nouvelle route). **Progressive enhancement** : sans JS, la **liste** server-side reste (`#bv3-dates-fallback`) ; avec JS, le calendrier la remplace. Mois préc./suiv. **bornés** à `[minMonth, today+MAX_HORIZON_DAYS]` (boutons désactivés aux bords). Jour = **aujourd'hui** marqué (`.bv3-cal-day.is-today`, cadre `--orange`) via `data-today` **serveur** (pas l'horloge client → zéro bug de fuseau). Jours dispo = `<a>` cliquables → `slot.php` ; passés/indispo = grisés non cliquables. **A11y** : `role="grid"`, `aria-label` par jour (« vendredi 26 juin 2026, 18 créneaux disponibles »), boutons `aria-label`, `aria-busy` pendant le fetch. `innerHTML` sûr (valeurs construites côté code, zéro entrée utilisateur). `date.php` : monture `#bv3-calendar` (`data-service/min-month/max-month/today`) + `<script booking-calendar.js>` **après** `icons.js`. **Mutualisation** `booking_steps(int $current, array $hrefs)` dans `modules/booking/_shell.php` : barre d'étapes (était **dupliquée** dans `date/slot/confirm` — AD-3) ; **étapes franchies = liens** (retour arrière), câblée 2/3/4. CSS `booking-v3.css` : `.bv3-cal*` (grille 7 col mobile-first, cellules `aspect-ratio:1`), `.bv3-step-link` + `.bv3-step.is-done:hover`. **Décisions** : (a) **calendrier maison vs lib** (Cally / Vanilla Calendar Pro évaluées) → **AD-5** interdit une lib front sans décision tracée + projet **sans build** (OVH) → custom sur l'API existante ; (b) PE pour ne rien casser sans JS ; (c) « aujourd'hui » côté serveur ; (d) horizon = `MAX_HORIZON_DAYS=60` (constante `config/config.php:99`, borne le calendrier — pas un réglage admin). **Erreurs à ne pas refaire** : (1) le **point orange** « disponible » a été **retiré** — redondant avec la case cliquable et **interprété à tort** comme « réservations existantes » (un indicateur doit être univoque) ; (2) `icons.js` **doit** précéder `booking-calendar.js` (dépend de `Icons.svg`) ; (3) ne jamais dériver la date du jour du client. Vérifs : `php -l` ✓, hex modules **0**, `node --check` JS ✓, HTTP 200 (3 pages), `data-today` + liens d'étapes présents, smoke **44/44**. |
 | 26/06/2026 | 2.8.1 | 🎨 UI tunnel | **Footer du site mutualisé + coquille booking cohérente.** Footer = composant UNIQUE `siteFooter(bool $full)` (`includes/init.php`, piloté par `siteConfig()`, AD-2/AD-3) : accueil → `siteFooter(true)` (navy 3 colonnes Marque/Navigation/Informations) ; tunnel → `siteFooter(false)` (même navy, **version allégée** marque + liens légaux + ©, sans nav qui ferait sortir du funnel). CSS `.home-footer` → **`.site-footer`** déplacé de `home.css` vers `main.css` (chargé partout : le booking, qui ne charge pas `home.css`, hérite du style ; tous les tokens `--on-dark-*`/`--section-pad-x` déjà centraux). Header/footer du tunnel mutualisés dans `modules/booking/_shell.php` (`booking_header()`/`booking_footer()`), 6 pages câblées. **Wordmark centralisé** : identité DM Sans MAJUSCULES bicolore portée par `.brand-half-a/b` dans `main.css` (dé-dupliquée de `home.css`), donc bicolore+majuscule dans tout le tunnel. Étape 1 en **3 tiers** côte à côte (`@media 1024`). **Sticky footer** : `body.booking-page { display:flex; flex-direction:column; min-height:100vh }` + `.booking-main { flex:1 }` → fini le blanc sous le footer sur page courte. Mobile-first vérifié (0 media query `max-width`), PWA intacte (`pwaHead`/`pwaRegister` sur les 6 pages), 0 hex modules, smoke 44/44. CSS mort retiré (`.booking-footer`). |
 | 25/06/2026 | 2.8.0 | 💳 §6 Tunnel Stripe | **Paiement Stripe (Checkout + webhook + holds), prouvé sans produits réels.** S1 routage (`stripeEnabled`/`paymentMode` ; 0 €→bypass). S2 anti-double-booking transactionnel (**`GET_LOCK` par jour** + `FOR UPDATE` + prédicat semi-ouvert + hold `pending_payment` + retry 23000/40001) — **prouvé sous concurrence réelle** (race tranchée, 0 deadlock). S3 `StripeClient::createCheckoutSession` (cURL direct, échec maîtrisé, SSL jamais désactivé). S4 `api/stripe-webhook.php` (CSRF-exempt, **HMAC corps brut**, idempotence `stripe_events_processed`, `amount_paid_cents`, email idempotent via claim atomique `confirmation_email_sent_at`, GCal inline non bloquant). S5 `Booking::expireStaleHolds()` + `cron/expire-holds.php` (CLI/`CRON_SECRET`, balaie tous les holds échus ; lectures sans effet de bord). S6 câblage `process.php` (route + libère le hold si Checkout KO) + `success.php` (statut RÉEL en BDD, le retour navigateur ne prouve pas le paiement) + `health.php` surface mode dégradé / `stripe_price_id` manquant. Smoke 44/44. NB local : cURL EasyPHP sans CA bundle → vrais appels Stripe nécessitent `curl.cainfo`. |
 | 25/06/2026 | 2.7.0 | 🩺 Module diagnostic | **`modules/diagnostic/` (AD-11) — hub + 5 pages, lecture seule, auth admin, secrets masqués.** `health` (PHP/extensions/BDD/tables/config/fuseaux/BASE_URL, résilient si BDD down via `diag_try_pdo` qui ne `die()` pas), `config-check` (constantes par sévérité, secrets jamais affichés), `alignment` (VERSION↔stamps, enum `bookings.status`⇄`active_key`⇄`BOOKING_STATUS`, catalogue seed⇄migration), `api-console` (fetch **client** d'un endpoint GET — évite le loopback serveur non fiable ici), `smoke` (corpus en `<iframe>`). CSS `diagnostic.css` 100 % tokens + un seul bloc `DIAG-FALLBACK` (garde-fou hex étendu). +4 icônes Lucide dans les 2 miroirs. **Fix [O1]** : `diag_head()` n'utilise plus `siteConfig()` (qui touche la BDD et `die()`) mais la constante `SITE_NAME` → header résilient. Tests 2 sens prouvés : BASE_URL absent → 500 ; BDD KO → health 200 « Inaccessible » ; stamp altéré → dérive ; statut hors enum → signalé ; hex hors fallback → pre-commit bloque ; lecture seule (0 écriture), 0 fuite de secret. |
@@ -330,6 +331,7 @@
 | `.diag .box` / `.diag .btn` / `.diag .btn-danger` | Composants du diagnostic |
 | `.diag .code-email` | Code inline sur fond bleu pâle (email Service Account) |
 | `.brand-half-a` / `.brand-half-b` | Wordmark bicolore (cf. `brandWordmark()`) |
+| `.site-footer` / `.footer-*` | Footer du site (composant `siteFooter()`, navy) — accueil (`siteFooter(true)`) + tunnel (`.site-footer--lite`). Depuis 2.8.1, dans `main.css` (chargé partout) |
 | `.hidden` | `display: none !important` (utilitaire) |
 
 ### Wordmark bicolore — `brandWordmark()`
@@ -341,10 +343,12 @@ via `/admin`) en deux moitiés de caractères, snap sur espace ±2 :
 - `"FocusCoach"` → split par milieu → `Focus` + `Coach`
 - `"Acme"` (4 chars) → `Ac` + `me`
 
-CSS par défaut (home.css) : `.brand-half-a` orange, `.brand-half-b` navy.
-Adaptation par contexte sombre via sélecteur descendant :
-`.home-footer .brand-half-b`, `.legal-header .brand-half-b`,
-`.sidebar-logo .brand-half-b`, `.booking-header .brand-half-b` → `var(--white)`.
+Identité + couleurs par défaut centralisées dans **`main.css`** (depuis 2.8.1) :
+`.brand-half-a/b` = DM Sans MAJUSCULES `letter-spacing 0.08em` ; `.brand-half-a`
+orange, `.brand-half-b` navy. Adaptation par contexte **sombre** via sélecteur
+descendant → `var(--white)` : `.site-footer .brand-half-b` (main.css),
+`.sidebar-logo .brand-half-b` (admin.css), `.legal-header .brand-half-b` (home.css).
+*(Le header du tunnel est sur fond blanc → wordmark orange+navy, pas d'override.)*
 
 > **Jamais** de mot de marque en dur dans le HTML — toujours `brandWordmark()`.
 
@@ -474,6 +478,31 @@ color: #1a2744;         /* ❌ Jamais de couleur en dur */
 | Champ | Longueur | Format |
 |-------|----------|--------|
 | `manage_token` | 64 car. | Hexadécimal |
+
+### Tunnel de réservation (booking v3) — mutualisations & pièges
+**Coquille mutualisée** — `modules/booking/_shell.php` (inclus par les 6 pages
+`index/date/slot/confirm/success/manage`) porte 3 fonctions, à réutiliser, jamais
+ré-écrire la marque/structure en dur :
+- `booking_header($backHref, $backLabel)` — header logo + lien retour.
+- `booking_footer()` — délègue à `siteFooter(false)` (le footer **du site**,
+  variante allégée ; cf. `includes/init.php`). Pas de footer booking divergent.
+- `booking_steps($current, $hrefs)` — barre d'étapes 1-4 ; les étapes **franchies**
+  deviennent des **liens** (retour arrière). `$hrefs` = href déjà sûrs, indexés par n°.
+
+**Footer du site** — un seul composant `siteFooter(bool $full)` (`includes/init.php`),
+CSS `.site-footer` dans **`main.css`** (chargé partout). `$full=true` accueil (3 col),
+`$full=false` tunnel (allégé). Ne **pas** recréer un `.home-footer`/`.booking-footer`.
+
+**Calendrier de date** (`assets/js/booking-calendar.js`, étape `date.php`) :
+- **Progressive enhancement** : la liste server-side (`#bv3-dates-fallback`) est le
+  fallback sans JS ; le calendrier la masque si JS présent. Ne pas supprimer la liste.
+- Données via l'**API mois** existante (`api/booking-v3-slots.php?service&month`) — ne
+  pas créer de route parallèle.
+- « Aujourd'hui » vient du **serveur** (`data-today`), jamais de l'horloge client (fuseau).
+- `icons.js` **avant** `booking-calendar.js` (dépend de `Icons.svg`).
+- Horizon affiché borné par `MAX_HORIZON_DAYS` (`config/config.php`, constante = 60 j).
+- **Indicateur univoque** : pas de pastille « disponible » (retirée en 2.8.2, prise pour
+  « réservations existantes ») — la case cliquable suffit à distinguer dispo/indispo.
 
 ---
 
