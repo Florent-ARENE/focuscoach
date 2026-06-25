@@ -12,6 +12,7 @@
  * et success (court-circuit si clés absentes ou price_cents == 0).
  */
 require_once __DIR__ . '/../../includes/init.php';
+require_once __DIR__ . '/_shell.php';
 
 use App\Database;
 use App\Helpers;
@@ -69,13 +70,8 @@ $pageTitle = 'Vos informations';
     <link rel="stylesheet" href="../../assets/css/booking-v3.css">
     <?= pwaHead() ?>
 </head>
-<body>
-    <header class="booking-header">
-        <div class="booking-header-content">
-            <a href="../../" class="booking-logo"><?= brandWordmark() ?></a>
-            <a href="slot.php?service=<?= Helpers::escape((string) (int) $service['id']) ?>&amp;date=<?= Helpers::escape($date) ?>" class="back-link"><?= Icons::svg('arrow-left', 20, 'icon-inline') ?>Changer de créneau</a>
-        </div>
-    </header>
+<body class="booking-page">
+    <?= booking_header('slot.php?service=' . (int) $service['id'] . '&amp;date=' . Helpers::escape($date), 'Changer de créneau') ?>
 
     <main class="booking-main">
         <ol class="bv3-steps" aria-label="Étapes de la réservation">
@@ -157,9 +153,7 @@ $pageTitle = 'Vos informations';
         </form>
     </main>
 
-    <footer class="booking-footer">
-        <p>© <?= date('Y') ?> <?= Helpers::escape(siteConfig()['site_name']) ?></p>
-    </footer>
+    <?= booking_footer() ?>
 
     <script src="../../assets/js/icons.js"></script>
     <?= pwaRegister() ?>

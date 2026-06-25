@@ -9,6 +9,7 @@
  * et passe directement à slot.php?service=…&date=….
  */
 require_once __DIR__ . '/../../includes/init.php';
+require_once __DIR__ . '/_shell.php';
 
 use App\Database;
 use App\Slot;
@@ -60,13 +61,8 @@ $pageTitle = 'Choisir une date';
     <link rel="stylesheet" href="../../assets/css/booking-v3.css">
     <?= pwaHead() ?>
 </head>
-<body>
-    <header class="booking-header">
-        <div class="booking-header-content">
-            <a href="../../" class="booking-logo"><?= brandWordmark() ?></a>
-            <a href="index.php" class="back-link"><?= Icons::svg('arrow-left', 20, 'icon-inline') ?>Changer de prestation</a>
-        </div>
-    </header>
+<body class="booking-page">
+    <?= booking_header('index.php', 'Changer de prestation') ?>
 
     <main class="booking-main">
         <ol class="bv3-steps" aria-label="Étapes de la réservation">
@@ -103,9 +99,7 @@ $pageTitle = 'Choisir une date';
         <?php endif; ?>
     </main>
 
-    <footer class="booking-footer">
-        <p>© <?= date('Y') ?> <?= Helpers::escape(siteConfig()['site_name']) ?></p>
-    </footer>
+    <?= booking_footer() ?>
 
     <script src="../../assets/js/icons.js"></script>
     <?= pwaRegister() ?>

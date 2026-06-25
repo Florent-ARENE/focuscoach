@@ -154,6 +154,59 @@ a:hover {
 }
 
 /* ============================================
+   MARQUE / WORDMARK — brandWordmark()
+   ============================================
+   Bicolore par DÉFAUT, centralisé ici (design system unique, AD-4) pour
+   que TOUTE page chargeant main.css l'ait — pas seulement home.css.
+   Les contextes sombres overrident `.brand-half-b` en blanc dans leur
+   module (ex. `.sidebar-logo` admin, `.site-footer`/`.legal-header`).
+   Identité TYPO du wordmark centralisée ici aussi (DM Sans, MAJUSCULES,
+   letter-spacing) → toute page l'a, plus de re-déclaration par contexte. */
+.brand-half-a,
+.brand-half-b {
+    font-family: var(--font-body); /* wordmark = DM Sans, jamais le serif display */
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.brand-half-a { color: var(--orange); }
+.brand-half-b { color: var(--navy); }
+
+/* ============================================
+   FOOTER DU SITE — .site-footer (composant UNIQUE, navy)
+   ============================================
+   Mutualisé accueil + tunnel booking (markup = siteFooter() dans init.php).
+   Variante `.site-footer--lite` = funnel allégé. Tokens déjà centraux ici. */
+.site-footer { background: var(--navy-deep); padding: 3rem var(--section-pad-x) 2rem; font-size: 0.78rem; letter-spacing: 0.06em; }
+.site-footer .brand-half-b { color: var(--white); } /* footer sombre : « Coach » en blanc, « Focus » reste orange */
+.footer-top { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--on-dark-08); }
+.footer-brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+.footer-brand img { height: 36px; width: auto; opacity: 0.95; }
+.footer-brand-text { font-size: 1rem; letter-spacing: 0.06em; }
+.footer-tagline { font-size: 0.8rem; color: var(--on-dark-40); line-height: 1.7; max-width: 320px; }
+.footer-legal { font-size: 0.75rem; color: var(--on-dark-25); margin-top: 1rem; }
+.footer-legal .value { color: var(--on-dark-40); }
+.footer-col-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--orange); margin-bottom: 1rem; font-weight: 500; }
+.footer-links { display: flex; flex-direction: column; gap: 0.5rem; }
+.footer-links a { font-size: 0.82rem; color: var(--on-dark-45); text-decoration: none; transition: color var(--transition); }
+.footer-links a:hover { color: var(--orange); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.footer-bottom p { font-size: 0.75rem; color: var(--on-dark-25); }
+.footer-note { font-size: 0.72rem; color: var(--on-dark-20); }
+
+/* Variante allégée (funnel) : marque + liens légaux + ©, centré, 1 colonne. */
+.site-footer--lite .footer-top { grid-template-columns: 1fr; text-align: center; }
+.site-footer--lite .footer-brand { justify-content: center; }
+.site-footer--lite .footer-tagline { max-width: none; }
+.footer-links--inline { flex-direction: row; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem; }
+.site-footer--lite .footer-bottom { justify-content: center; }
+
+@media (min-width: 768px) {
+    /* 3 colonnes pour le footer COMPLET ; la variante lite reste 1 colonne. */
+    .site-footer:not(.site-footer--lite) .footer-top { grid-template-columns: 2fr 1fr 1fr; gap: 3rem; }
+}
+
+/* ============================================
    TYPOGRAPHIE
    ============================================ */
 h1, h2, h3, h4, h5, h6 {
