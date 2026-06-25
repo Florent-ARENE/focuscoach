@@ -13,6 +13,42 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.8.0] — 2026-06-25 — §6 Tunnel de paiement Stripe (Checkout + webhook + holds)
+
+Jalon Stripe (MINOR). Construit et **prouvé sans produits Stripe réels** (mode
+dégradé + webhooks simulés signés) ; le end-to-end avec vrais produits reste à
+faire par l'admin (cf. checklist `docs/booking-v3-spec.md`). `3.0.0` reste
+réservé à la complétion v3 (forfaits §7 + admin CRUD §8).
+
+- **S1 — routage** : `App\stripeEnabled()` / `App\paymentMode()` — `stripe` si
+  activé + payant + `stripe_price_id` ; sinon `bypass` (gratuit / Stripe off /
+  price_id absent → validation admin). 0 € ne part jamais en Stripe.
+- **S2 — anti-double-booking** : `Booking::create()` transactionnel
+  (`GET_LOCK` par jour + `SELECT … FOR UPDATE` + prédicat d'intervalle semi-ouvert
+  buffer des 2 côtés) + hold `pending_payment` (`createHold`) + retry hold échu
+  (23000) + retry deadlock (40001). **Prouvé sous concurrence réelle** (5/5 race
+  tranchée, 0 deadlock, 0 double booking). `isSlotTaken/Available` incluent les
+  holds non expirés.
+- **S3 — Checkout** : `StripeClient::createCheckoutSession()` en cURL direct (pas
+  de lib), timeouts bornés, échec maîtrisé (hold libéré, pas de booking fantôme ;
+  vérif SSL jamais désactivée).
+- **S4 — webhook** : `api/stripe-webhook.php`, CSRF-exempt, signature HMAC sur le
+  **corps brut**, idempotence `stripe_events_processed` (rejeu → 200 no-op),
+  `checkout.session.completed` → `confirmed`/`paid`/`amount_paid_cents` ; email
+  idempotent (claim atomique `confirmation_email_sent_at`) + GCal inline, échecs
+  email/GCal non bloquants.
+- **S5 — expiration** : `Booking::expireStaleHolds()` + `cron/expire-holds.php`
+  (CLI ou token `CRON_SECRET`, jamais de placeholder ouvert). Balaie TOUS les
+  holds échus. Lectures sans effet de bord (holds échus = libres, sans écrire).
+- **S6 — câblage** : `process.php` route `paymentMode` (hold+Checkout ou bypass) ;
+  `success.php` lit le statut RÉEL en BDD (le retour navigateur ne prouve pas le
+  paiement) ; `health.php` surface « Stripe en mode dégradé » et « service payant
+  sans `stripe_price_id` ». Template : `STRIPE_*` + `CRON_SECRET` documentés.
+
+Smoke 44/44 (Lots 7 routage, 8 StripeClient, 9 signature). NB local : cURL EasyPHP
+échoue en SSL (CA bundle absent) → les vrais appels Stripe local nécessitent
+`curl.cainfo` (OVH l'a).
+
 ## [2.7.0] — 2026-06-25 — Module diagnostic standard (AD-11)
 
 Nouveau module `modules/diagnostic/` (MINOR) : outil interne **lecture

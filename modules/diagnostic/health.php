@@ -107,6 +107,33 @@ $baseOk = (defined('BASE_URL') && preg_match('#^https?://#', (string) BASE_URL))
 $states[] = $baseOk;
 $tzBody .= diag_row($baseOk, 'BASE_URL définie + absolue', defined('BASE_URL') ? BASE_URL : '(absente)');
 
+// ── Paiement Stripe (surface le mode dégradé / les price_id manquants) ──
+// Jamais fatal (le tunnel bascule en bypass) → états 'warn', pas 'fail'.
+$stripeOn = \App\stripeEnabled();
+$whSecret = defined('STRIPE_WEBHOOK_SECRET') ? (string) STRIPE_WEBHOOK_SECRET : '';
+$whOk     = ($whSecret !== '' && strpos($whSecret, 'REPLACE_WITH_') !== 0);
+
+$stripeBody   = diag_row($stripeOn ? 'ok' : 'warn', 'Clés Stripe', $stripeOn ? 'configurées' : 'placeholder/absentes → mode dégradé (bypass, validation admin)');
+$stripeBody  .= diag_row($whOk ? 'ok' : 'warn', 'Secret webhook', $whOk ? 'configuré' : 'placeholder/absent → webhook rejeté (400)');
+$stripeStates = [$stripeOn ? 'ok' : 'warn', $whOk ? 'ok' : 'warn'];
+
+if ($stripeOn && $pdo) {
+    try {
+        $missing = (int) $pdo->query(
+            "SELECT COUNT(*) FROM services
+              WHERE is_active = 1 AND price_cents > 0
+                AND (stripe_price_id IS NULL OR stripe_price_id = '')"
+        )->fetchColumn();
+        $ms = $missing === 0 ? 'ok' : 'warn';
+        $stripeStates[] = $ms;
+        $stripeBody .= diag_row($ms, 'Services payants sans stripe_price_id', $missing === 0 ? 'aucun' : $missing . ' → tunnel refusé tant que non renseigné');
+    } catch (\PDOException $e) {
+        $stripeBody .= diag_row('warn', 'Services payants sans stripe_price_id', 'non vérifiable');
+    }
+}
+$stripeState = diag_worst($stripeStates);
+$states[] = $stripeState;
+
 // ── Rendu ──
 $overall = diag_worst($states);
 $summaryLabel = ['ok' => 'Tout est vert.', 'warn' => 'Points d\'attention.', 'fail' => 'Au moins un blocage.'][$overall];
@@ -122,6 +149,7 @@ echo diag_head('Santé runtime');
     <?= diag_render_card($dbState, 'Base de données', $dbBody) ?>
     <?= diag_render_card(diag_worst([$cfgState, $pwChk['state']]), 'Configuration requise', $cfgBody) ?>
     <?= diag_render_card($baseOk, 'Fuseaux & URL', $tzBody) ?>
+    <?= diag_render_card($stripeState, 'Paiement Stripe', $stripeBody) ?>
 </div>
 <?php
 echo diag_foot();

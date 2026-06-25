@@ -14,7 +14,9 @@
 require_once __DIR__ . '/../../includes/init.php';
 
 use App\Booking;
+use App\Database;
 use App\Helpers;
+use App\StripeClient;
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
@@ -50,7 +52,8 @@ if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $booking = new Booking();
-$result  = $booking->create([
+
+$data = [
     'visitor_name'         => $name,
     'visitor_email'        => $email,
     'visitor_phone'        => Helpers::sanitize($_POST['visitor_phone']        ?? ''),
@@ -64,18 +67,54 @@ $result  = $booking->create([
     'service_id'           => (int) $draft['service_id'],
     'duration_min'         => (int) $draft['duration_min'],
     'buffer_after_min'     => (int) $draft['buffer_after_min'],
-]);
+];
 
-if (!$result['success']) {
-    // Conflit créneau (race active_key) ou erreur — retour vers slot
-    // pour re-choisir.
-    header('Location: slot.php'
-        . '?service=' . (int) $draft['service_id']
-        . '&date='    . urlencode($draft['slot_date']));
+$slotBack = 'slot.php?service=' . (int) $draft['service_id'] . '&date=' . urlencode($draft['slot_date']);
+
+// Routage paiement (S1) : on lit le tarif + price_id du service.
+$svc = Database::getInstance()->prepare('SELECT price_cents, stripe_price_id FROM services WHERE id = :id');
+$svc->execute([':id' => (int) $draft['service_id']]);
+$service = $svc->fetch() ?: ['price_cents' => 0, 'stripe_price_id' => null];
+
+if (\App\paymentMode($service) === 'stripe') {
+    // 1) Hold pending_payment (15 min) avec garde anti-double-booking (S2).
+    $result = $booking->createHold($data, 15);
+    if (!$result['success']) {
+        header('Location: ' . $slotBack); // créneau déjà pris
+        exit;
+    }
+    $bookingId = (int) $result['booking_id'];
+
+    // 2) Session Checkout (URLs absolues depuis BASE_URL, jamais HTTP_HOST).
+    $session = StripeClient::createCheckoutSession(
+        (string) $service['stripe_price_id'],
+        BASE_URL . 'modules/booking/success.php?cs={CHECKOUT_SESSION_ID}',
+        BASE_URL . 'modules/booking/' . $slotBack,
+        ['booking_id' => $bookingId]
+    );
+
+    // 3) Échec → libérer le hold (pas de booking fantôme) + retour clair.
+    if (isset($session['error'])) {
+        $booking->releaseHold($bookingId);
+        $_SESSION['booking_error'] = 'Le paiement n\'a pas pu démarrer. Merci de réessayer.';
+        header('Location: ' . $slotBack);
+        exit;
+    }
+
+    // 4) Mémoriser la session et rediriger vers Stripe (confirmation via webhook).
+    $booking->attachStripeSession($bookingId, $session['id']);
+    header('Location: ' . $session['url']);
     exit;
 }
 
-// Mémoriser le résultat dans la session pour success.php
+// Mode BYPASS (gratuit, Stripe off, ou stripe_price_id absent) : booking direct
+// en 'pending' (validation admin), comme avant.
+$result = $booking->create($data);
+if (!$result['success']) {
+    header('Location: ' . $slotBack);
+    exit;
+}
+
 $_SESSION['booking_result'] = [
     'booking_id'   => $result['booking_id'],
     'manage_token' => $result['manage_token'],

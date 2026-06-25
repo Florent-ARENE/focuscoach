@@ -351,6 +351,43 @@ class Booking
         return $stmt->rowCount();
     }
 
+    /** Attache l'id de session Stripe Checkout à un hold (avant redirection). */
+    public function attachStripeSession(int $id, string $sessionId): void
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE bookings SET stripe_session_id = :sid WHERE id = :id"
+        );
+        $stmt->execute([':sid' => $sessionId, ':id' => $id]);
+    }
+
+    /**
+     * Libère un hold dont le tunnel Stripe a échoué (création de session KO) :
+     * passe 'expired' → libère active_key. Pas de booking fantôme.
+     */
+    public function releaseHold(int $id): void
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE bookings SET status = 'expired'
+              WHERE id = :id AND status = 'pending_payment'"
+        );
+        $stmt->execute([':id' => $id]);
+    }
+
+    /** Retrouve une réservation par son stripe_session_id (retour success.php). */
+    public function getByStripeSession(string $sessionId): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT b.*, s.name AS service_name, s.slug AS service_slug
+               FROM bookings b
+               LEFT JOIN services s ON s.id = b.service_id
+              WHERE b.stripe_session_id = :sid
+              LIMIT 1"
+        );
+        $stmt->execute([':sid' => $sessionId]);
+        $booking = $stmt->fetch();
+        return $booking ? $this->enrichBooking($booking) : null;
+    }
+
     /**
      * Générer un token unique pour la gestion client
      */

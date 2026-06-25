@@ -451,6 +451,26 @@ secrets.
       `config/google-credentials.json` en place, hors web,
       protégé par `.htaccess` (`Require all denied`).
 
+### Mise en service Stripe (§6, livré 2.8.0) — à faire par l'admin
+
+> Le code est livré et testé **sans produits réels** (mode dégradé +
+> webhooks simulés). Le end-to-end « vrai paiement » dépend de ces gestes.
+
+- [ ] Dashboard Stripe → **créer un Price (EUR)** par prestation et forfait
+      payant ; coller chaque `price_…` dans `/admin` (colonne
+      `stripe_price_id`). `health.php` liste les services payants sans
+      `stripe_price_id` (tunnel refusé tant que vide).
+- [ ] Stripe → **Webhooks** → endpoint `https://focuscoach.fr/api/stripe-webhook.php`,
+      événement `checkout.session.completed` → copier le `whsec_…` dans
+      `STRIPE_WEBHOOK_SECRET`.
+- [ ] **Cron** `cron/expire-holds.php` planifié (~5 min) en CLI, ou via URL
+      avec `CRON_SECRET` défini dans `config.local.php` (sinon HTTP refusé).
+- [ ] **CA bundle** : vérifier que cURL PHP peut joindre `api.stripe.com` en
+      TLS (sur OVH OK ; en local EasyPHP, configurer `curl.cainfo`). La vérif
+      SSL n'est jamais désactivée côté code.
+- [ ] Test **sandbox** d'un paiement réel (clé test) AVANT la bascule live :
+      paiement → webhook confirme → `success.php` affiche « confirmé ».
+
 ### Base de données
 
 - [ ] **`mysqldump`** complet effectué avant toute migration
