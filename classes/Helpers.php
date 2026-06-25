@@ -278,3 +278,60 @@ class Helpers
         return preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $time) === 1;
     }
 }
+
+/**
+ * Problèmes de configuration courants (fonction PURE, sans effet de bord).
+ *
+ * Source unique consommée par : la sanction de `config/config.php` (500 au
+ * démarrage si non vide) ET le module diagnostic (health/config-check).
+ * Ne pas dupliquer ailleurs.
+ *
+ * Injection de `$isDefined`/`$valueOf` (défauts `defined`/`constant`) → testable
+ * sans toucher aux vraies constantes : le smoke simule l'absence/le format
+ * d'une clé via des callables, sans tuer le process.
+ *
+ * Sévérité (3 catégories) :
+ *   - REQUIS non vide (fatal)  : DB_HOST, DB_NAME, DB_USER, BASE_URL, ADMIN_PASSWORD_HASH.
+ *   - REQUIS, vide toléré      : DB_PASS — un mot de passe vide est LÉGITIME en
+ *                                local (EasyPHP : root sans mot de passe). Le rendre
+ *                                fatal casserait le dev documenté → on exige seulement
+ *                                qu'il soit *défini*.
+ *   - OPTIONNEL piloté (jamais fatal) : STRIPE_*, GOOGLE_* → mode dégradé, jamais
+ *                                dans la liste (rendre Stripe requis = casser le
+ *                                mode sans-Stripe = interdit).
+ *
+ * @return string[] liste des problèmes (vide = config complète et bien formée).
+ */
+function configProblems(?callable $isDefined = null, ?callable $valueOf = null): array
+{
+    // PHP n'accepte pas un défaut string sur un paramètre typé `callable` ;
+    // on résout les défauts `defined`/`constant` dans le corps.
+    $isDefined = $isDefined ?? 'defined';
+    $valueOf   = $valueOf   ?? 'constant';
+
+    $requiredNonEmpty = ['DB_HOST', 'DB_NAME', 'DB_USER', 'BASE_URL', 'ADMIN_PASSWORD_HASH'];
+    $requiredDefined  = ['DB_PASS']; // défini obligatoire, mais vide accepté
+
+    $problems = [];
+
+    foreach ($requiredNonEmpty as $key) {
+        // Court-circuit : si non défini, on n'appelle pas $valueOf (constant() lèverait).
+        if (!$isDefined($key) || $valueOf($key) === '' || $valueOf($key) === null) {
+            $problems[] = "$key manquant ou vide";
+        }
+    }
+
+    foreach ($requiredDefined as $key) {
+        if (!$isDefined($key)) {
+            $problems[] = "$key non défini";
+        }
+    }
+
+    if ($isDefined('BASE_URL')
+        && $valueOf('BASE_URL') !== ''
+        && !preg_match('#^https?://#', (string) $valueOf('BASE_URL'))) {
+        $problems[] = "BASE_URL doit commencer par http:// ou https://";
+    }
+
+    return $problems;
+}
