@@ -1,0 +1,229 @@
+/* ============================================
+   DIAGNOSTIC — feuille du module modules/diagnostic/
+   ============================================
+   Module outil, lecture seule. Écrit EXCLUSIVEMENT en tokens CSS.
+   Aucune valeur en dur (couleur, hex) hors de l'unique bloc de fallback
+   délimité ci-dessous (DIAG-FALLBACK-START…END) — vérifié par le
+   pre-commit (AD-4). Les tokens dérivent du design system de l'app
+   (main.css) quand il les expose, avec un défaut sobre neutre sinon.
+   Mobile-first : règles de base = mobile, min-width pour enrichir.
+   ============================================ */
+
+/* DIAG-FALLBACK-START — seul bloc de diagnostic.css autorisé à contenir des hex */
+:root {
+  --diag-surface:     var(--surface, #ffffff);
+  --diag-surface-alt: var(--sand, #f7f5f0);
+  --diag-border:      var(--border, #e5e7eb);
+  --diag-text:        var(--text, #1f2937);
+  --diag-muted:       var(--muted, #6b7280);
+  --diag-accent:      var(--navy-deep, #2e2a5e);
+  --diag-ok:          var(--success, #16a34a);
+  --diag-warn:        var(--warning, #d97706);
+  --diag-fail:        var(--danger, #dc2626);
+  --diag-console-bg:  var(--console-bg, #0f172a);
+  --diag-console-fg:  var(--console-fg, #e2e8f0);
+}
+/* DIAG-FALLBACK-END */
+
+/* ── Layout ── */
+.diag-body {
+  margin: 0;
+  background: var(--diag-surface-alt);
+  color: var(--diag-text);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+.diag-wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.diag-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0 1rem;
+  border-bottom: 1px solid var(--diag-border);
+  margin-bottom: 1rem;
+}
+.diag-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--diag-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.diag-back:hover { color: var(--diag-accent); }
+.diag-h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--diag-accent);
+}
+.diag-lead {
+  margin: 0 0 1rem;
+  color: var(--diag-muted);
+  font-size: 0.9rem;
+}
+
+/* ── Bandeau de synthèse ── */
+.diag-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--diag-border);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--diag-surface);
+  margin-bottom: 1.25rem;
+  font-weight: 600;
+}
+.diag-summary--ok   { border-left-color: var(--diag-ok); }
+.diag-summary--warn { border-left-color: var(--diag-warn); }
+.diag-summary--fail { border-left-color: var(--diag-fail); }
+
+/* ── Grille de cartes ── */
+.diag-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+/* ── Carte d'état ── */
+.diag-card {
+  border: 1px solid var(--diag-border);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: var(--diag-surface);
+  padding: 0.9rem 1rem;
+}
+.diag-card--ok   { border-left-color: var(--diag-ok); }
+.diag-card--warn { border-left-color: var(--diag-warn); }
+.diag-card--fail { border-left-color: var(--diag-fail); }
+.diag-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.diag-card__title {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--diag-text);
+}
+.diag-card__body { font-size: 0.9rem; }
+
+/* ── Badge d'état ── */
+.diag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.diag-badge--ok   { color: var(--diag-ok); }
+.diag-badge--warn { color: var(--diag-warn); }
+.diag-badge--fail { color: var(--diag-fail); }
+
+/* ── Ligne label / valeur ── */
+.diag-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid var(--diag-border);
+}
+.diag-row:first-child { border-top: 0; }
+.diag-row__icon { display: inline-flex; }
+.diag-row--ok   .diag-row__icon { color: var(--diag-ok); }
+.diag-row--warn .diag-row__icon { color: var(--diag-warn); }
+.diag-row--fail .diag-row__icon { color: var(--diag-fail); }
+.diag-row__label { color: var(--diag-text); }
+.diag-row__value {
+  color: var(--diag-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  word-break: break-word;
+}
+
+/* ── Console (sortie JSON / smoke) ── */
+.diag-console {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  background: var(--diag-console-bg);
+  color: var(--diag-console-fg);
+  font-family: ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* ── Formulaire console (lecture seule) ── */
+.diag-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.diag-input {
+  flex: 1 1 8rem;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--diag-border);
+  border-radius: 6px;
+  font: inherit;
+  color: var(--diag-text);
+  background: var(--diag-surface);
+}
+.diag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--diag-accent);
+  color: var(--diag-surface);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Hub : liste de liens ── */
+.diag-links {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.diag-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--diag-border);
+  border-radius: 8px;
+  background: var(--diag-surface);
+  color: var(--diag-text);
+  text-decoration: none;
+}
+.diag-link:hover { border-color: var(--diag-accent); }
+.diag-link__icon { color: var(--diag-accent); display: inline-flex; }
+.diag-link__body { display: flex; flex-direction: column; gap: 0.1rem; }
+.diag-link__title { font-weight: 600; }
+.diag-link__desc { font-size: 0.82rem; color: var(--diag-muted); }
+
+/* ── Tablette+ : grilles à 2 colonnes ── */
+@media (min-width: 768px) {
+  .diag-wrap { padding: 1.5rem; }
+  .diag-grid,
+  .diag-links { grid-template-columns: 1fr 1fr; }
+}

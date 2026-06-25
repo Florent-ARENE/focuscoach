@@ -33,7 +33,8 @@ Ordre de consultation : **état réel du repo** (commits poussés par Claude Cod
 | Fichier (standard inter-projets) | Rôle |
 |---|---|
 | `CLAUDE.md` | Règles d'or numérotées + architecture — **source de vérité du code** |
-| `CADRAGE_UNIVERSEL.md` | **Socle de règles commun à tous les projets** (anti-dérive AD-1→AD-10, gouvernance) — mono-source, référencé |
+| `CADRAGE_UNIVERSEL.md` | **Socle de règles commun à tous les projets** (anti-dérive AD-1→AD-11, gouvernance) — mono-source, référencé |
+| `modules/diagnostic/` | **Module diagnostic standard (AD-11)** : hub + pages de test en lecture seule (santé, config, alignement, console API, smoke). Auth, secrets masqués, tokens CSS exclusifs |
 | `CADRAGE_<PROJET>.md` | Cadrage de développement du projet (résumé lisible), **dérivé** de `CADRAGE_UNIVERSEL.md` |
 | `README_TECHNIQUE.md` | Arborescence + carte des fonctions + relations + changelog |
 | `CHANGELOG.md` | Historique complet (Keep a Changelog) |

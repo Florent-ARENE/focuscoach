@@ -64,6 +64,17 @@ for f in $hex_files; do
     h=$(grep -nE '#[0-9a-fA-F]{3,6}\b' "$f" || true)
     [ -n "$h" ] && hex_hits="${hex_hits}\n[$f]\n$h"
 done
+
+# diagnostic.css : hex tolérés UNIQUEMENT dans le bloc de fallback délimité
+# DIAG-FALLBACK-START…END (AD-11). On extrait le HORS-bloc (marqueurs inclus
+# exclus) et on grep les hex dessus → tout hit hors fallback = échec.
+diag_css="assets/css/diagnostic.css"
+if [ -f "$diag_css" ]; then
+    outside=$(awk '/DIAG-FALLBACK-START/{skip=1; next} /DIAG-FALLBACK-END/{skip=0; next} !skip' "$diag_css")
+    h=$(printf '%s\n' "$outside" | grep -nE '#[0-9a-fA-F]{3,6}\b' || true)
+    [ -n "$h" ] && hex_hits="${hex_hits}\n[$diag_css hors bloc DIAG-FALLBACK]\n$h"
+fi
+
 if [ -n "$hex_hits" ]; then
     printf "Hex en dur dans modules CSS :\n%b\n" "$hex_hits" >&2
     fail "AD-4 hex en dur"
