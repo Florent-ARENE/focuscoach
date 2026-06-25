@@ -30,89 +30,194 @@ class Booking
      */
     public function create(array $data): array
     {
-        if (empty($data['service_id']) || (int) $data['service_id'] <= 0) {
-            return [
-                'success'      => false,
-                'message'      => 'Prestation requise (service_id manquant).',
-                'booking_id'   => null,
-                'manage_token' => null,
-            ];
-        }
+        return $this->insertWithIntegrity($data, 'pending', 'none', 0);
+    }
 
-        // Vérifier que le créneau est disponible
-        if ($this->isSlotTaken($data['slot_date'], $data['slot_time_start'])) {
-            return [
-                'success'      => false,
-                'message'      => 'Ce créneau vient d\'être réservé. Veuillez en choisir un autre.',
-                'booking_id'   => null,
-                'manage_token' => null,
-            ];
+    /**
+     * Crée un HOLD `pending_payment` (réservation provisoire pendant le tunnel
+     * Stripe). Le créneau est tenu `payment_expires_at = NOW() + $holdMinutes`,
+     * et libéré automatiquement à expiration (lazy-expiry / cron). Même garde
+     * d'intégrité transactionnelle que create().
+     */
+    public function createHold(array $data, int $holdMinutes = 15): array
+    {
+        return $this->insertWithIntegrity($data, 'pending_payment', 'pending', $holdMinutes);
+    }
+
+    /**
+     * Insertion d'une réservation avec garde d'intégrité TRANSACTIONNELLE.
+     *
+     * L'`active_key UNIQUE` ne protège QUE contre le même `slot_time_start`.
+     * Pour les durées variables qui se chevauchent à start différent (ex.
+     * 10:00–11:00 puis 10:30–11:30), il faut une vérif d'intervalle sous
+     * verrou. Convention IDENTIQUE à Slot::computeCandidates : chaque
+     * réservation occupe [start, end + buffer) (semi-ouvert) ; deux
+     * réservations entrent en conflit si leurs intervalles se chevauchent.
+     * Les holds `pending_payment` échus (payment_expires_at < NOW()) sont
+     * traités comme LIBRES (lazy-expiry).
+     *
+     * Collision `active_key` (23000) sur un hold échu de MÊME start : la
+     * colonne générée ne peut pas tester NOW(), donc l'INSERT lève 23000
+     * tant que le hold n'est pas passé `expired`. On le re-qualifie alors et
+     * on réessaie une fois.
+     */
+    private function insertWithIntegrity(array $data, string $status, string $paymentStatus, int $holdMinutes): array
+    {
+        if (empty($data['service_id']) || (int) $data['service_id'] <= 0) {
+            return $this->bookingResult(false, 'Prestation requise (service_id manquant).');
         }
 
         $manageToken = $this->generateManageToken();
+        $holdMinutes = max(0, $holdMinutes);
+        $expiresExpr = $holdMinutes > 0
+            ? 'DATE_ADD(NOW(), INTERVAL ' . (int) $holdMinutes . ' MINUTE)'
+            : 'NULL';
 
-        try {
-            $stmt = $this->db->prepare(
-                "INSERT INTO bookings (
-                    visitor_name, visitor_email, visitor_phone, visitor_organization,
-                    slot_date, slot_time_start, slot_time_end,
-                    service_id, duration_min, buffer_after_min,
-                    subject, message,
-                    status, payment_status,
-                    manage_token, ip_address, user_agent
-                ) VALUES (
-                    :name, :email, :phone, :organization,
-                    :date, :time_start, :time_end,
-                    :service_id, :duration_min, :buffer_after_min,
-                    :subject, :message,
-                    'pending', 'none',
-                    :token, :ip, :ua
-                )"
-            );
-            $stmt->execute([
-                ':name'             => $data['visitor_name'],
-                ':email'            => $data['visitor_email'],
-                ':phone'            => $data['visitor_phone']        ?? null,
-                ':organization'     => $data['visitor_organization'] ?? null,
-                ':date'             => $data['slot_date'],
-                ':time_start'       => $data['slot_time_start'],
-                ':time_end'         => $data['slot_time_end'],
-                ':service_id'       => (int) $data['service_id'],
-                ':duration_min'     => (int) ($data['duration_min']     ?? 0),
-                ':buffer_after_min' => (int) ($data['buffer_after_min'] ?? 0),
-                ':subject'          => $data['subject'] ?? null,
-                ':message'          => $data['message'] ?? null,
-                ':token'            => $manageToken,
-                ':ip'               => $_SERVER['REMOTE_ADDR']      ?? null,
-                ':ua'               => $_SERVER['HTTP_USER_AGENT'] ?? null,
-            ]);
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            try {
+                $this->db->beginTransaction();
 
-            $bookingId = (int) $this->db->lastInsertId();
+                // 1. Verrouille les réservations actives du jour.
+                $lock = $this->db->prepare(
+                    "SELECT slot_time_start, slot_time_end, buffer_after_min, status, payment_expires_at
+                       FROM bookings
+                      WHERE slot_date = :date
+                        AND status IN ('pending', 'confirmed', 'pending_payment')
+                      FOR UPDATE"
+                );
+                $lock->execute([':date' => $data['slot_date']]);
 
-            return [
-                'success'      => true,
-                'message'      => 'Votre demande de rendez-vous a été enregistrée.',
-                'booking_id'   => $bookingId,
-                'manage_token' => $manageToken,
-            ];
-            
-        } catch (\PDOException $e) {
-            // 23000 = violation de contrainte d'intégrité — ici l'UNIQUE
-            // sur active_key (race entre isSlotTaken() et INSERT). On
-            // traduit en message UX cohérent au lieu d'une erreur générique.
-            if ($e->getCode() === '23000') {
+                // 2. Vérif de chevauchement (lazy-expiry sur les holds échus).
+                if ($this->overlapsActive($lock->fetchAll(), $data)) {
+                    $this->db->rollBack();
+                    return $this->bookingResult(false, 'Ce créneau vient d\'être réservé. Veuillez en choisir un autre.');
+                }
+
+                // 3. INSERT (le slot reste tenu jusqu'au COMMIT).
+                $stmt = $this->db->prepare(
+                    "INSERT INTO bookings (
+                        visitor_name, visitor_email, visitor_phone, visitor_organization,
+                        slot_date, slot_time_start, slot_time_end,
+                        service_id, duration_min, buffer_after_min,
+                        subject, message,
+                        status, payment_status, payment_expires_at,
+                        manage_token, ip_address, user_agent
+                    ) VALUES (
+                        :name, :email, :phone, :organization,
+                        :date, :time_start, :time_end,
+                        :service_id, :duration_min, :buffer_after_min,
+                        :subject, :message,
+                        :status, :pstatus, $expiresExpr,
+                        :token, :ip, :ua
+                    )"
+                );
+                $stmt->execute([
+                    ':name'             => $data['visitor_name'],
+                    ':email'            => $data['visitor_email'],
+                    ':phone'            => $data['visitor_phone']        ?? null,
+                    ':organization'     => $data['visitor_organization'] ?? null,
+                    ':date'             => $data['slot_date'],
+                    ':time_start'       => $data['slot_time_start'],
+                    ':time_end'         => $data['slot_time_end'],
+                    ':service_id'       => (int) $data['service_id'],
+                    ':duration_min'     => (int) ($data['duration_min']     ?? 0),
+                    ':buffer_after_min' => (int) ($data['buffer_after_min'] ?? 0),
+                    ':subject'          => $data['subject'] ?? null,
+                    ':message'          => $data['message'] ?? null,
+                    ':status'           => $status,
+                    ':pstatus'          => $paymentStatus,
+                    ':token'            => $manageToken,
+                    ':ip'               => $_SERVER['REMOTE_ADDR']      ?? null,
+                    ':ua'               => $_SERVER['HTTP_USER_AGENT'] ?? null,
+                ]);
+
+                $bookingId = (int) $this->db->lastInsertId();
+                $this->db->commit();
+
                 return [
-                    'success' => false,
-                    'message' => 'Ce créneau vient d\'être réservé. Veuillez en choisir un autre.',
-                    'booking_id' => null,
-                    'manage_token' => null
+                    'success'      => true,
+                    'message'      => 'Votre demande de rendez-vous a été enregistrée.',
+                    'booking_id'   => $bookingId,
+                    'manage_token' => $manageToken,
                 ];
+
+            } catch (\PDOException $e) {
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                if ($e->getCode() === '23000') {
+                    // Collision active_key (même start). Hold échu → re-qualifier + réessayer une fois.
+                    if ($attempt === 1
+                        && $this->expireStaleHoldAt($data['slot_date'], $data['slot_time_start'])) {
+                        continue;
+                    }
+                    return $this->bookingResult(false, 'Ce créneau vient d\'être réservé. Veuillez en choisir un autre.');
+                }
+                $msg = APP_DEBUG ? 'Erreur : ' . $e->getMessage() : 'Une erreur est survenue.';
+                return $this->bookingResult(false, $msg);
             }
-            if (APP_DEBUG) {
-                return ['success' => false, 'message' => 'Erreur : ' . $e->getMessage(), 'booking_id' => null, 'manage_token' => null];
-            }
-            return ['success' => false, 'message' => 'Une erreur est survenue.', 'booking_id' => null, 'manage_token' => null];
         }
+
+        return $this->bookingResult(false, 'Ce créneau vient d\'être réservé. Veuillez en choisir un autre.');
+    }
+
+    /**
+     * Le nouveau créneau chevauche-t-il une réservation active verrouillée ?
+     * Convention semi-ouverte [start, end+buffer) des deux côtés (= Slot).
+     * Ignore les holds `pending_payment` échus (lazy-expiry).
+     *
+     * @param array<int, array<string,mixed>> $activeRows lignes verrouillées
+     */
+    private function overlapsActive(array $activeRows, array $data): bool
+    {
+        $now       = date('Y-m-d H:i:s');
+        $newStart  = Slot::timeToMinutes((string) $data['slot_time_start']);
+        $newEndBuf = Slot::timeToMinutes((string) $data['slot_time_end'])
+                   + (int) ($data['buffer_after_min'] ?? 0);
+
+        foreach ($activeRows as $b) {
+            if ($b['status'] === 'pending_payment'
+                && !empty($b['payment_expires_at'])
+                && $b['payment_expires_at'] < $now) {
+                continue; // hold échu = libre
+            }
+            $exStart  = Slot::timeToMinutes((string) $b['slot_time_start']);
+            $exEndBuf = Slot::timeToMinutes((string) $b['slot_time_end'])
+                      + (int) $b['buffer_after_min'];
+            if ($newStart < $exEndBuf && $exStart < $newEndBuf) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Passe en `expired` un hold `pending_payment` ÉCHU de ce créneau (même
+     * start) pour libérer son active_key. Retourne true si une ligne a été
+     * re-qualifiée (→ il vaut la peine de réessayer l'INSERT).
+     */
+    private function expireStaleHoldAt(string $date, string $timeStart): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE bookings SET status = 'expired'
+              WHERE slot_date = :date AND slot_time_start = :start
+                AND status = 'pending_payment'
+                AND payment_expires_at IS NOT NULL
+                AND payment_expires_at < NOW()"
+        );
+        $stmt->execute([':date' => $date, ':start' => $timeStart]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /** Résultat normalisé d'une tentative de création. */
+    private function bookingResult(bool $success, string $message): array
+    {
+        return [
+            'success'      => $success,
+            'message'      => $message,
+            'booking_id'   => null,
+            'manage_token' => null,
+        ];
     }
 
     /**
@@ -406,10 +511,13 @@ class Booking
     public function isSlotTaken(string $date, string $timeStart): bool
     {
         $stmt = $this->db->prepare("
-            SELECT id FROM bookings 
-            WHERE slot_date = :date 
-            AND slot_time_start = :time 
-            AND status IN ('pending', 'confirmed')
+            SELECT id FROM bookings
+            WHERE slot_date = :date
+            AND slot_time_start = :time
+            AND status IN ('pending', 'confirmed', 'pending_payment')
+            AND NOT (status = 'pending_payment'
+                     AND payment_expires_at IS NOT NULL
+                     AND payment_expires_at < NOW())
         ");
         $stmt->execute([':date' => $date, ':time' => $timeStart]);
         return (bool) $stmt->fetch();
@@ -421,10 +529,13 @@ class Booking
     public function isSlotAvailable(string $date, string $timeStart, ?int $excludeId = null): bool
     {
         $sql = "
-            SELECT id FROM bookings 
-            WHERE slot_date = :date 
-            AND slot_time_start = :time 
-            AND status IN ('pending', 'confirmed')
+            SELECT id FROM bookings
+            WHERE slot_date = :date
+            AND slot_time_start = :time
+            AND status IN ('pending', 'confirmed', 'pending_payment')
+            AND NOT (status = 'pending_payment'
+                     AND payment_expires_at IS NOT NULL
+                     AND payment_expires_at < NOW())
         ";
         $params = [':date' => $date, ':time' => $timeStart];
         
