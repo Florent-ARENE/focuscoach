@@ -66,16 +66,16 @@ Communes à tous les projets, instanciées ici pour Focus Coach.
 
 ### 1. Architecture & code
 1. **Zéro duplication** PHP/JS. Avant d'écrire une fonction : `grep` + carte des fonctions du `README_TECHNIQUE.md`. Si un équivalent existe → réutiliser ou étendre, jamais recréer.
-2. **Helpers partagés mutualisés** — `includes/init.php`, `classes/Helpers.php`, `classes/Icons.php`, `assets/js/api.js`, `assets/js/icons.js`. Toute logique commune (formatage, API, modales, identité, icônes) y est centralisée.
+2. **Helpers partagés mutualisés** — `includes/init.php`, `classes/Helpers.php`, `classes/Icons.php`, `assets/js/icons.js`. Toute logique commune (formatage, modales, identité, icônes) y est centralisée. ⚠️ Les **appels API côté JS** sont aujourd'hui **inlinés par module** (`admin.js`/`manage.js`/`booking-calendar.js`), **pas** dans un `assets/js/api.js` — **ce fichier n'existe pas** (candidat de mutualisation identifié à l'audit 2.8.x, à arbitrer).
 3. **Fonctions courtes**, responsabilité unique (~40 lignes max).
 4. **Code en anglais, commentaires + UI en français**, de façon uniforme.
-5. **API JSON uniforme** : `{ success: bool, data: …, error: … }`. Point d'entrée centralisé par domaine, raccourcis dans `api.js` (un seul fichier à toucher si une URL change).
+5. **API JSON uniforme** : `{ success: bool, data: …, error: … }`. Point d'entrée centralisé par domaine **côté serveur** (`api/*.php`). *(Côté JS, pas encore de `api.js` : chaque module fait son `fetch` — à mutualiser le jour où ça se répète, cf. RÈGLE 1.)*
 6. **Architecture modulaire** — chaque fonctionnalité autonome, activable/désactivable sans casser l'ensemble.
 
 ### 2. CSS & design
 1. **Zéro hex en dur dans les modules** — couleurs et tokens uniquement dans `main.css :root`. Statuts = tokens sémantiques (`--status-*`, `--info-*`, `--success`, `--red-*`).
 2. **Zéro `style=` décoratif, zéro `<style>` inline** — seuls les `display:none` fonctionnels pilotés par JS sont tolérés. Tout style inline récurrent (3+) devient une classe utilitaire.
-3. **Un seul design system** — `main.css` point d'entrée unique. Modules CSS chargés par page (`main.css` + module spécifique de la page).
+3. **Un seul design system** — `main.css` point d'entrée unique. Modules CSS chargés par page (`main.css` + module spécifique de la page). **Une feuille de module ne contient QUE des classes propres à sa page (namespace dédié) et HÉRITE du design system de `main.css` — elle ne doit JAMAIS redéfinir une classe de `main.css` (`.btn`, `.status-badge`, `.modal-overlay`, `.text-*`…).** Exemple de référence : **`diagnostic.css`** est légitimement une feuille séparée car elle ne touche qu'à son namespace `.diag*` et consomme les tokens — **ce n'est pas une duplication** (décision tracée v2.8.x). Contre-exemple à corriger : `manage.css` redéfinit `.btn`/utilitaires de `main.css` (déjà en train de diverger : `padding` 0.875↔0.75) → dette de consolidation (audit 2.8.x).
 4. **Cohérence absolue** — avant de créer une classe, vérifier qu'aucune existante ne couvre déjà le besoin (section CSS du `README_TECHNIQUE`).
 5. **Mobile-first** — règles de base = mobile, `min-width` pour enrichir. Jamais de `max-width`.
 6. **Breakpoints uniques** — 768px (tablette+), 1024px (desktop+), documentés en commentaire au-dessus du `:root` de `main.css`. Mêmes seuils partout.
@@ -137,4 +137,4 @@ Communes à tous les projets, instanciées ici pour Focus Coach.
 - **Breakpoints** : 768px (tablette+), 1024px (desktop+) — mobile-first.
 - **Polices** : DM Sans (body / wordmark uppercase `letter-spacing: 0.08em`) — Playfair Display (display).
 - **Palette** : `--navy-deep #2E2A5E`, `--navy #4A4580`, `--orange #F0A500`, `--sand #F7F5F0`.
-- **Fichiers clés** : `includes/init.php` (helpers + `siteConfig()` + `pwaHead/Register`), `classes/Helpers.php`, `classes/Icons.php`, `assets/js/api.js`, `assets/js/icons.js`, `assets/css/main.css`, `sql/`, `manifest.json`, `sw.js`, `scripts/generate-pwa-icons.php`.
+- **Fichiers clés** : `includes/init.php` (helpers + `siteConfig()` + `pwaHead/Register`), `classes/Helpers.php`, `classes/Icons.php`, `assets/js/icons.js`, `assets/css/main.css`, `sql/`, `manifest.json`, `sw.js`, `scripts/generate-pwa-icons.php`.

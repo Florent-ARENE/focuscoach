@@ -11,6 +11,12 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ---
 
+> ⚠️ **SOURCE UNIQUE DU CHANGELOG = [`README_TECHNIQUE.md` § ChangeLog](./README_TECHNIQUE.md#-changelog)** — c'est la « mémoire vivante » du projet (CLAUDE.md §8.1).
+>
+> Pour ne pas entretenir **deux journaux qui divergent** (constaté : ce fichier était resté à 2.8.0 alors que `VERSION` valait 2.8.4 — AD-2 cassé), **ce fichier-ci est gelé à 2.8.0** et n'est plus tenu à jour. **Les versions 2.8.1 et au-delà vivent uniquement dans `README_TECHNIQUE.md`.** Les entrées Keep-a-Changelog ci-dessous restent comme historique jusqu'à 2.8.0.
+>
+> *(Arbitrage 2.8.4 : si le verdict humain préfère faire de ce `CHANGELOG.md` le canonique standard — Keep a Changelog —, on inverse : rattraper ce fichier jusqu'au courant et pointer `README_TECHNIQUE` vers lui. Mais **un seul** des deux, jamais les deux.)*
+
 ## [Unreleased]
 
 ## [2.8.0] — 2026-06-25 — §6 Tunnel de paiement Stripe (Checkout + webhook + holds)
