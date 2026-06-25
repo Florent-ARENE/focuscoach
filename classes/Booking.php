@@ -270,6 +270,64 @@ class Booking
     }
 
     /**
+     * Confirme le paiement Stripe d'un booking retrouvé par stripe_session_id.
+     * IDEMPOTENT : si déjà confirmé+payé, no-op (newly_confirmed=false). Ne
+     * ressuscite pas un booking 'cancelled'. Le webhook (source de vérité)
+     * appelle ceci, pas le retour navigateur.
+     *
+     * @return array{ok:bool, newly_confirmed?:bool, booking?:array, reason?:string}
+     */
+    public function fulfillStripePayment(string $sessionId, ?int $amountCents): array
+    {
+        if ($sessionId === '') {
+            return ['ok' => false, 'reason' => 'no_session'];
+        }
+        $stmt = $this->db->prepare(
+            "SELECT * FROM bookings WHERE stripe_session_id = :sid LIMIT 1"
+        );
+        $stmt->execute([':sid' => $sessionId]);
+        $booking = $stmt->fetch();
+        if (!$booking) {
+            return ['ok' => false, 'reason' => 'not_found'];
+        }
+        if ($booking['status'] === 'confirmed' && $booking['payment_status'] === 'paid') {
+            return ['ok' => true, 'newly_confirmed' => false, 'booking' => $booking];
+        }
+
+        $upd = $this->db->prepare(
+            "UPDATE bookings
+                SET status = 'confirmed', payment_status = 'paid',
+                    amount_paid_cents = :amt, confirmed_at = NOW(),
+                    payment_expires_at = NULL
+              WHERE id = :id AND status <> 'cancelled'"
+        );
+        $upd->bindValue(':amt', $amountCents, $amountCents === null ? \PDO::PARAM_NULL : \PDO::PARAM_INT);
+        $upd->bindValue(':id', (int) $booking['id'], \PDO::PARAM_INT);
+        $upd->execute();
+
+        return [
+            'ok'              => true,
+            'newly_confirmed' => $upd->rowCount() === 1,
+            'booking'         => $this->getById((int) $booking['id']),
+        ];
+    }
+
+    /**
+     * Réclame le DROIT d'envoyer l'email de confirmation, de façon ATOMIQUE
+     * (anti double-email sur retry/concurrence webhook). Pose
+     * confirmation_email_sent_at seulement si NULL ; true = à nous d'envoyer.
+     */
+    public function claimConfirmationEmail(int $id): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE bookings SET confirmation_email_sent_at = NOW()
+              WHERE id = :id AND confirmation_email_sent_at IS NULL"
+        );
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
      * Générer un token unique pour la gestion client
      */
     private function generateManageToken(): string

@@ -66,6 +66,50 @@ class StripeClient
     }
 
     /**
+     * Vérifie la signature d'un webhook Stripe (en-tête `Stripe-Signature`,
+     * schéma `t=timestamp,v1=hmac…`). HMAC-SHA256 sur `timestamp.payload`
+     * (LE CORPS BRUT, jamais ré-encodé), comparaison constante (hash_equals),
+     * tolérance d'horloge. Pur → testable hors réseau.
+     *
+     * @param string $payload   Corps HTTP brut (file_get_contents('php://input')).
+     * @param string $sigHeader Valeur de l'en-tête Stripe-Signature.
+     * @param string $secret    STRIPE_WEBHOOK_SECRET (whsec_…).
+     * @param int    $tolerance Fenêtre d'horloge en secondes (défaut 300).
+     */
+    public static function verifyWebhookSignature(string $payload, string $sigHeader, string $secret, int $tolerance = 300): bool
+    {
+        if ($secret === '' || strpos($secret, 'REPLACE_WITH_') === 0 || $sigHeader === '') {
+            return false;
+        }
+        $timestamp = null;
+        $signatures = [];
+        foreach (explode(',', $sigHeader) as $part) {
+            $kv = explode('=', trim($part), 2);
+            if (count($kv) !== 2) {
+                continue;
+            }
+            if ($kv[0] === 't') {
+                $timestamp = $kv[1];
+            } elseif ($kv[0] === 'v1') {
+                $signatures[] = $kv[1];
+            }
+        }
+        if ($timestamp === null || !ctype_digit($timestamp) || $signatures === []) {
+            return false;
+        }
+        if (abs(time() - (int) $timestamp) > $tolerance) {
+            return false; // hors fenêtre → rejet (anti-rejeu)
+        }
+        $expected = hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+        foreach ($signatures as $candidate) {
+            if (hash_equals($expected, $candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * POST x-www-form-urlencoded vers l'API Stripe. Retourne le JSON décodé,
      * ou ['error' => …] sur échec réseau/HTTP. Ne logge jamais la clé.
      */
