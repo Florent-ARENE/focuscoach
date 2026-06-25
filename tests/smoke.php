@@ -357,6 +357,35 @@ it('Contre-test : STRIPE_SECRET_KEY absent → liste vide (optionnel, jamais fat
 });
 
 // ============================================
+// LOT 7 — Stripe : routage paiement (2 sens)
+// ============================================
+echo "\n💳 Lot 7 — Stripe routage (stripeEnabled / paymentMode)\n";
+
+it('stripeEnabled : placeholder REPLACE_WITH_ → false', function () {
+    expect_false(\App\stripeEnabled('REPLACE_WITH_STRIPE_SECRET_KEY'));
+});
+it('stripeEnabled : vide → false', function () {
+    expect_false(\App\stripeEnabled(''));
+});
+it('stripeEnabled : sk_test_… → true', function () {
+    expect_true(\App\stripeEnabled('sk_test_abc123'));
+});
+
+$paid = ['price_cents' => 8000, 'stripe_price_id' => 'price_x'];
+it('paymentMode : Stripe on + payant + price_id → stripe', function () use ($paid) {
+    expect_true(\App\paymentMode($paid, true) === 'stripe');
+});
+it('paymentMode : Stripe OFF → bypass (mode dégradé)', function () use ($paid) {
+    expect_true(\App\paymentMode($paid, false) === 'bypass');
+});
+it('paymentMode : 0 € → bypass (jamais Stripe à 0 €)', function () {
+    expect_true(\App\paymentMode(['price_cents' => 0, 'stripe_price_id' => 'price_x'], true) === 'bypass');
+});
+it('paymentMode : price_id absent → bypass (dégradé, validation admin)', function () {
+    expect_true(\App\paymentMode(['price_cents' => 8000, 'stripe_price_id' => ''], true) === 'bypass');
+});
+
+// ============================================
 // VERDICT
 // ============================================
 echo implode("\n", $cases) . "\n\n";
