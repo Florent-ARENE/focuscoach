@@ -335,3 +335,37 @@ function configProblems(?callable $isDefined = null, ?callable $valueOf = null):
 
     return $problems;
 }
+
+/**
+ * Stripe est-il réellement activé ? VRAI seulement si STRIPE_SECRET_KEY est
+ * définie, non vide, et n'est PAS le placeholder du template (`REPLACE_WITH_…`).
+ * Param `$secretKey` injectable pour test (défaut = la constante).
+ */
+function stripeEnabled(?string $secretKey = null): bool
+{
+    if ($secretKey === null) {
+        $secretKey = defined('STRIPE_SECRET_KEY') ? (string) STRIPE_SECRET_KEY : '';
+    }
+    return $secretKey !== '' && strpos($secretKey, 'REPLACE_WITH_') !== 0;
+}
+
+/**
+ * Décision de routage paiement pour un service (tableau avec price_cents +
+ * stripe_price_id). Source unique consommée par le tunnel.
+ *   'stripe' ← Stripe activé ET price_cents > 0 ET stripe_price_id non vide ;
+ *   'bypass' ← sinon (gratuit, Stripe off, ou price_id absent = mode dégradé
+ *              → validation admin). Une séance à 0 € ne part JAMAIS en Stripe
+ *              (Stripe refuse une session à 0 €).
+ * `$stripeOn` injectable pour test (défaut = stripeEnabled()).
+ */
+function paymentMode(array $service, ?bool $stripeOn = null): string
+{
+    $stripeOn = $stripeOn ?? stripeEnabled();
+    $price    = (int) ($service['price_cents'] ?? 0);
+    $priceId  = trim((string) ($service['stripe_price_id'] ?? ''));
+
+    if ($stripeOn && $price > 0 && $priceId !== '') {
+        return 'stripe';
+    }
+    return 'bypass';
+}

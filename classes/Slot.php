@@ -407,8 +407,9 @@ class Slot
         return $candidates;
     }
 
-    /** 'HH:MM[:SS]' → minutes depuis 00:00. */
-    private static function timeToMinutes(string $t): int
+    /** 'HH:MM[:SS]' → minutes depuis 00:00. Public : réutilisé par Booking
+     *  pour la vérif transactionnelle de chevauchement (même convention). */
+    public static function timeToMinutes(string $t): int
     {
         $parts = explode(':', $t);
         return ((int) $parts[0]) * 60 + (int) ($parts[1] ?? 0);
