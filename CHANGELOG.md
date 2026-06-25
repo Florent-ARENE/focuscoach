@@ -13,6 +13,35 @@ vérifié par `.git/hooks/pre-commit` (AD-8).
 
 ## [Unreleased]
 
+## [2.6.8] — 2026-06-25 — §6 : `BASE_URL` stricte (jamais dérivée du `Host`)
+
+> **⚠️ Migration** : dès 2.6.8, `config/config.local.php` **doit** définir
+> `BASE_URL` (absolue, `http(s)://`, slash final). Sinon `config.php` répond
+> **500 au démarrage** (refus net, voulu). Mettre à jour chaque environnement
+> avant déploiement.
+
+- **`config/config.php`** : la dérivation de `BASE_URL` depuis
+  `$_SERVER['HTTP_HOST']` + `SCRIPT_NAME` est **entièrement retirée**.
+  `BASE_URL` est lue **exclusivement** depuis `config.local.php` (anti XSS
+  Host-header ; cohérence prod/dev/staging ; valide en webhook/cron où
+  `Host` n'existe pas). `ASSETS_URL` en dérive.
+- **Sanction au démarrage** : après le chargement de `config.local.php`,
+  `\App\configProblems()` (C1) est évaluée ; si la config requise manque ou
+  est mal formée → `http_response_code(500)` + message clair pointant vers
+  le template. `configProblems()` reste la **source unique** (réutilisée par
+  le module diagnostic à venir).
+- **Le warning « Constant BASE_URL already defined » disparaît par
+  construction** (plus de 2ᵉ `define`), pas via une garde `if(!defined())`.
+  Effet de bord prouvé `[O1]` : le smoke en CLI ne produit plus **aucun**
+  warning (BASE_URL ni la cascade `session_*`) — 30/30 vert.
+- **Doc** : `config.local.php.template` (BASE_URL « REQUISE, jamais dérivée
+  du Host, sinon 500 ») + `docs/booking-v3-spec.md` (§ BASE_URL figée
+  marquée livrée + checklist pré-bascule mise à jour).
+- Recensement `[O1]` : `HTTP_HOST` ne sert plus nulle part à construire une
+  URL (seul un commentaire le mentionne). Tests 2 sens : nominal (smoke 0
+  warning, `BASE_URL` résolu) ; échec (BASE_URL retirée → 500 + message),
+  puis restauration `git status` propre.
+
 ## [2.6.7] — 2026-06-25 — Fondation : import SQL robuste au charset (`SET NAMES`) + hook fail-closed
 
 Fix de **reproductibilité de fondation** (pas une correction de données

@@ -45,19 +45,30 @@ define('TEMPLATES_PATH', ROOT_PATH . 'templates/');
 define('ASSETS_PATH', ROOT_PATH . 'assets/');
 
 // ============================================
-// URLs (detection automatique)
+// VALIDATION CONFIG — sanction au démarrage (garde-fou runtime, AD-8)
 // ============================================
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+// La config requise (DB_*, BASE_URL, ADMIN_PASSWORD_HASH) vit dans
+// config.local.php, propre à chaque serveur. On échoue TÔT et CLAIREMENT
+// si elle manque ou est mal formée, plutôt que de servir des pages à
+// demi configurées (ex. BASE_URL absente → liens/Stripe cassés).
+// configProblems() = source unique (classes/Helpers.php), réutilisée par
+// le module diagnostic. require_once explicite : l'autoloader n'est pas
+// encore enregistré à ce stade (cf. includes/init.php).
+require_once CLASSES_PATH . 'Helpers.php';
+$cfgErr = \App\configProblems();
+if ($cfgErr !== []) {
+    http_response_code(500);
+    exit('Configuration manquante/invalide : ' . implode(' ; ', $cfgErr)
+        . '. Voir config/config.local.php.template (ex. BASE_URL=https://focuscoach.fr/).');
+}
 
-// Calculer le chemin de base - méthode simplifiée pour OVH
-$scriptPath = $_SERVER['SCRIPT_NAME'] ?? '';
-// Retirer le nom du fichier et les sous-dossiers connus (api/, admin/, booking/)
-$basePath = dirname($scriptPath);
-$basePath = preg_replace('#/(api|admin|booking)$#', '', $basePath);
-$basePath = ($basePath === '/' || $basePath === '\\' || $basePath === '.') ? '' : $basePath;
-
-define('BASE_URL', $protocol . '://' . $host . $basePath . '/');
+// ============================================
+// URLs — BASE_URL STRICTE (jamais dérivée du Host)
+// ============================================
+// BASE_URL est définie EXCLUSIVEMENT par config.local.php (validée
+// ci-dessus : présente + absolue). JAMAIS dérivée de $_SERVER['HTTP_HOST']
+// (vecteur XSS Host-header, et absente en contexte webhook/cron). On en
+// dérive seulement les URLs filles.
 define('ASSETS_URL', BASE_URL . 'assets/');
 
 // ============================================

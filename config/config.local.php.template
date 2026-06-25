@@ -54,8 +54,11 @@ define('STRIPE_WEBHOOK_SECRET',  'REPLACE_WITH_STRIPE_WEBHOOK_SECRET');
 // Checkout (success_url / cancel_url) et à tout endpoint qui doit
 // produire une URL absolue de retour.
 //
-// JAMAIS dérivée du header HTTP `Host` (risque XSS Host-header).
-// Fixe par environnement : prod / staging / dev.
+// REQUISE — propre à chaque serveur. Depuis la 2.6.8, si BASE_URL est
+// absente ou ne commence pas par http(s)://, `config/config.php` répond
+// 500 au démarrage (refus net plutôt que pages à demi configurées).
+// JAMAIS dérivée du header HTTP `Host` (risque XSS Host-header ; absente
+// en contexte webhook/cron). Fixe par environnement : prod / staging / dev.
 //
 // Exemples :
 //   define('BASE_URL', 'https://focuscoach.fr/');
