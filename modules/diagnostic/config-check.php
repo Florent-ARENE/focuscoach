@@ -32,13 +32,17 @@ $requiredDefs = [
 $reqBody = '';
 foreach ($requiredDefs as [$key, $secret]) {
     $defined = defined($key);
-    // DB_PASS : vide toléré (défini suffit) ; les autres requis : non vide.
     if ($key === 'DB_PASS') {
-        $state = $defined ? 'ok' : 'fail';
+        // Vide toléré en local, mais surfacé en WARN hors-local/prod
+        // (sans fataliser : configProblems reste vert). On affiche le
+        // statut de contexte, jamais la valeur.
+        $chk   = diag_dbpass_check();
+        $state = $chk['state'];
+        $value = $chk['detail'];
     } else {
         $state = ($defined && (string) constant($key) !== '') ? 'ok' : 'fail';
+        $value = $secret ? diag_mask_secret($defined ? constant($key) : null) : cc_value($key);
     }
-    $value = $secret ? diag_mask_secret($defined ? constant($key) : null) : cc_value($key);
     $reqBody .= diag_row($state, $key, $value);
 }
 

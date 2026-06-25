@@ -41,6 +41,18 @@ l'AD-11 ajouté au cadrage en 2.6.8 (C3).
 - **Fix `[O1]`** : `diag_head()` n'appelle plus `siteConfig()` (qui touche la
   BDD via `Settings` → `Database::getInstance()` qui `die()`) mais la constante
   `SITE_NAME` — sinon health/alignment n'étaient pas résilients à une BDD down.
+- **DB_PASS vide — surfacé sans fataliser (revue)** : `configProblems()` ne
+  bloque pas un `DB_PASS` vide (légitime en local : root EasyPHP). Mais
+  `health` et `config-check` le signalent désormais en **warning** quand
+  l'hôte de `BASE_URL` n'est pas local (`localhost`/`127.0.0.1`/`::1`) **ou**
+  `APP_ENV=production` — un déploiement prod avec mot de passe vide par
+  accident doit se voir (helper `diag_dbpass_check()`). La valeur n'est jamais
+  affichée.
+- **BACKLOG (dette racine notée)** : `Database::getInstance()` fait un `die()`
+  **non rattrapable** sur échec de connexion → toute page touchant la BDD meurt
+  dur si la BDD tombe. Contourné dans le module (`diag_try_pdo`). Commentaire
+  `BACKLOG` posé dans `classes/Database.php` : à terme, remonter une exception
+  et en faire un indicateur de santé.
 - **Tests dans les 2 sens `[O1]`** : `BASE_URL` absente → 500 (sanction C2) ;
   creds BDD fausses → health **200** « Inaccessible » (non fatal) ; stamp version
   altéré → `alignment` montre la dérive ; statut hors enum → signalé ; hex hors

@@ -83,6 +83,10 @@ if ($problems === []) {
         $cfgBody .= diag_row('fail', 'Problème', $p);
     }
 }
+// DB_PASS vide n'est pas fatal, mais on le surface en warn hors-local/prod.
+$pwChk = diag_dbpass_check();
+$states[] = $pwChk['state'];
+$cfgBody .= diag_row($pwChk['state'], 'DB_PASS (contexte)', $pwChk['detail']);
 
 // ── Fuseaux & URL ──
 $phpOffset = date('P');
@@ -116,7 +120,7 @@ echo diag_head('Santé runtime');
 <div class="diag-grid">
     <?= diag_render_card(diag_worst([$phpOk]), 'Runtime PHP', $rtBody) ?>
     <?= diag_render_card($dbState, 'Base de données', $dbBody) ?>
-    <?= diag_render_card($cfgState, 'Configuration requise', $cfgBody) ?>
+    <?= diag_render_card(diag_worst([$cfgState, $pwChk['state']]), 'Configuration requise', $cfgBody) ?>
     <?= diag_render_card($baseOk, 'Fuseaux & URL', $tzBody) ?>
 </div>
 <?php

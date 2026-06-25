@@ -101,6 +101,34 @@ function diag_mask_secret($value): string
     return '•••••••• (défini)';
 }
 
+/**
+ * État de DB_PASS. Politique (cf. configProblems / revue 2.7.0) :
+ *   - non défini            → fail ;
+ *   - défini non vide       → ok ;
+ *   - VIDE en LOCAL          → ok (root EasyPHP sans mot de passe, légitime) ;
+ *   - VIDE hors-local/prod   → WARN (surface le risque sans fataliser :
+ *     un déploiement prod avec mot de passe vide par accident doit se voir).
+ * « Local » = hôte de BASE_URL ∈ {localhost, 127.0.0.1, ::1} ET APP_ENV ≠ production.
+ *
+ * @return array{state:string, detail:string}
+ */
+function diag_dbpass_check(): array
+{
+    if (!defined('DB_PASS')) {
+        return ['state' => 'fail', 'detail' => 'non défini'];
+    }
+    if (DB_PASS !== '') {
+        return ['state' => 'ok', 'detail' => 'défini'];
+    }
+    $host    = defined('BASE_URL') ? (string) parse_url((string) BASE_URL, PHP_URL_HOST) : '';
+    $isLocal = in_array($host, ['localhost', '127.0.0.1', '::1'], true);
+    $isProd  = defined('APP_ENV') && APP_ENV === 'production';
+    if ($isProd || !$isLocal) {
+        return ['state' => 'warn', 'detail' => 'VIDE en contexte non-local/prod (' . ($host ?: '?') . ') — à vérifier'];
+    }
+    return ['state' => 'ok', 'detail' => 'vide (toléré en local)'];
+}
+
 /** Coquille HTML d'ouverture. $showBack=false pour le hub. */
 function diag_head(string $title, bool $showBack = true): string
 {
