@@ -88,6 +88,17 @@ define('BASE_URL', 'https://focuscoach.fr/');
 // même quand les clés sont présentes (pas de session Checkout à 0 €).
 
 // ──────────────────────────────────────────────
+//  Clé des crons déclenchés par URL (optionnel)
+// ──────────────────────────────────────────────
+// Jeton secret pour déclencher les crons via HTTP (ex.
+// cron/expire-holds.php?key=…) quand le cron CLI OVH n'est pas dispo.
+// En CLI, les crons s'exécutent toujours sans clé. En HTTP, SANS cette
+// constante définie, l'accès est REFUSÉ (jamais d'endpoint cron ouvert).
+// Générer une valeur aléatoire longue, ex :
+//   php -r "echo bin2hex(random_bytes(24)), PHP_EOL;"
+// define('CRON_SECRET', 'colle_ici_un_jeton_aleatoire_long');
+
+// ──────────────────────────────────────────────
 //  Google Calendar (optionnel — si la sync est activée)
 // ──────────────────────────────────────────────
 // Fichier de credentials du Service Account, hors webroot, protégé .htaccess.

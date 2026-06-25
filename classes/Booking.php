@@ -328,6 +328,30 @@ class Booking
     }
 
     /**
+     * Passe en `expired` TOUS les holds `pending_payment` échus
+     * (payment_expires_at < NOW()), ce qui libère leur `active_key`.
+     * Source unique de l'expiration (cron `expire-holds`). Balaie aussi les
+     * orphelins laissés par le chemin overlap de create() — pas seulement les
+     * collisions même-départ traitées en ligne par expireStaleHoldAt().
+     * Idempotent (un 2ᵉ passage ne touche plus rien). Retourne le nombre libéré.
+     *
+     * Note : les LECTURES (Slot::getActiveBookingsForDate) traitent déjà un
+     * hold échu comme libre (sans écrire) → aucun effet de bord en GET ; c'est
+     * ce cron qui matérialise le statut `expired`.
+     */
+    public function expireStaleHolds(): int
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE bookings SET status = 'expired'
+              WHERE status = 'pending_payment'
+                AND payment_expires_at IS NOT NULL
+                AND payment_expires_at < NOW()"
+        );
+        $stmt->execute();
+        return $stmt->rowCount();
+    }
+
+    /**
      * Générer un token unique pour la gestion client
      */
     private function generateManageToken(): string
