@@ -182,3 +182,31 @@ function diag_try_pdo(): array
         return ['pdo' => null, 'error' => 'SQLSTATE ' . (string) $e->getCode()];
     }
 }
+
+/**
+ * Version la plus haute (1ʳᵉ ligne de données) de la table « ## ChangeLog »
+ * du changelog CANONIQUE (README_TECHNIQUE.md). Parsing PUR (testable hors
+ * fichier) → sert le check d'alignement « VERSION ↔ haut du changelog ».
+ *
+ * @return ?string "X.Y.Z" ou null si aucune ligne de version trouvée.
+ */
+function diag_changelog_top_version(string $content): ?string
+{
+    return preg_match('/^\|\s*\d{2}\/\d{2}\/\d{4}\s*\|\s*([0-9]+\.[0-9]+\.[0-9]+)\s*\|/m', $content, $m)
+        ? $m[1]
+        : null;
+}
+
+/**
+ * Statut d'un checkpoint dans le tableau « État d'avancement » de la spec
+ * (ligne « | §N | module | statut | »). Parsing PUR → sert le check
+ * « spec ↔ versions livrées ».
+ *
+ * @return ?string Le texte de la cellule statut (ex. "**livré** (v2.8.0)",
+ *                 "à venir"), ou null si le checkpoint est absent du tableau.
+ */
+function diag_spec_status(string $content, string $checkpoint): ?string
+{
+    $re = '/^\|\s*' . preg_quote($checkpoint, '/') . '\s*\|[^|]*\|\s*([^|]+?)\s*\|/m';
+    return preg_match($re, $content, $m) ? trim($m[1]) : null;
+}

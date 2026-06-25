@@ -6,7 +6,11 @@
  * Vue HTTP des cohérences mono-source (AD-2) :
  *   (a) version : VERSION ↔ stamps README/CLAUDE/README_TECHNIQUE/sw.js ;
  *   (b) statuts : enum bookings.status ⇄ CASE active_key ⇄ BOOKING_STATUS ;
- *   (c) catalogue : services de seed.sql ⇄ migration-3.0.0.sql.
+ *   (c) catalogue : services de seed.sql ⇄ migration-3.0.0.sql ;
+ *   (d) docs & cadrage (AD-2/AD-7, ajout 2.8.5 — anti-dérive de la doc) :
+ *       VERSION ↔ haut du changelog canonique ; CHANGELOG.md mono-source
+ *       (redirection) ; spec ↔ versions livrées ; exception inter-règles
+ *       AD-4↔AD-11 (diagnostic.css) tracée.
  * Lecture seule (fichiers + information_schema).
  */
 
@@ -104,6 +108,48 @@ $catBody .= diag_row(
         : 'écart : ' . implode(', ', array_merge($diffA, $diffB))
 );
 
+// ── (d) Documentation & cadrage (anti-dérive doc — AD-2 / AD-7) ──
+// d1 — VERSION ↔ haut du changelog CANONIQUE (README_TECHNIQUE §ChangeLog).
+$rtTxt = (string) @file_get_contents(ROOT_PATH . 'README_TECHNIQUE.md');
+$clTop = diag_changelog_top_version($rtTxt);
+$d1 = ($clTop === $version && $version !== '') ? 'ok' : 'fail';
+$docBody = diag_row($d1, 'VERSION ↔ haut du ChangeLog (canonique)',
+    $clTop === $version ? (string) $clTop : ($clTop ?? '(absent)') . ' ≠ ' . $version);
+
+// d2 — Mono-source : CHANGELOG.md racine gelé + redirigé (pas de 2ᵉ journal vivant).
+$clMd = (string) @file_get_contents(ROOT_PATH . 'CHANGELOG.md');
+$d2 = (stripos($clMd, 'SOURCE UNIQUE DU CHANGELOG') !== false) ? 'ok' : 'fail';
+$docBody .= diag_row($d2, 'CHANGELOG.md = redirection (mono-source AD-2)',
+    $d2 === 'ok' ? 'gelé + redirige vers README_TECHNIQUE' : 'bandeau de redirection ABSENT (deux journaux ?)');
+
+// d3 — spec ↔ versions livrées : un checkpoint dont le code existe doit être « livré ».
+$specTxt = (string) @file_get_contents(ROOT_PATH . 'docs/booking-v3-spec.md');
+$proxies = [
+    '§6' => 'classes/StripeClient.php',
+    '§9' => 'modules/diagnostic/health.php',
+    '§7' => 'modules/booking/pack.php',
+];
+$specDrift = [];
+foreach ($proxies as $cp => $proxyFile) {
+    $status = (string) diag_spec_status($specTxt, $cp);
+    if (file_exists(ROOT_PATH . $proxyFile) && stripos($status, 'livré') === false) {
+        $specDrift[] = $cp . ' livré (code présent) mais marqué « ' . $status . ' »';
+    }
+}
+$d3 = $specDrift === [] ? 'ok' : 'fail';
+$docBody .= diag_row($d3, 'spec ↔ versions livrées',
+    $specDrift === [] ? 'tableau d\'avancement cohérent avec le code' : implode(' ; ', $specDrift));
+
+// d4 — Exception inter-règles tracée (AD-4 ↔ AD-11 : diagnostic.css séparé, voulu).
+$claudeTxt = (string) @file_get_contents(ROOT_PATH . 'CLAUDE.md');
+$d4 = (stripos($claudeTxt, 'diagnostic.css') !== false
+       && stripos($claudeTxt, 'ne doit JAMAIS redéfinir') !== false) ? 'ok' : 'fail';
+$docBody .= diag_row($d4, 'Exception cadrage tracée (AD-4↔AD-11 : diagnostic.css)',
+    $d4 === 'ok' ? 'documentée (CLAUDE.md §2.3)' : 'NON tracée → contradiction silencieuse');
+
+$docCard = diag_worst([$d1, $d2, $d3, $d4]);
+array_push($states, $d1, $d2, $d3, $d4);
+
 $overall = diag_worst($states);
 echo diag_head('Alignement');
 ?>
@@ -115,6 +161,7 @@ echo diag_head('Alignement');
     <?= diag_render_card(diag_worst(array_slice($states, 0, 4)), 'Version ↔ docs', $verBody) ?>
     <?= diag_render_card('ok', 'Statuts (enum ⇄ active_key ⇄ BOOKING_STATUS)', $statusBody) ?>
     <?= diag_render_card($catOk, 'Catalogue seed ⇄ migration', $catBody) ?>
+    <?= diag_render_card($docCard, 'Documentation & cadrage (AD-2 / AD-7)', $docBody) ?>
 </div>
 <?php
 echo diag_foot();

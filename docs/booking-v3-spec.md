@@ -256,7 +256,7 @@ booking, refund manuel.
 
 L'`active_key` seule ne couvre **pas** les départs différents qui
 se chevauchent (ex. 10h00-11h00 vs 10h30-11h30). À la création d'un
-booking (§5/§6 — à venir) :
+booking (§5/§6 — livrés 2.5.2 / 2.8.0) :
 
 ```
 BEGIN;
@@ -336,7 +336,7 @@ planification d'une séance : refus si `exhausted` ou `expired`.
 
 ---
 
-## 6. Tunnel & paiement (§5/§6 — à venir, esquisse)
+## 6. Tunnel & paiement (§5 livré 2.5.2 · §6 livré 2.8.0 — section = esquisse de conception pré-livraison ; le réel fait foi)
 
 ### Tunnel multi-pages PHP
 

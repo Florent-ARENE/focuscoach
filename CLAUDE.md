@@ -9,7 +9,7 @@ Point d'entrée Claude Code — committé à la racine. Décrit **(1)** l'état 
 
 ---
 
-## 📦 État courant — v2.8.4
+## 📦 État courant — v2.8.5
 
 Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tout le changelog.
 
@@ -65,7 +65,7 @@ Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tou
 Communes à tous les projets, instanciées ici pour Focus Coach.
 
 ### 1. Architecture & code
-1. **Zéro duplication** PHP/JS. Avant d'écrire une fonction : `grep` + carte des fonctions du `README_TECHNIQUE.md`. Si un équivalent existe → réutiliser ou étendre, jamais recréer.
+1. **Zéro duplication** PHP/JS. Avant d'écrire une fonction : `grep` (la « carte des fonctions » du `README_TECHNIQUE.md` est **gelée** depuis 2.6.0, régénération prévue au dégel v3.0.0 → d'ici là s'appuyer sur `grep` + le ChangeLog, pas sur la carte). Si un équivalent existe → réutiliser ou étendre, jamais recréer.
 2. **Helpers partagés mutualisés** — `includes/init.php`, `classes/Helpers.php`, `classes/Icons.php`, `assets/js/icons.js`. Toute logique commune (formatage, modales, identité, icônes) y est centralisée. ⚠️ Les **appels API côté JS** sont aujourd'hui **inlinés par module** (`admin.js`/`manage.js`/`booking-calendar.js`), **pas** dans un `assets/js/api.js` — **ce fichier n'existe pas** (candidat de mutualisation identifié à l'audit 2.8.x, à arbitrer).
 3. **Fonctions courtes**, responsabilité unique (~40 lignes max).
 4. **Code en anglais, commentaires + UI en français**, de façon uniforme.
