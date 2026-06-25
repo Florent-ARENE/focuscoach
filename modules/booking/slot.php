@@ -7,6 +7,7 @@
  * Clic sur un créneau → confirm.php (formulaire identité).
  */
 require_once __DIR__ . '/../../includes/init.php';
+require_once __DIR__ . '/_shell.php';
 
 use App\Database;
 use App\Slot;
@@ -58,21 +59,14 @@ $pageTitle = 'Choisir un créneau';
     <link rel="stylesheet" href="../../assets/css/booking-v3.css">
     <?= pwaHead() ?>
 </head>
-<body>
-    <header class="booking-header">
-        <div class="booking-header-content">
-            <a href="../../" class="booking-logo"><?= brandWordmark() ?></a>
-            <a href="date.php?service=<?= Helpers::escape((string) (int) $service['id']) ?>" class="back-link"><?= Icons::svg('arrow-left', 20, 'icon-inline') ?>Changer de date</a>
-        </div>
-    </header>
+<body class="booking-page">
+    <?= booking_header('date.php?service=' . (int) $service['id'], 'Changer de date') ?>
 
     <main class="booking-main">
-        <ol class="bv3-steps" aria-label="Étapes de la réservation">
-            <li class="bv3-step is-done"><span class="bv3-step-num">1</span> Prestation</li>
-            <li class="bv3-step is-done"><span class="bv3-step-num">2</span> Date</li>
-            <li class="bv3-step is-current" aria-current="step"><span class="bv3-step-num">3</span> Créneau</li>
-            <li class="bv3-step"><span class="bv3-step-num">4</span> Vos informations</li>
-        </ol>
+        <?= booking_steps(3, [
+            1 => 'index.php',
+            2 => 'date.php?service=' . (int) $service['id'],
+        ]) ?>
 
         <div class="bv3-summary">
             <strong><?= Helpers::escape($service['name']) ?></strong>
@@ -98,9 +92,7 @@ $pageTitle = 'Choisir un créneau';
         <?php endif; ?>
     </main>
 
-    <footer class="booking-footer">
-        <p>© <?= date('Y') ?> <?= Helpers::escape(siteConfig()['site_name']) ?></p>
-    </footer>
+    <?= booking_footer() ?>
 
     <script src="../../assets/js/icons.js"></script>
     <?= pwaRegister() ?>

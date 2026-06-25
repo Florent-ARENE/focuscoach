@@ -178,3 +178,72 @@ function brandWordmark(): string
     return '<span class="brand-half-a">' . \App\Helpers::escape($a) . '</span>'
          . '<span class="brand-half-b">' . \App\Helpers::escape($b) . '</span>';
 }
+
+/**
+ * Footer du SITE — composant UNIQUE mutualisé (AD-3), fond navy.
+ * Utilisé par l'accueil ET le tunnel booking (fini la duplication / le footer
+ * minimal divergent). Contenu piloté par siteConfig() (AD-2), liens absolus
+ * via BASE_URL. Styles : `.site-footer` dans main.css (chargé partout).
+ *
+ *   $full = true  → 3 colonnes (marque/légal · Navigation · Informations).
+ *   $full = false → version ALLÉGÉE pour le funnel : marque + liens légaux + ©.
+ *
+ * Usage : <?= siteFooter() ?> (accueil) · <?= siteFooter(false) ?> (booking).
+ */
+function siteFooter(bool $full = true): string
+{
+    $cfg  = siteConfig();
+    $esc  = static fn($v): string => \App\Helpers::escape((string) $v);
+    $base = $esc(BASE_URL);
+    $year = date('Y');
+
+    $tagline = 'Architecte de liens · ' . trim((string) ($cfg['admin_activity'] ?? ''));
+    if (!empty($cfg['admin_address'])) {
+        $tagline .= '. ' . $cfg['admin_address'];
+    }
+    $tagline .= '.';
+
+    // Colonne marque + légal — présente dans les deux variantes.
+    $brand = '<div>'
+        . '<div class="footer-brand">'
+        . '<img src="' . $base . 'assets/img/logo_Focus_Coach.png" alt="' . $esc($cfg['site_name']) . '">'
+        . '<p class="footer-brand-text">' . brandWordmark() . '</p></div>'
+        . '<p class="footer-tagline">' . $esc($tagline) . '</p>'
+        . '<p class="footer-legal">SIRET : <span class="value">' . cfgField($cfg['admin_siret']) . '</span></p>'
+        . '<p class="footer-legal">' . cfgField($cfg['legal_status'], 'Statut juridique à compléter') . '</p>'
+        . '</div>';
+
+    $legalLinks = '<a href="' . $base . 'mentions-legales.php">Mentions légales</a>'
+        . '<a href="' . $base . 'confidentialite.php">Confidentialité &amp; RGPD</a>';
+
+    if ($full) {
+        $nav = '<div><p class="footer-col-title">Navigation</p><div class="footer-links">'
+            . '<a href="' . $base . '#services">Accompagnements</a>'
+            . '<a href="' . $base . '#philosophie">Philosophie</a>'
+            . '<a href="' . $base . '#about">Qui je suis</a>'
+            . '<a href="' . $base . '#parcours">Parcours</a>'
+            . '<a href="' . $base . 'modules/booking/">Prendre rendez-vous</a>'
+            . '</div></div>';
+        $infos = '<div><p class="footer-col-title">Informations</p><div class="footer-links">' . $legalLinks;
+        if (!empty($cfg['admin_email'])) {
+            $infos .= '<a href="mailto:' . $esc($cfg['admin_email']) . '">' . $esc($cfg['admin_email']) . '</a>';
+        }
+        if (!empty($cfg['admin_phone'])) {
+            $infos .= '<a href="tel:' . $esc(preg_replace('/\s+/', '', (string) $cfg['admin_phone'])) . '">' . $esc($cfg['admin_phone']) . '</a>';
+        }
+        $infos .= '</div></div>';
+        $top    = $brand . $nav . $infos;
+        $bottom = '<p>© ' . $year . ' ' . brandWordmark() . ' · ' . $esc($cfg['full_name']) . ' · Tous droits réservés</p>'
+                . '<p class="footer-note">Membre engagé dans les principes éthiques ICF &amp; EMCC</p>';
+        $cls = 'site-footer';
+    } else {
+        $top    = $brand . '<div class="footer-links footer-links--inline">' . $legalLinks . '</div>';
+        $bottom = '<p>© ' . $year . ' ' . brandWordmark() . ' · Tous droits réservés</p>';
+        $cls    = 'site-footer site-footer--lite';
+    }
+
+    return '<footer class="' . $cls . '">'
+        . '<div class="footer-top">' . $top . '</div>'
+        . '<div class="footer-bottom">' . $bottom . '</div>'
+        . '</footer>';
+}

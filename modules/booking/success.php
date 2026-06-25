@@ -11,6 +11,7 @@
  *  - Mode bypass (gratuit / Stripe off) → $_SESSION['booking_result'].
  */
 require_once __DIR__ . '/../../includes/init.php';
+require_once __DIR__ . '/_shell.php';
 
 use App\Helpers;
 use App\Icons;
@@ -78,13 +79,8 @@ if ($paid) {
     <link rel="stylesheet" href="../../assets/css/booking-v3.css">
     <?= pwaHead() ?>
 </head>
-<body>
-    <header class="booking-header">
-        <div class="booking-header-content">
-            <a href="../../" class="booking-logo"><?= brandWordmark() ?></a>
-            <a href="../../" class="back-link"><?= Icons::svg('arrow-left', 20, 'icon-inline') ?>Retour au site</a>
-        </div>
-    </header>
+<body class="booking-page">
+    <?= booking_header(Helpers::escape(BASE_URL), 'Retour au site') ?>
 
     <main class="booking-main">
         <div class="bv3-success">
@@ -115,9 +111,7 @@ if ($paid) {
         </div>
     </main>
 
-    <footer class="booking-footer">
-        <p>© <?= date('Y') ?> <?= Helpers::escape(siteConfig()['site_name']) ?></p>
-    </footer>
+    <?= booking_footer() ?>
 
     <script src="../../assets/js/icons.js"></script>
     <?= pwaRegister() ?>

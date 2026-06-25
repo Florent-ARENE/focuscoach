@@ -379,43 +379,8 @@ $cfg = siteConfig();
         </div>
     </section>
 
-    <!-- ═══ FOOTER ═══ -->
-    <footer class="home-footer">
-        <div class="footer-top">
-            <div>
-                <div class="footer-brand">
-                    <img src="assets/img/logo_Focus_Coach.png" alt="Focus Coach">
-                    <p class="footer-brand-text"><?= brandWordmark() ?></p>
-                </div>
-                <p class="footer-tagline">Architecte de liens · Coach, accompagnateur de transformations, préparateur mental et formateur. Bordeaux, Nouvelle-Aquitaine.</p>
-                <p class="footer-legal">SIRET : <span class="value"><?= cfgField($cfg['admin_siret']) ?></span></p>
-                <p class="footer-legal"><?= cfgField($cfg['legal_status'], 'Statut juridique à compléter') ?></p>
-            </div>
-            <div>
-                <p class="footer-col-title">Navigation</p>
-                <div class="footer-links">
-                    <a href="#services">Accompagnements</a>
-                    <a href="#philosophie">Philosophie</a>
-                    <a href="#about">Qui je suis</a>
-                    <a href="#parcours">Parcours</a>
-                    <a href="modules/booking/">Prendre rendez-vous</a>
-                </div>
-            </div>
-            <div>
-                <p class="footer-col-title">Informations</p>
-                <div class="footer-links">
-                    <a href="mentions-legales.php">Mentions légales</a>
-                    <a href="confidentialite.php">Confidentialité &amp; RGPD</a>
-                    <a href="mailto:<?= Helpers::escape($cfg['admin_email']) ?>"><?= Helpers::escape($cfg['admin_email']) ?></a>
-                    <?php if (!empty($cfg['admin_phone'])): ?><a href="tel:<?= Helpers::escape(preg_replace('/\s+/', '', $cfg['admin_phone'])) ?>"><?= Helpers::escape($cfg['admin_phone']) ?></a><?php endif; ?>
-                </div>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>© <?= date('Y') ?> <?= brandWordmark() ?> · <?= Helpers::escape($cfg['full_name']) ?> · Tous droits réservés</p>
-            <p class="footer-note">Membre engagé dans les principes éthiques ICF &amp; EMCC</p>
-        </div>
-    </footer>
+    <!-- ═══ FOOTER (composant mutualisé siteFooter()) ═══ -->
+    <?= siteFooter(true) ?>
 
     <!-- ═══ JS — formulaire de contact (mailto, sans backend) ═══ -->
     <script src="assets/js/icons.js"></script>

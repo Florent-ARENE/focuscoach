@@ -18,6 +18,7 @@
  * place), et le client peut annuler puis re-réserver.
  */
 require_once __DIR__ . '/../../includes/init.php';
+require_once __DIR__ . '/_shell.php';
 
 use App\Booking;
 use App\Helpers;
@@ -64,13 +65,8 @@ $statusIcons = [
     <link rel="stylesheet" href="../../assets/css/manage.css">
     <?= pwaHead() ?>
 </head>
-<body>
-    <header class="booking-header">
-        <div class="booking-header-content">
-            <a href="../../" class="booking-logo"><?= brandWordmark() ?></a>
-            <a href="../../" class="back-link"><?= Icons::svg('arrow-left', 20, 'icon-inline') ?>Retour au site</a>
-        </div>
-    </header>
+<body class="booking-page">
+    <?= booking_header(Helpers::escape(BASE_URL), 'Retour au site') ?>
 
     <main class="booking-main">
         <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
@@ -240,9 +236,7 @@ $statusIcons = [
         <?php endif; ?>
     </main>
 
-    <footer class="booking-footer">
-        <p>&copy; <?= date('Y') ?> <?= Helpers::escape(siteConfig()['site_name']) ?></p>
-    </footer>
+    <?= booking_footer() ?>
 
     <?php if ($booking && $canCancel): ?>
     <script src="../../assets/js/icons.js"></script>
