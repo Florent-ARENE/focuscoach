@@ -204,7 +204,32 @@ class Helpers
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
     }
-    
+
+    /**
+     * Gate d'accès d'un cron (mutualisée — AD-3 ; était recopiée et divergente
+     * entre expire-holds.php et purge-rgpd.php, cette dernière avec un secret
+     * EN DUR + comparaison non constante).
+     *
+     * - En CLI : toujours autorisé (lancé par le planificateur).
+     * - En HTTP : autorisé uniquement si $secret est non vide ET que `?key=`
+     *   correspond, comparé en temps constant (hash_equals). **Fail-closed** :
+     *   secret non configuré → refus (jamais d'endpoint ouvert). Le secret est
+     *   toujours lu depuis config.local (RÈGLE 5.1, jamais en dur dans le code).
+     *
+     * @param string $secret Valeur du secret (depuis une constante de config.local).
+     */
+    public static function requireCronAuth(string $secret): void
+    {
+        if (php_sapi_name() === 'cli') {
+            return;
+        }
+        $provided = (string) ($_GET['key'] ?? '');
+        if ($secret === '' || !hash_equals($secret, $provided)) {
+            http_response_code(403);
+            exit('Accès interdit');
+        }
+    }
+
     /**
      * Récupérer les données JSON d'une requête (cache statique : `php://input`
      * peut être lu plusieurs fois en PHP ≥ 5.6, mais on évite l'I/O répété).

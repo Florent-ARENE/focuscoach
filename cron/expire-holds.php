@@ -21,17 +21,10 @@
 require_once __DIR__ . '/../includes/init.php';
 
 use App\Booking;
+use App\Helpers;
 
-$isCli = (php_sapi_name() === 'cli');
-
-if (!$isCli) {
-    $secret   = defined('CRON_SECRET') ? (string) CRON_SECRET : '';
-    $provided = (string) ($_GET['key'] ?? '');
-    if ($secret === '' || !hash_equals($secret, $provided)) {
-        http_response_code(403);
-        exit('Accès interdit');
-    }
-}
+// Gate mutualisée (CLI ou ?key= en temps constant, fail-closed) — cf. Helpers::requireCronAuth.
+Helpers::requireCronAuth(defined('CRON_SECRET') ? (string) CRON_SECRET : '');
 
 $expired = (new Booking())->expireStaleHolds();
 

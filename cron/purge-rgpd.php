@@ -13,28 +13,22 @@
  * Usage CRON OVH :
  *   php /homez.XXX/votrelogin/www/cron/purge-rgpd.php
  * 
- * Ou via URL protégée :
- *   https://votresite.fr/cron/purge-rgpd.php?key=VOTRE_CLE_SECRETE
- * 
- * Dépend de : includes/init.php, Database.php
+ * Ou via URL protégée (clé = RGPD_CRON_SECRET défini dans config.local.php) :
+ *   https://votresite.fr/cron/purge-rgpd.php?key=<RGPD_CRON_SECRET>
+ *
+ * Dépend de : includes/init.php, Database.php, Helpers::requireCronAuth()
  */
 
-// Protection : exécution CLI ou clé secrète
-$isCliExecution = (php_sapi_name() === 'cli');
-$secretKey = 'CHANGEZ_CETTE_CLE_SECRETE_RGPD'; // ⚠️ À personnaliser !
-
-if (!$isCliExecution) {
-    $providedKey = $_GET['key'] ?? '';
-    if ($providedKey !== $secretKey) {
-        http_response_code(403);
-        die('Accès interdit');
-    }
-}
-
-// Bootstrap
+// Bootstrap d'abord : charge config.local (→ RGPD_CRON_SECRET) et les classes.
 require_once __DIR__ . '/../includes/init.php';
 
 use App\Database;
+use App\Helpers;
+
+// Gate d'accès mutualisée — CLI ou ?key= comparé en temps constant, fail-closed.
+// Secret lu depuis config.local (RÈGLE 5.1 : JAMAIS en dur). À définir :
+// RGPD_CRON_SECRET dans config.local.php (cf. config.local.php.template).
+Helpers::requireCronAuth(defined('RGPD_CRON_SECRET') ? (string) RGPD_CRON_SECRET : '');
 
 // ============================================
 // CONFIGURATION DES DURÉES
