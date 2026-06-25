@@ -96,7 +96,7 @@ date_default_timezone_set(TIMEZONE);
 
 define('BOOKING_STEP',     15);
 define('MIN_NOTICE_MIN',   120);
-define('MAX_HORIZON_DAYS', 60);
+define('MAX_HORIZON_DAYS', 180); // ~6 mois de réservation à l'avance
 
 // ============================================
 // GOOGLE CALENDAR (synchronisation miroir)
