@@ -41,14 +41,12 @@ if (empty($token) || strlen($token) !== MANAGE_TOKEN_LENGTH) {
 
 $canCancel = $booking && in_array($booking['status'], ['pending', 'confirmed'], true);
 
-$statusIcons = [
-    'pending'         => 'hourglass',
-    'pending_payment' => 'hourglass',
-    'confirmed'       => 'circle-check',
-    'cancelled'       => 'circle-x',
-    'completed'       => 'check',
-    'expired'         => 'circle-x',
-];
+// Icônes de statut : SOURCE = BOOKING_STATUS['icon'] (4 statuts exposés) + les
+// 2 transitionnels (pending_payment/expired) absents de la table (cf. config).
+$statusIcons = ['pending_payment' => 'hourglass', 'expired' => 'circle-x'];
+foreach (BOOKING_STATUS as $statusKey => $statusInfo) {
+    $statusIcons[$statusKey] = $statusInfo['icon'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">

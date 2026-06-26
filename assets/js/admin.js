@@ -27,16 +27,11 @@ const AdminApp = {
     },
     
     /**
-     * Mapping statut → icône Lucide (remplace les emojis de status_info)
+     * Icône Lucide d'un statut — lue depuis BOOKING_STATUS['icon'] côté serveur
+     * (SOURCE UNIQUE), exposée via status_info. Plus de map dupliquée ici.
      */
-    statusIcon(status) {
-        const map = {
-            pending:   Icons.svg('hourglass', 14),
-            confirmed: Icons.svg('circle-check', 14),
-            cancelled: Icons.svg('circle-x', 14),
-            completed: Icons.svg('check', 14),
-        };
-        return map[status] || '';
+    statusIcon(statusInfo) {
+        return statusInfo?.icon ? Icons.svg(statusInfo.icon, 14) : '';
     },
 
     /**
@@ -136,7 +131,7 @@ const AdminApp = {
                 <td>${this.escapeHtml(b.service_label)}</td>
                 <td>
                     <span class="status-badge ${b.status}">
-                        ${this.statusIcon(b.status)} ${b.status_info?.label || b.status}
+                        ${this.statusIcon(b.status_info)} ${b.status_info?.label || b.status}
                     </span>
                 </td>
                 <td>
@@ -166,7 +161,7 @@ const AdminApp = {
                 <span class="detail-label">Statut</span>
                 <span class="detail-value">
                     <span class="status-badge ${b.status}">
-                        ${this.statusIcon(b.status)} ${b.status_info?.label || b.status}
+                        ${this.statusIcon(b.status_info)} ${b.status_info?.label || b.status}
                     </span>
                 </span>
             </div>
