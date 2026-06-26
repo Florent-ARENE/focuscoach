@@ -35,6 +35,39 @@ const AdminApp = {
     },
 
     /**
+     * Modale de confirmation STYLÉE (remplace les confirm() natifs du navigateur).
+     * Réutilise le système .modal-overlay/.modal de main.css + #confirm-modal.
+     * @returns {Promise<boolean>} true si confirmé, false si annulé/fond cliqué.
+     */
+    confirmModal({ title = 'Confirmer', message = '', confirmLabel = 'Confirmer', danger = false } = {}) {
+        return new Promise((resolve) => {
+            const modal  = document.getElementById('confirm-modal');
+            const okBtn  = document.getElementById('confirm-ok');
+            const noBtn  = document.getElementById('confirm-cancel');
+            document.getElementById('confirm-title').textContent   = title;
+            document.getElementById('confirm-message').textContent = message;
+            okBtn.textContent = confirmLabel;
+            okBtn.className   = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+
+            const close = (result) => {
+                modal.classList.remove('active');
+                okBtn.removeEventListener('click', onOk);
+                noBtn.removeEventListener('click', onNo);
+                modal.removeEventListener('click', onBackdrop);
+                resolve(result);
+            };
+            const onOk = () => close(true);
+            const onNo = () => close(false);
+            const onBackdrop = (e) => { if (e.target === modal) close(false); };
+            okBtn.addEventListener('click', onOk);
+            noBtn.addEventListener('click', onNo);
+            modal.addEventListener('click', onBackdrop);
+            modal.classList.add('active');
+            okBtn.focus();
+        });
+    },
+
+    /**
      * Initialisation
      */
     async init() {
@@ -323,7 +356,11 @@ const AdminApp = {
         
         const [newTimeStart, newTimeEnd] = slotValue.split('|');
         
-        if (!confirm(`Déplacer ce rendez-vous au ${newDate} de ${newTimeStart} à ${newTimeEnd} ?`)) {
+        if (!await this.confirmModal({
+            title: 'Déplacer le rendez-vous',
+            message: `Déplacer ce rendez-vous au ${newDate} de ${newTimeStart} à ${newTimeEnd} ?`,
+            confirmLabel: 'Déplacer',
+        })) {
             return;
         }
         
@@ -358,7 +395,12 @@ const AdminApp = {
      * Supprimer une réservation
      */
     async deleteBooking(id) {
-        if (!confirm('Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.')) {
+        if (!await this.confirmModal({
+            title: 'Supprimer la réservation',
+            message: 'Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.',
+            confirmLabel: 'Supprimer',
+            danger: true,
+        })) {
             return;
         }
         
@@ -388,7 +430,7 @@ const AdminApp = {
      * Confirmer une réservation
      */
     async confirmBooking(id) {
-        if (!confirm('Confirmer cette réservation ?')) return;
+        if (!await this.confirmModal({ title: 'Confirmer la réservation', message: 'Confirmer cette réservation ?', confirmLabel: 'Confirmer' })) return;
         await this.updateStatus(id, 'confirmed');
     },
     
@@ -396,7 +438,7 @@ const AdminApp = {
      * Annuler une réservation
      */
     async cancelBooking(id) {
-        if (!confirm('Refuser cette réservation ?')) return;
+        if (!await this.confirmModal({ title: 'Refuser la réservation', message: 'Refuser cette réservation ?', confirmLabel: 'Refuser', danger: true })) return;
         await this.updateStatus(id, 'cancelled');
     },
     
