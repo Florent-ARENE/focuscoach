@@ -147,8 +147,25 @@ $d4 = (stripos($claudeTxt, 'diagnostic.css') !== false
 $docBody .= diag_row($d4, 'Exception cadrage tracée (AD-4↔AD-11 : diagnostic.css)',
     $d4 === 'ok' ? 'documentée (CLAUDE.md §2.3)' : 'NON tracée → contradiction silencieuse');
 
-$docCard = diag_worst([$d1, $d2, $d3, $d4]);
-array_push($states, $d1, $d2, $d3, $d4);
+// d5 — Footer mutualisé : aucune page publique ne déclare un <footer> EN DUR
+// (le markup vit dans siteFooter()/booking_footer()). Garde contre l'oubli
+// d'une page — cf. dérive .legal-footer repérée à l'œil en 2.8.8.
+$pageFiles = [
+    'index.php', 'mentions-legales.php', 'confidentialite.php',
+    'modules/booking/index.php', 'modules/booking/date.php', 'modules/booking/slot.php',
+    'modules/booking/confirm.php', 'modules/booking/success.php', 'modules/booking/manage.php',
+];
+$inlineFooter = [];
+foreach ($pageFiles as $pf) {
+    $c = (string) @file_get_contents(ROOT_PATH . $pf);
+    if ($c !== '' && diag_has_inline_footer($c)) { $inlineFooter[] = $pf; }
+}
+$d5 = $inlineFooter === [] ? 'ok' : 'fail';
+$docBody .= diag_row($d5, 'Footer mutualisé sur toutes les pages (AD-3)',
+    $inlineFooter === [] ? count($pageFiles) . ' pages via siteFooter()/booking_footer()' : 'footer EN DUR : ' . implode(', ', $inlineFooter));
+
+$docCard = diag_worst([$d1, $d2, $d3, $d4, $d5]);
+array_push($states, $d1, $d2, $d3, $d4, $d5);
 
 $overall = diag_worst($states);
 echo diag_head('Alignement');
@@ -161,7 +178,7 @@ echo diag_head('Alignement');
     <?= diag_render_card(diag_worst(array_slice($states, 0, 4)), 'Version ↔ docs', $verBody) ?>
     <?= diag_render_card('ok', 'Statuts (enum ⇄ active_key ⇄ BOOKING_STATUS)', $statusBody) ?>
     <?= diag_render_card($catOk, 'Catalogue seed ⇄ migration', $catBody) ?>
-    <?= diag_render_card($docCard, 'Documentation & cadrage (AD-2 / AD-7)', $docBody) ?>
+    <?= diag_render_card($docCard, 'Documentation, cadrage & pages (AD-2/3/7)', $docBody) ?>
 </div>
 <?php
 echo diag_foot();
