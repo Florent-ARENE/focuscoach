@@ -1,6 +1,6 @@
 # 📅 Focus Coach — Système de Réservation
 
-**Version:** 2.8.13
+**Version:** 2.8.14
 **Date:** 16 juin 2026
 **Auteur:** Développé avec Claude AI
 **Stack:** PHP 7.4+ / MySQL / JavaScript vanilla / **PWA installable**
