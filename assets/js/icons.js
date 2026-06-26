@@ -4,7 +4,7 @@
  * ============================================
  * Bibliothèque d'icônes Lucide (https://lucide.dev) inline.
  * Utilisée côté JS pour les rendus dynamiques (admin.js, manage.js,
- * summary-module.js, booking.js).
+ * booking-calendar.js).
  *
  * Usage :
  *   Icons.svg('mail')           // → "<svg ...>...</svg>"
