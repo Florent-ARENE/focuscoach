@@ -29,7 +29,7 @@ if (empty($input)) {
 $token = $input['token'] ?? '';
 $confirmEmail = $input['confirm_email'] ?? '';
 
-if (empty($token) || strlen($token) !== 64) {
+if (empty($token) || strlen($token) !== MANAGE_TOKEN_LENGTH) {
     Helpers::jsonResponse(['error' => 'Token invalide'], 400);
 }
 

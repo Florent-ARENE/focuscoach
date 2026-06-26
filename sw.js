@@ -10,7 +10,7 @@
  * pour invalider proprement les caches navigateur.
  */
 
-const CACHE_VERSION = 'v2.8.5';
+const CACHE_VERSION = 'v2.8.6';
 const STATIC_CACHE  = `focuscoach-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `focuscoach-runtime-${CACHE_VERSION}`;
 

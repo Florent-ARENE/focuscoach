@@ -77,8 +77,8 @@ $svc->execute([':id' => (int) $draft['service_id']]);
 $service = $svc->fetch() ?: ['price_cents' => 0, 'stripe_price_id' => null];
 
 if (\App\paymentMode($service) === 'stripe') {
-    // 1) Hold pending_payment (15 min) avec garde anti-double-booking (S2).
-    $result = $booking->createHold($data, 15);
+    // 1) Hold pending_payment (HOLD_MINUTES) avec garde anti-double-booking (S2).
+    $result = $booking->createHold($data, HOLD_MINUTES);
     if (!$result['success']) {
         header('Location: ' . $slotBack); // créneau déjà pris
         exit;

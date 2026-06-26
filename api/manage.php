@@ -35,7 +35,7 @@ switch ($action) {
     case 'get':
         $token = $_GET['token'] ?? '';
         
-        if (empty($token) || strlen($token) !== 64) {
+        if (empty($token) || strlen($token) !== MANAGE_TOKEN_LENGTH) {
             Helpers::jsonResponse(['error' => 'Token invalide'], 400);
         }
         
@@ -76,7 +76,7 @@ switch ($action) {
         $newTimeStart = $input['new_time_start'] ?? '';
         $newTimeEnd = $input['new_time_end'] ?? '';
         
-        if (empty($token) || strlen($token) !== 64) {
+        if (empty($token) || strlen($token) !== MANAGE_TOKEN_LENGTH) {
             Helpers::jsonResponse(['error' => 'Token invalide'], 400);
         }
         
@@ -145,7 +145,7 @@ switch ($action) {
         
         $token = $input['token'] ?? '';
         
-        if (empty($token) || strlen($token) !== 64) {
+        if (empty($token) || strlen($token) !== MANAGE_TOKEN_LENGTH) {
             Helpers::jsonResponse(['error' => 'Token invalide'], 400);
         }
         

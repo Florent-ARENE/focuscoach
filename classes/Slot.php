@@ -171,7 +171,7 @@ class Slot
                     status, payment_expires_at
                FROM bookings
               WHERE slot_date = :date
-                AND status IN ('pending', 'confirmed', 'pending_payment')
+                AND status IN (" . Booking::activeStatusesInSql() . ")
               ORDER BY slot_time_start"
         );
         $stmt->execute([':date' => $date]);
@@ -179,9 +179,7 @@ class Slot
         $now = date('Y-m-d H:i:s');
         $out = [];
         foreach ($stmt->fetchAll() as $b) {
-            if ($b['status'] === 'pending_payment'
-                && !empty($b['payment_expires_at'])
-                && $b['payment_expires_at'] < $now) {
+            if (Booking::isHoldExpired($b, $now)) {
                 continue;
             }
 
