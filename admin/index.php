@@ -384,6 +384,20 @@ $currentPage = $_GET['page'] ?? 'bookings';
         </div>
     </div>
     
+    <!-- Modal de confirmation (remplace les confirm() natifs du navigateur) -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="confirm-title">Confirmer</h3>
+            </div>
+            <div class="modal-body"><p id="confirm-message"></p></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="confirm-cancel">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirm-ok">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast notification -->
     <div class="toast" id="toast"></div>
     
