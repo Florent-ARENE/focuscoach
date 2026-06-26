@@ -150,26 +150,33 @@ define('SESSION_NAME', 'renaud_booking_session');
 // `pending_payment` et `expired` (nouveaux statuts v3) sont
 // affichés via leur clé brute si absents de cette table — ils ne
 // sont pas exposés à l'admin par défaut, seulement transitionnels.
+// `icon` = nom d'icône Lucide (SOURCE UNIQUE du mapping statut→icône, lu par
+// admin.js via status_info + modules/booking/manage.php). Doit exister dans
+// les 2 miroirs classes/Icons.php ⇄ assets/js/icons.js.
 define('BOOKING_STATUS', [
     'pending' => [
         'label' => 'En attente',
         'color' => '#f59e0b',
         'google_color' => '5',
+        'icon' => 'hourglass',
     ],
     'confirmed' => [
         'label' => 'Confirme',
         'color' => '#10b981',
         'google_color' => '10',
+        'icon' => 'circle-check',
     ],
     'cancelled' => [
         'label' => 'Annule',
         'color' => '#ef4444',
         'google_color' => '11',
+        'icon' => 'circle-x',
     ],
     'completed' => [
         'label' => 'Termine',
         'color' => '#6b7280',
         'google_color' => '8',
+        'icon' => 'check',
     ],
 ]);
 

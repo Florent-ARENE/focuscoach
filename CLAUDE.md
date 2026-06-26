@@ -9,7 +9,7 @@ Point d'entrée Claude Code — committé à la racine. Décrit **(1)** l'état 
 
 ---
 
-## 📦 État courant — v2.8.10
+## 📦 État courant — v2.8.13
 
 Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tout le changelog.
 
@@ -75,7 +75,7 @@ Communes à tous les projets, instanciées ici pour Focus Coach.
 ### 2. CSS & design
 1. **Zéro hex en dur dans les modules** — couleurs et tokens uniquement dans `main.css :root`. Statuts = tokens sémantiques (`--status-*`, `--info-*`, `--success`, `--red-*`).
 2. **Zéro `style=` décoratif, zéro `<style>` inline** — seuls les `display:none` fonctionnels pilotés par JS sont tolérés. Tout style inline récurrent (3+) devient une classe utilitaire.
-3. **Un seul design system** — `main.css` point d'entrée unique. Modules CSS chargés par page (`main.css` + module spécifique de la page). **Une feuille de module ne contient QUE des classes propres à sa page (namespace dédié) et HÉRITE du design system de `main.css` — elle ne doit JAMAIS redéfinir une classe de `main.css` (`.btn`, `.status-badge`, `.modal-overlay`, `.text-*`…).** Exemple de référence : **`diagnostic.css`** est légitimement une feuille séparée car elle ne touche qu'à son namespace `.diag*` et consomme les tokens — **ce n'est pas une duplication** (décision tracée v2.8.x). Contre-exemple à corriger : `manage.css` redéfinit `.btn`/utilitaires de `main.css` (déjà en train de diverger : `padding` 0.875↔0.75) → dette de consolidation (audit 2.8.x).
+3. **Un seul design system** — `main.css` point d'entrée unique. Modules CSS chargés par page (`main.css` + module spécifique de la page). **Une feuille de module ne contient QUE des classes propres à sa page (namespace dédié) et HÉRITE du design system de `main.css` — elle ne doit JAMAIS redéfinir une classe de `main.css` (`.btn`, `.status-badge`, `.modal-overlay`, `.text-*`…).** Exemple de référence : **`diagnostic.css`** est légitimement une feuille séparée car elle ne touche qu'à son namespace `.diag*` et consomme les tokens — **ce n'est pas une duplication** (décision tracée v2.8.x). Cas désormais **résolu** : `manage.css` ne redéfinit plus le design system (boutons/badges/utilitaires hérités de `main.css` en 2.8.7, modale `.modal-overlay` unifiée en 2.8.12) — il ne garde que ses classes propres (`.btn-close`, `.modal-content`, `.delete-modal`…). **0 collision cross-feuilles** depuis 2.8.12.
 4. **Cohérence absolue** — avant de créer une classe, vérifier qu'aucune existante ne couvre déjà le besoin (section CSS du `README_TECHNIQUE`).
 5. **Mobile-first** — règles de base = mobile, `min-width` pour enrichir. Jamais de `max-width`.
 6. **Breakpoints uniques** — 768px (tablette+), 1024px (desktop+), documentés en commentaire au-dessus du `:root` de `main.css`. Mêmes seuils partout.
@@ -125,7 +125,7 @@ Communes à tous les projets, instanciées ici pour Focus Coach.
 - Reskins : auditer **tout le repo** avant de supposer qu'une chose est à construire — la paramétrisation admin et de nombreux helpers existent déjà.
 - **PWA bouton « Installer »** : Chrome/Edge ne l'exposent qu'en HTTPS (ou `localhost`). En HTTP simple, manifest et SW se chargent correctement mais le bouton n'apparaît jamais. Tester en local avec `php -S` puis tunnel HTTPS (ngrok), ou directement sur l'OVH déployé.
 - **`Icons::svg()`** : retourne du HTML brut, à injecter avec `<?= ?>` **sans** `htmlspecialchars` (sinon le SVG s'affiche en texte). Pas de risque XSS : `$name` est validé contre une liste blanche interne (`LIBRARY`), `$class` est échappée. Même logique que `brandWordmark()`.
-- **`config/config.php` `BOOKING_STATUS['icon']`** : champ emoji conservé pour compat, plus consommé par aucune vue (à supprimer à la prochaine refacto majeure).
+- **`config/config.php` `BOOKING_STATUS['icon']`** : depuis 2.8.13, **source unique du mapping statut→icône** (nom Lucide, plus un emoji). Lu par `admin.js` (via `status_info.icon`) et `modules/booking/manage.php`. Modifier l'icône d'un statut = **ici uniquement** (et vérifier que le nom existe dans les 2 miroirs `Icons.php` ⇄ `icons.js`). Les statuts transitionnels `pending_payment`/`expired` (absents de la table) gardent un fallback local dans `manage.php`.
 - **`:has()` ? Non** : la nav mobile utilise `.nav-cta-item` plutôt que `li:has(.nav-cta)` pour la compat (Safari 15.4+ seulement). Standard projet : classer explicitement plutôt que recourir à des sélecteurs CSS modernes non polyfillables.
 
 ---
