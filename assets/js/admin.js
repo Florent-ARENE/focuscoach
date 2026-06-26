@@ -128,7 +128,7 @@ const AdminApp = {
                     <strong>${this.escapeHtml(b.visitor_name)}</strong><br>
                     <small class="text-muted">${this.escapeHtml(b.visitor_email)}</small>
                 </td>
-                <td>${this.escapeHtml(b.service_label)}</td>
+                <td>${this.escapeHtml(b.service_name || '')}</td>
                 <td>
                     <span class="status-badge ${b.status}">
                         ${this.statusIcon(b.status_info)} ${b.status_info?.label || b.status}
@@ -191,7 +191,7 @@ const AdminApp = {
             </div>
             <div class="detail-row">
                 <span class="detail-label">Service</span>
-                <span class="detail-value">${this.escapeHtml(b.service_label)}</span>
+                <span class="detail-value">${this.escapeHtml(b.service_name || '')}</span>
             </div>
             ${b.subject ? `
             <div class="detail-row">
