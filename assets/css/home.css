@@ -443,7 +443,7 @@ nav.home-nav {
 /* ============================================
    PAGES LÉGALES PHP (mentions-legales.php / confidentialite.php)
    Remplace les <style> inline de ces pages (cohérence avec la charte).
-   Classes : .legal-header / .legal-main / .legal-footer
+   Classes : .legal-header / .legal-main (footer = .site-footer mutualisé)
    ============================================ */
 /* Pages légales — mobile first (padding réduit) */
 .legal-header { background: var(--navy-deep); padding: 0 1.2rem; height: 68px; display: flex; align-items: center; }
@@ -462,10 +462,8 @@ nav.home-nav {
 .legal-main a:hover { color: var(--orange-hover); }
 .legal-main strong { color: var(--text-dark); }
 
-.legal-footer { background: var(--navy-deep); padding: 2.5rem var(--section-pad-x); text-align: center; }
-.legal-footer p { color: var(--on-dark-45); font-size: 0.82rem; letter-spacing: 0.04em; }
-.legal-footer a { color: var(--orange); text-decoration: none; }
-.legal-footer a:hover { color: var(--orange-hover); }
+/* Footer des pages légales : désormais le composant mutualisé .site-footer
+   (siteFooter(), main.css) — l'ancien .legal-footer minimal a été retiré. */
 
 @media (min-width: 768px) {
     .legal-header { padding: 0 var(--section-pad-x); }

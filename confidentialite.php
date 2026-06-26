@@ -313,10 +313,8 @@ $lastUpdate = '13 février 2026';
         <p>Cette politique de confidentialité peut être mise à jour pour refléter des évolutions réglementaires ou des changements dans nos pratiques. La date de dernière mise à jour est indiquée en haut de cette page. Nous vous encourageons à la consulter régulièrement.</p>
     </main>
     
-    <!-- Footer -->
-    <footer class="legal-footer">
-        <p>&copy; <?= date('Y') ?> <?= Helpers::escape($cfg['site_name']) ?> &bull; <a href="mentions-legales.php">Mentions légales</a></p>
-    </footer>
+    <!-- Footer (composant mutualisé siteFooter — cohérent avec l'accueil) -->
+    <?= siteFooter(true) ?>
     <?= pwaRegister() ?>
 </body>
 </html>
