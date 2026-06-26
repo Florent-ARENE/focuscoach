@@ -231,35 +231,35 @@ $cfg = siteConfig();
         <p class="section-eyebrow">Pourquoi agir maintenant</p>
         <h2 class="section-title">Des chiffres qui parlent</h2>
         <p class="section-lead">Ces données issues d'études sérieuses (ICF, PwC, OMS, Opinion Way) disent pourquoi l'accompagnement n'est plus un luxe — c'est une nécessité stratégique.</p>
-        <div class="stats-grid">
-            <article class="stat-card stat-card--t-orange">
-                <p class="stat-number">87%</p>
-                <p class="stat-label">des organisations constatent un ROI positif du coaching</p>
-                <p class="stat-source">avec un retour moyen de <strong>7 fois le coût initial</strong> — étude PricewaterhouseCoopers / ICF.</p>
+        <div class="metrics-grid">
+            <article class="metric-card metric-card--t-orange">
+                <p class="metric-number">87%</p>
+                <p class="metric-label">des organisations constatent un ROI positif du coaching</p>
+                <p class="metric-source">avec un retour moyen de <strong>7 fois le coût initial</strong> — étude PricewaterhouseCoopers / ICF.</p>
             </article>
-            <article class="stat-card stat-card--navy">
-                <p class="stat-number">61%</p>
-                <p class="stat-label">des actifs français stressés au moins une fois par semaine</p>
-                <p class="stat-source">et 45% des managers ont vécu un burnout modéré ou sévère. <em>Empreinte Humaine / Opinion Way 2024.</em></p>
+            <article class="metric-card metric-card--navy">
+                <p class="metric-number">61%</p>
+                <p class="metric-label">des actifs français stressés au moins une fois par semaine</p>
+                <p class="metric-source">et 45% des managers ont vécu un burnout modéré ou sévère. <em>Empreinte Humaine / Opinion Way 2024.</em></p>
             </article>
-            <article class="stat-card stat-card--t-blue">
-                <p class="stat-number">72%</p>
-                <p class="stat-label">des entreprises voient les compétences s'améliorer après coaching</p>
-                <p class="stat-source">corrélation forte avec l'engagement des collaborateurs. <em>ICF / HCI 2023.</em></p>
+            <article class="metric-card metric-card--t-blue">
+                <p class="metric-number">72%</p>
+                <p class="metric-label">des entreprises voient les compétences s'améliorer après coaching</p>
+                <p class="metric-source">corrélation forte avec l'engagement des collaborateurs. <em>ICF / HCI 2023.</em></p>
             </article>
-            <article class="stat-card stat-card--navy">
-                <p class="stat-number">12 Mds</p>
-                <p class="stat-label">de jours de travail perdus chaque année dans le monde</p>
-                <p class="stat-source">à cause de la dépression et de l'anxiété — 1 000 milliards de perte de productivité. <em>OMS 2024.</em></p>
+            <article class="metric-card metric-card--navy">
+                <p class="metric-number">12 Mds</p>
+                <p class="metric-label">de jours de travail perdus chaque année dans le monde</p>
+                <p class="metric-source">à cause de la dépression et de l'anxiété — 1 000 milliards de perte de productivité. <em>OMS 2024.</em></p>
             </article>
-            <article class="stat-card stat-card--t-orange">
-                <p class="stat-number">2×</p>
-                <p class="stat-label">moins de problèmes de santé mentale quand des pratiques de prévention existent</p>
-                <p class="stat-source">La formation des managers est le levier prioritaire identifié. <em>Baromètre Empreinte Humaine.</em></p>
+            <article class="metric-card metric-card--t-orange">
+                <p class="metric-number">2×</p>
+                <p class="metric-label">moins de problèmes de santé mentale quand des pratiques de prévention existent</p>
+                <p class="metric-source">La formation des managers est le levier prioritaire identifié. <em>Baromètre Empreinte Humaine.</em></p>
             </article>
-            <article class="stat-card stat-card--t-navy">
-                <p class="stat-quote">« La préparation mentale devient une compétence stratégique, directement liée aux enjeux de performance. »</p>
-                <p class="stat-source">Depuis les JO de Paris 2024, ce qui relevait du sport s'impose dans les organisations performantes.</p>
+            <article class="metric-card metric-card--t-navy">
+                <p class="metric-quote">« La préparation mentale devient une compétence stratégique, directement liée aux enjeux de performance. »</p>
+                <p class="metric-source">Depuis les JO de Paris 2024, ce qui relevait du sport s'impose dans les organisations performantes.</p>
             </article>
         </div>
     </section>

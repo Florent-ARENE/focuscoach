@@ -265,18 +265,18 @@ nav.home-nav {
 /* ============================================
    CHIFFRES
    ============================================ */
-.stats-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 1rem; }
-.stat-card { background: var(--white); padding: 2rem 1.5rem; border-radius: var(--radius); }
-.stat-card--navy { background: var(--navy); }
-.stat-card--t-orange { border-top: 3px solid var(--orange); }
-.stat-card--t-blue { border-top: 3px solid var(--blue); }
-.stat-card--t-navy { border-top: 3px solid var(--navy); }
-.stat-number { font-family: var(--font-display); font-size: 2.8rem; font-weight: 700; color: var(--orange); line-height: 1; }
-.stat-label { font-size: 0.85rem; font-weight: 500; color: var(--navy); margin: 0.5rem 0 0.4rem; }
-.stat-card--navy .stat-label { color: var(--white); }
-.stat-source { font-size: 0.75rem; color: var(--text-light); line-height: 1.6; }
-.stat-card--navy .stat-source { color: var(--blue-light); }
-.stat-quote { font-family: var(--font-display); font-size: 1.1rem; font-style: italic; color: var(--navy); line-height: 1.6; margin-bottom: 0.8rem; }
+.metrics-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 1rem; }
+.metric-card { background: var(--white); padding: 2rem 1.5rem; border-radius: var(--radius); }
+.metric-card--navy { background: var(--navy); }
+.metric-card--t-orange { border-top: 3px solid var(--orange); }
+.metric-card--t-blue { border-top: 3px solid var(--blue); }
+.metric-card--t-navy { border-top: 3px solid var(--navy); }
+.metric-number { font-family: var(--font-display); font-size: 2.8rem; font-weight: 700; color: var(--orange); line-height: 1; }
+.metric-label { font-size: 0.85rem; font-weight: 500; color: var(--navy); margin: 0.5rem 0 0.4rem; }
+.metric-card--navy .metric-label { color: var(--white); }
+.metric-source { font-size: 0.75rem; color: var(--text-light); line-height: 1.6; }
+.metric-card--navy .metric-source { color: var(--blue-light); }
+.metric-quote { font-family: var(--font-display); font-size: 1.1rem; font-style: italic; color: var(--navy); line-height: 1.6; margin-bottom: 0.8rem; }
 
 /* ============================================
    QUI JE SUIS
@@ -426,7 +426,7 @@ nav.home-nav {
 
     .grid-2 { grid-template-columns: repeat(2, 1fr); }
     .contact-grid { grid-template-columns: 1fr 1fr; }
-    .audience-grid, .stats-grid, .services-grid { grid-template-columns: repeat(2, 1fr); }
+    .audience-grid, .metrics-grid, .services-grid { grid-template-columns: repeat(2, 1fr); }
     .compare-grid { grid-template-columns: 1fr 1fr; }
     .flash-cta { grid-template-columns: 1.3fr 1fr; }
 
@@ -437,7 +437,7 @@ nav.home-nav {
 }
 
 @media (min-width: 1024px) {
-    .audience-grid, .stats-grid, .services-grid { grid-template-columns: repeat(3, 1fr); }
+    .audience-grid, .metrics-grid, .services-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ============================================

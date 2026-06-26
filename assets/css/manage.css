@@ -63,35 +63,8 @@
     margin: 0;
 }
 
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.status-badge.pending {
-    background: var(--status-pending-bg);
-    color: var(--status-pending-text);
-}
-
-.status-badge.confirmed {
-    background: var(--status-confirmed-bg);
-    color: var(--status-confirmed-text);
-}
-
-.status-badge.cancelled {
-    background: var(--status-cancelled-bg);
-    color: var(--status-cancelled-text);
-}
-
-.status-badge.completed {
-    background: var(--status-completed-bg);
-    color: var(--status-completed-text);
-}
+/* `.status-badge` (+ variantes .pending/.confirmed/.cancelled/.completed)
+   HÉRITÉ de main.css (tokens --status-* sémantiques, source unique AD-4). */
 
 .booking-card-body {
     padding: 2rem;
@@ -261,6 +234,12 @@
 .panel-actions .btn { width: 100%; }
 
 /* Modal */
+/* ⚠️ modal-overlay : CONSERVÉ ici volontairement (collision de nom avec main.css
+   mais mécanisme DIFFÉRENT). Celui de main.css est `visibility:hidden` par défaut
+   (affiché par classe d'état) ; ici, manage affiche par défaut et masque via
+   `display:none` inline + JS. Le retirer casserait les modales de manage. À
+   unifier proprement = migrer manage.js vers le toggle par classe (dette tracée,
+   audit 2.8.x) — pas une simple suppression CSS. */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -336,55 +315,10 @@
     line-height: 1.6;
 }
 
-/* Buttons */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--radius-md);
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: var(--transition);
-    border: none;
-    text-decoration: none;
-}
-
-.btn-primary {
-    background: var(--gold);
-    color: var(--navy-900);
-}
-
-.btn-primary:hover {
-    background: var(--gold-dark);
-}
-
-.btn-primary:disabled {
-    background: var(--gray-300);
-    color: var(--gray-500);
-    cursor: not-allowed;
-}
-
-.btn-secondary {
-    background: var(--gray-200);
-    color: var(--navy-900);
-}
-
-.btn-secondary:hover {
-    background: var(--gray-300);
-}
-
-.btn-danger {
-    background: var(--red-light);
-    color: var(--red-strong);
-}
-
-.btn-danger:hover {
-    background: var(--red-soft);
-}
+/* Buttons : `.btn`, `.btn-primary/secondary/danger` (+ `:hover`/`:disabled`)
+   HÉRITÉS de main.css (design system unique, AD-4) — manage ne les redéfinit
+   plus (fini la dérive padding 0.75↔0.875). Boutons propres à manage ci-dessus
+   et ci-dessous : `.btn-close`, `.btn-rgpd-delete`. */
 
 /* ============================================
    RGPD — section de suppression des données (art. 17)
@@ -521,13 +455,7 @@
 }
 
 /* Text utilities */
-.text-muted {
-    color: var(--gray-600);
-}
-
-.text-center {
-    text-align: center;
-}
+/* `.text-muted` / `.text-center` : hérités de main.css (identiques) — retirés. */
 
 /* Responsive — mobile-first ; à partir de 768px, layouts élargis */
 @media (min-width: 768px) {

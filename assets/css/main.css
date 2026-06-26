@@ -355,23 +355,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .status-badge.pending {
-    background: var(--orange-light);
-    color: #b45309;
+    background: var(--status-pending-bg);
+    color: var(--status-pending-text);
 }
 
 .status-badge.confirmed {
-    background: var(--green-light);
-    color: #047857;
+    background: var(--status-confirmed-bg);
+    color: var(--status-confirmed-text);
 }
 
 .status-badge.cancelled {
-    background: var(--red-light);
-    color: #b91c1c;
+    background: var(--status-cancelled-bg);
+    color: var(--status-cancelled-text);
 }
 
 .status-badge.completed {
-    background: var(--gray-200);
-    color: var(--gray-600);
+    background: var(--status-completed-bg);
+    color: var(--status-completed-text);
 }
 
 /* ============================================
