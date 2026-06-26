@@ -129,11 +129,13 @@ const ManageApp = {
     },
 
     showCancelModal() {
-        this.elements.cancelModal.style.display = 'flex';
+        // Mécanisme unifié main.css : .modal-overlay caché par défaut
+        // (visibility/opacity), affiché par la classe d'état .active.
+        this.elements.cancelModal.classList.add('active');
     },
 
     hideCancelModal() {
-        this.elements.cancelModal.style.display = 'none';
+        this.elements.cancelModal.classList.remove('active');
     },
 
     async confirmCancel() {

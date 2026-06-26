@@ -234,26 +234,10 @@
 .panel-actions .btn { width: 100%; }
 
 /* Modal */
-/* ⚠️ modal-overlay : CONSERVÉ ici volontairement (collision de nom avec main.css
-   mais mécanisme DIFFÉRENT). Celui de main.css est `visibility:hidden` par défaut
-   (affiché par classe d'état) ; ici, manage affiche par défaut et masque via
-   `display:none` inline + JS. Le retirer casserait les modales de manage. À
-   unifier proprement = migrer manage.js vers le toggle par classe (dette tracée,
-   audit 2.8.x) — pas une simple suppression CSS. */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
-}
-
+/* `.modal-overlay` HÉRITÉ de main.css (mécanisme unifié : caché par défaut
+   `visibility:hidden`, affiché par la classe d'état `.active` togglée depuis
+   manage.js — dette 2.8.x fermée). Ici, seul le box `.modal-content` (propre
+   à manage, absent de main.css) et ses actions. */
 .modal-content {
     background: var(--white);
     border-radius: var(--radius-lg);

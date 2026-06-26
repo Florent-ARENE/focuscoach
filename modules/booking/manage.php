@@ -210,8 +210,9 @@ $statusIcons = [
                     </div>
                 </div>
 
-                <!-- Modal de confirmation d'annulation -->
-                <div class="modal-overlay" id="cancel-modal" style="display:none;">
+                <!-- Modal de confirmation d'annulation (caché par défaut via
+                     main.css .modal-overlay ; affiché par .active depuis manage.js) -->
+                <div class="modal-overlay" id="cancel-modal">
                     <div class="modal-content">
                         <h3>Confirmer l'annulation</h3>
                         <p>Êtes-vous sûr de vouloir annuler ce rendez-vous ?</p>
