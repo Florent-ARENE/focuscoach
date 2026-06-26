@@ -98,6 +98,19 @@ define('BOOKING_STEP',     15);
 define('MIN_NOTICE_MIN',   120);
 define('MAX_HORIZON_DAYS', 180); // ~6 mois de réservation à l'avance
 
+// HOLD_MINUTES : durée d'un hold Stripe (`pending_payment`) avant expiration
+//   automatique → libère le créneau. Source unique (était en dur 2× : défaut
+//   de Booking::createHold + appel dans process.php).
+define('HOLD_MINUTES', 15);
+// MANAGE_TOKEN_LENGTH : longueur du manage_token (bin2hex(random_bytes(32)) =
+//   64 hex). Source unique des validations strlen (était en dur 5×+).
+define('MANAGE_TOKEN_LENGTH', 64);
+// ACTIVE_BOOKING_STATUSES : statuts qui OCCUPENT un créneau (anti-double-
+//   booking). Le `pending_payment` n'occupe que tant que son hold n'a pas
+//   expiré (cf. Booking::isHoldExpired / SQL_HOLD_EXPIRED). À NE PAS confondre
+//   avec ('pending','confirmed') seuls (réservations « fermes », hors holds).
+define('ACTIVE_BOOKING_STATUSES', ['pending', 'confirmed', 'pending_payment']);
+
 // ============================================
 // GOOGLE CALENDAR (synchronisation miroir)
 // ============================================

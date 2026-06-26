@@ -97,6 +97,11 @@ define('BASE_URL', 'https://focuscoach.fr/');
 // Générer une valeur aléatoire longue, ex :
 //   php -r "echo bin2hex(random_bytes(24)), PHP_EOL;"
 // define('CRON_SECRET', 'colle_ici_un_jeton_aleatoire_long');
+//
+// Secret DÉDIÉ à la purge RGPD (cron/purge-rgpd.php) — ce cron supprime des
+// données personnelles, on lui donne sa propre clé. Même règle : sans cette
+// constante, l'accès HTTP est REFUSÉ (CLI toujours autorisé).
+// define('RGPD_CRON_SECRET', 'colle_ici_un_autre_jeton_aleatoire_long');
 
 // ──────────────────────────────────────────────
 //  Google Calendar (optionnel — si la sync est activée)

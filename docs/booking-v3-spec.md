@@ -19,10 +19,10 @@ code, pas une cible théorique.
 | §4 | Algorithme de calcul des créneaux | **livré** (v2.5.1) |
 | §5 | Tunnel de réservation (prestation → date → créneau) | **livré** (v2.5.2) |
 | §5b | Purge legacy (tunnel v2 + algo v2 + `service_type` ENUM) | **livré** (v2.6.0) |
-| §6 | Paiement Stripe Checkout + webhook idempotent | à venir |
+| §6 | Paiement Stripe Checkout + webhook idempotent | **livré** (v2.8.0) |
 | §7 | Forfaits & jetons (espace pack) | à venir |
 | §8 | Admin (CRUD services/availability/packages) | à venir |
-| §9 | `health.php` (AD-8 runtime) | à venir |
+| §9 | `health.php` (AD-8 runtime) — livré comme page du module diagnostic (`modules/diagnostic/health.php`) | **livré** (v2.7.0) |
 | §10 | Tests (smoke / integration / endpoints) | à venir |
 | livraison finale | bump 3.0.0, doc, mysqldump pré-prod | à venir |
 
@@ -146,7 +146,7 @@ Implémenté dans `classes/Slot.php` :
   étend leur intervalle du `buffer_after_min`, **filtre les holds
   expirés** (`pending_payment` avec `payment_expires_at < NOW()`)
   — lazy-expiry à la lecture, redondant avec le cron
-  `cron/expire-holds.php` (à créer §6).
+  `cron/expire-holds.php` (livré 2.8.0).
 - **`computeSlotsForService(serviceId, date)`** — orchestrateur
   qui appelle les trois précédents + applique `MIN_NOTICE_MIN` /
   `MAX_HORIZON_DAYS`.
@@ -256,7 +256,7 @@ booking, refund manuel.
 
 L'`active_key` seule ne couvre **pas** les départs différents qui
 se chevauchent (ex. 10h00-11h00 vs 10h30-11h30). À la création d'un
-booking (§5/§6 — à venir) :
+booking (§5/§6 — livrés 2.5.2 / 2.8.0) :
 
 ```
 BEGIN;
@@ -336,7 +336,7 @@ planification d'une séance : refus si `exhausted` ou `expired`.
 
 ---
 
-## 6. Tunnel & paiement (§5/§6 — à venir, esquisse)
+## 6. Tunnel & paiement (§5 livré 2.5.2 · §6 livré 2.8.0 — section = esquisse de conception pré-livraison ; le réel fait foi)
 
 ### Tunnel multi-pages PHP
 
@@ -378,7 +378,7 @@ already defined » disparaît par construction (plus de 2ᵉ `define`).
 
 ### Webhook idempotent
 
-`api/stripe-webhook.php` (à créer §6) :
+`api/stripe-webhook.php` (livré 2.8.0) :
 
 1. Vérifie la signature HMAC (`STRIPE_WEBHOOK_SECRET`).
 2. **Exempté de CSRF** (allowlist explicite — pas de session
@@ -414,13 +414,14 @@ RGPD existant (qui ne couvre aujourd'hui que `bookings`) :
 
 ---
 
-## 7.bis Checklist pré-bascule prod (sans `health.php`)
+## 7.bis Checklist pré-bascule prod (complément à `health.php`)
 
-Tant que `health.php` (checkpoint §9 du chantier, AD-8 runtime)
-n'est pas livré, il n'y a **aucun filet automatique** pour
-rattraper les invariants ci-dessous. Cette liste est le **filet
-humain explicite** à passer point par point avant de basculer en
-prod publique — pas seulement à confier au futur `health.php`.
+`health.php` est **livré** (2.7.0) comme page du module diagnostic
+(`modules/diagnostic/health.php` : PHP/extensions/BDD/tables/config/
+fuseaux/BASE_URL). Il fournit un filet **runtime**, mais ne couvre pas
+tout : cette liste reste le **filet humain explicite** (invariants
+métier, produits Stripe réels, secrets) à passer point par point avant
+de basculer en prod publique — en complément du contrôle automatique.
 
 Une fois `health.php` livré (§9), une partie de ces checks bascule
 en garde-fou runtime ; l'autre reste humaine (secrets,

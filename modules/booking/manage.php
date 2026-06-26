@@ -29,7 +29,7 @@ $token     = $_GET['token'] ?? '';
 $booking   = null;
 $error     = null;
 
-if (empty($token) || strlen($token) !== 64) {
+if (empty($token) || strlen($token) !== MANAGE_TOKEN_LENGTH) {
     $error = 'Lien invalide ou expiré.';
 } else {
     $bookingModel = new Booking();

@@ -14,11 +14,49 @@ class Booking
 {
     private PDO $db;
     
+    /**
+     * Fragment SQL « ce hold pending_payment est expiré » (lazy-expiry).
+     * Source unique (était recopié dans isSlotTaken / isSlotAvailable /
+     * expireStaleHoldAt / expireStaleHolds). À interpoler dans un WHERE —
+     * aucune donnée utilisateur, sûr.
+     */
+    public const SQL_HOLD_EXPIRED = 'payment_expires_at IS NOT NULL AND payment_expires_at < NOW()';
+
     public function __construct()
     {
         $this->db = Database::getInstance();
     }
-    
+
+    /**
+     * Un hold `pending_payment` est-il expiré (→ créneau libéré) ? Miroir PHP
+     * du fragment SQL_HOLD_EXPIRED — SOURCE UNIQUE du prédicat (était copié à
+     * l'identique dans Slot::getActiveBookingsForDate et Booking::overlapsActive).
+     * Un statut ≠ `pending_payment` n'est jamais « expiré » par cette règle ;
+     * `payment_expires_at` vide ⇒ non expiré (le hold compte encore).
+     *
+     * @param array       $row Ligne booking ('status' + 'payment_expires_at').
+     * @param string|null $now Horodatage injectable (cohérence dans une boucle).
+     */
+    public static function isHoldExpired(array $row, ?string $now = null): bool
+    {
+        if (($row['status'] ?? '') !== 'pending_payment') {
+            return false;
+        }
+        $now = $now ?? date('Y-m-d H:i:s');
+        return !empty($row['payment_expires_at']) && $row['payment_expires_at'] < $now;
+    }
+
+    /**
+     * Liste SQL des statuts qui OCCUPENT un créneau (anti-double-booking),
+     * dérivée de ACTIVE_BOOKING_STATUSES → source unique (était le littéral
+     * `'pending', 'confirmed', 'pending_payment'` recopié dans 4 requêtes).
+     * Valeurs internes (jamais d'entrée utilisateur) → interpolation SQL sûre.
+     */
+    public static function activeStatusesInSql(): string
+    {
+        return "'" . implode("', '", ACTIVE_BOOKING_STATUSES) . "'";
+    }
+
     /**
      * Créer une nouvelle réservation (v3 — service catalogué)
      *
@@ -39,7 +77,7 @@ class Booking
      * et libéré automatiquement à expiration (lazy-expiry / cron). Même garde
      * d'intégrité transactionnelle que create().
      */
-    public function createHold(array $data, int $holdMinutes = 15): array
+    public function createHold(array $data, int $holdMinutes = HOLD_MINUTES): array
     {
         return $this->insertWithIntegrity($data, 'pending_payment', 'pending', $holdMinutes);
     }
@@ -106,7 +144,7 @@ class Booking
                     "SELECT slot_time_start, slot_time_end, buffer_after_min, status, payment_expires_at
                        FROM bookings
                       WHERE slot_date = :date
-                        AND status IN ('pending', 'confirmed', 'pending_payment')
+                        AND status IN (" . self::activeStatusesInSql() . ")
                       FOR UPDATE"
                 );
                 $lock->execute([':date' => $data['slot_date']]);
@@ -204,9 +242,7 @@ class Booking
                    + (int) ($data['buffer_after_min'] ?? 0);
 
         foreach ($activeRows as $b) {
-            if ($b['status'] === 'pending_payment'
-                && !empty($b['payment_expires_at'])
-                && $b['payment_expires_at'] < $now) {
+            if (self::isHoldExpired($b, $now)) {
                 continue; // hold échu = libre
             }
             $exStart  = Slot::timeToMinutes((string) $b['slot_time_start']);
@@ -230,8 +266,7 @@ class Booking
             "UPDATE bookings SET status = 'expired'
               WHERE slot_date = :date AND slot_time_start = :start
                 AND status = 'pending_payment'
-                AND payment_expires_at IS NOT NULL
-                AND payment_expires_at < NOW()"
+                AND " . self::SQL_HOLD_EXPIRED
         );
         $stmt->execute([':date' => $date, ':start' => $timeStart]);
         return $stmt->rowCount() > 0;
@@ -344,8 +379,7 @@ class Booking
         $stmt = $this->db->prepare(
             "UPDATE bookings SET status = 'expired'
               WHERE status = 'pending_payment'
-                AND payment_expires_at IS NOT NULL
-                AND payment_expires_at < NOW()"
+                AND " . self::SQL_HOLD_EXPIRED
         );
         $stmt->execute();
         return $stmt->rowCount();
@@ -393,7 +427,8 @@ class Booking
      */
     private function generateManageToken(): string
     {
-        return bin2hex(random_bytes(32)); // 64 caractères hex
+        // 64 hex = 32 octets ; dérivé de MANAGE_TOKEN_LENGTH (source unique).
+        return bin2hex(random_bytes((int) (MANAGE_TOKEN_LENGTH / 2)));
     }
     
     /**
@@ -682,10 +717,9 @@ class Booking
             SELECT id FROM bookings
             WHERE slot_date = :date
             AND slot_time_start = :time
-            AND status IN ('pending', 'confirmed', 'pending_payment')
+            AND status IN (" . self::activeStatusesInSql() . ")
             AND NOT (status = 'pending_payment'
-                     AND payment_expires_at IS NOT NULL
-                     AND payment_expires_at < NOW())
+                     AND " . self::SQL_HOLD_EXPIRED . ")
         ");
         $stmt->execute([':date' => $date, ':time' => $timeStart]);
         return (bool) $stmt->fetch();
@@ -700,10 +734,9 @@ class Booking
             SELECT id FROM bookings
             WHERE slot_date = :date
             AND slot_time_start = :time
-            AND status IN ('pending', 'confirmed', 'pending_payment')
+            AND status IN (" . self::activeStatusesInSql() . ")
             AND NOT (status = 'pending_payment'
-                     AND payment_expires_at IS NOT NULL
-                     AND payment_expires_at < NOW())
+                     AND " . self::SQL_HOLD_EXPIRED . ")
         ";
         $params = [':date' => $date, ':time' => $timeStart];
         
