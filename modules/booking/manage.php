@@ -6,16 +6,13 @@
  * Le client arrive via le lien envoyé par mail / affiché à la
  * confirmation : modules/booking/manage.php?token=…
  *
- * v3 minimal : affichage du récap + annulation + RGPD.
+ * v3 : affichage du récap + déplacement (reschedule) + annulation + RGPD.
  *
- * ⚠️ Reschedule client temporairement désactivé depuis la purge
- * 2.6.0 (suppression de `calendar-module.js` legacy et du tunnel
- * v2 qui partageait son endpoint). Le rebranchement du reschedule
- * sur l'algo v3 (`api/booking-v3-slots.php?service=<id>&month=…`)
- * est noté comme dette technique — à traiter quand §6/§7 auront
- * stabilisé le pipeline. Pendant ce temps : l'admin peut faire le
- * reschedule côté back-office (`Booking::reschedule()` reste en
- * place), et le client peut annuler puis re-réserver.
+ * Reschedule client RÉACTIVÉ en 2.8.17 (était désactivé depuis la purge
+ * 2.6.0, le temps que l'algo v3 se stabilise) : modale dédiée → créneaux
+ * via `api/booking-v3-slots.php?service=<id>&date=…` (service-aware, comme
+ * l'admin) → `api/manage.php?action=reschedule` → `Booking::clientReschedule()`
+ * (remet le RDV en `pending` + email de notification + garde anti-double-booking).
  */
 require_once __DIR__ . '/../../includes/init.php';
 require_once __DIR__ . '/_shell.php';
@@ -79,7 +76,7 @@ foreach (BOOKING_STATUS as $statusKey => $statusInfo) {
                 </div>
             </div>
         <?php else: ?>
-            <div class="manage-container" id="manage-app" data-token="<?= Helpers::escape($token) ?>">
+            <div class="manage-container" id="manage-app" data-token="<?= Helpers::escape($token) ?>" data-service-id="<?= (int) ($booking['service_id'] ?? 0) ?>">
 
                 <div class="booking-card" id="booking-details">
                     <div class="booking-card-header">
@@ -142,13 +139,15 @@ foreach (BOOKING_STATUS as $statusKey => $statusInfo) {
 
                     <?php if ($canCancel): ?>
                     <div class="booking-card-actions">
+                        <?php if (!empty($booking['service_id'])): ?>
+                        <button type="button" class="btn btn-secondary" id="btn-reschedule">
+                            <?= Icons::svg('calendar', 18, 'icon-inline') ?>Déplacer le rendez-vous
+                        </button>
+                        <?php endif; ?>
                         <button type="button" class="btn btn-danger" id="btn-cancel">
                             <?= Icons::svg('circle-x', 18, 'icon-inline') ?>Annuler le rendez-vous
                         </button>
                     </div>
-                    <p class="text-muted text-center bv3-help-note">
-                        Pour déplacer ce rendez-vous, contactez directement <?= Helpers::escape(siteConfig()['admin_email']) ?>.
-                    </p>
                     <?php else: ?>
                     <div class="booking-card-footer">
                         <p class="text-muted">Ce rendez-vous ne peut plus être modifié.</p>
@@ -204,6 +203,33 @@ foreach (BOOKING_STATUS as $statusKey => $statusInfo) {
                         <div class="delete-modal__actions">
                             <button type="button" id="btn-delete-modal-close" class="btn btn-secondary btn-sm">Annuler</button>
                             <button type="button" id="btn-confirm-delete" class="btn btn-danger btn-sm">Supprimer définitivement</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal de déplacement (reschedule client — même mécanisme
+                     .modal-overlay/.active ; créneaux via l'API v3 service-aware,
+                     comme l'admin) -->
+                <div class="modal-overlay" id="reschedule-modal">
+                    <div class="modal-content">
+                        <h3>Déplacer mon rendez-vous</h3>
+                        <p class="text-muted reschedule-current">
+                            Actuel : <?= Helpers::escape($booking['formatted_date']) ?> · <?= Helpers::escape($booking['formatted_time']) ?>
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label" for="reschedule-date">Nouvelle date</label>
+                            <input type="date" class="form-input" id="reschedule-date">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="reschedule-slot">Nouveau créneau</label>
+                            <select class="form-input" id="reschedule-slot" disabled>
+                                <option value="">Choisissez d'abord une date</option>
+                            </select>
+                        </div>
+                        <p class="text-muted bv3-help-note">Le coach sera informé du changement par email.</p>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-reschedule-modal-close">Annuler</button>
+                            <button type="button" class="btn btn-primary" id="btn-confirm-reschedule" disabled>Déplacer</button>
                         </div>
                     </div>
                 </div>

@@ -2,12 +2,11 @@
  * ============================================
  * MANAGE APP — Espace client (Booking v3)
  * ============================================
- * Gestion du RDV par le client : annulation et droit à
- * l'effacement RGPD. Le reschedule client est désactivé depuis
- * la purge 2.6.0 (le calendrier legacy a été retiré avec le
- * tunnel v2) — le rebranchement sur l'algo v3 sera fait dans un
- * patch ultérieur. En attendant, le client annule et re-réserve,
- * ou contacte l'admin.
+ * Gestion du RDV par le client : déplacement (reschedule),
+ * annulation et droit à l'effacement RGPD. Le reschedule utilise
+ * l'algo v3 service-aware (api/booking-v3-slots.php pour les créneaux
+ * + api/manage.php?action=reschedule → Booking::clientReschedule),
+ * réactivé en 2.8.17 (était désactivé depuis la purge 2.6.0).
  *
  * Chemins relatifs : la page vit dans /modules/booking/manage.php
  * (deux niveaux sous la racine), donc l'API est en `../../api/...`.
@@ -16,6 +15,7 @@
 const ManageApp = {
     state: {
         token: null,
+        serviceId: null,
     },
 
     elements: {},
@@ -24,7 +24,8 @@ const ManageApp = {
         const app = document.getElementById('manage-app');
         if (!app) return;
 
-        this.state.token = app.dataset.token;
+        this.state.token     = app.dataset.token;
+        this.state.serviceId = app.dataset.serviceId;
         this.cacheElements();
         this.bindEvents();
     },
@@ -39,6 +40,13 @@ const ManageApp = {
             btnCancelModalClose: document.getElementById('btn-cancel-modal-close'),
             btnConfirmCancel:    document.getElementById('btn-confirm-cancel'),
 
+            rescheduleModal:        document.getElementById('reschedule-modal'),
+            btnReschedule:          document.getElementById('btn-reschedule'),
+            btnRescheduleClose:     document.getElementById('btn-reschedule-modal-close'),
+            btnConfirmReschedule:   document.getElementById('btn-confirm-reschedule'),
+            rescheduleDate:         document.getElementById('reschedule-date'),
+            rescheduleSlot:         document.getElementById('reschedule-slot'),
+
             successTitle:   document.getElementById('success-title'),
             successMessage: document.getElementById('success-message'),
         };
@@ -52,6 +60,19 @@ const ManageApp = {
         this.elements.cancelModal?.addEventListener('click', (e) => {
             if (e.target === this.elements.cancelModal) {
                 this.hideCancelModal();
+            }
+        });
+
+        this.elements.btnReschedule?.addEventListener('click', () => this.showRescheduleModal());
+        this.elements.btnRescheduleClose?.addEventListener('click', () => this.hideRescheduleModal());
+        this.elements.btnConfirmReschedule?.addEventListener('click', () => this.confirmReschedule());
+        this.elements.rescheduleDate?.addEventListener('change', () => this.loadRescheduleSlots());
+        this.elements.rescheduleSlot?.addEventListener('change', () => {
+            this.elements.btnConfirmReschedule.disabled = !this.elements.rescheduleSlot.value;
+        });
+        this.elements.rescheduleModal?.addEventListener('click', (e) => {
+            if (e.target === this.elements.rescheduleModal) {
+                this.hideRescheduleModal();
             }
         });
 
@@ -136,6 +157,80 @@ const ManageApp = {
 
     hideCancelModal() {
         this.elements.cancelModal.classList.remove('active');
+    },
+
+    // ── Déplacement (reschedule) — même algo v3 que l'admin ──
+    showRescheduleModal() {
+        this.elements.rescheduleDate.min = new Date().toISOString().split('T')[0];
+        this.elements.rescheduleModal.classList.add('active');
+    },
+
+    hideRescheduleModal() {
+        this.elements.rescheduleModal.classList.remove('active');
+    },
+
+    /** Charge les créneaux de la date choisie pour la prestation du RDV (API v3). */
+    async loadRescheduleSlots() {
+        const date = this.elements.rescheduleDate.value;
+        const sel  = this.elements.rescheduleSlot;
+        this.elements.btnConfirmReschedule.disabled = true;
+
+        if (!date) {
+            sel.innerHTML = '<option value="">Choisissez d\'abord une date</option>';
+            sel.disabled = true;
+            return;
+        }
+        sel.innerHTML = '<option value="">Chargement…</option>';
+        sel.disabled = true;
+        try {
+            const response = await fetch(`../../api/booking-v3-slots.php?service=${this.state.serviceId}&date=${date}`);
+            const data = await response.json();
+            if (data.slots && data.slots.length > 0) {
+                sel.innerHTML = '<option value="">Choisir un créneau</option>' +
+                    data.slots.map(s => `<option value="${s.time_start}|${s.time_end}">${s.label}</option>`).join('');
+                sel.disabled = false;
+            } else {
+                sel.innerHTML = '<option value="">Aucun créneau disponible</option>';
+            }
+        } catch (error) {
+            sel.innerHTML = '<option value="">Erreur de chargement</option>';
+            console.error(error);
+        }
+    },
+
+    async confirmReschedule() {
+        const date = this.elements.rescheduleDate.value;
+        const slot = this.elements.rescheduleSlot.value;
+        if (!date || !slot) { return; }
+        const [start, end] = slot.split('|');
+        const btn = this.elements.btnConfirmReschedule;
+        btn.disabled = true;
+        btn.textContent = 'Déplacement…';
+
+        try {
+            const response = await fetch('../../api/manage.php?action=reschedule', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ token: this.state.token, new_date: date, new_time_start: start, new_time_end: end }),
+            });
+            const result = await response.json();
+            if (result.success) {
+                this.hideRescheduleModal();
+                this.showSuccess(
+                    'Rendez-vous déplacé',
+                    'Votre rendez-vous a été déplacé. Vous recevrez un email de confirmation.'
+                );
+            } else {
+                alert(result.message || result.error || 'Une erreur est survenue');
+                btn.disabled = false;
+                btn.textContent = 'Déplacer';
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur de connexion');
+            btn.disabled = false;
+            btn.textContent = 'Déplacer';
+        }
     },
 
     async confirmCancel() {
