@@ -96,10 +96,8 @@ $pageTitle = 'Mentions légales';
         <p>Les présentes mentions légales sont régies par le droit français. En cas de litige, les tribunaux français seront seuls compétents.</p>
     </main>
     
-    <!-- Footer -->
-    <footer class="legal-footer">
-        <p>&copy; <?= date('Y') ?> <?= Helpers::escape($cfg['site_name']) ?> &bull; <a href="confidentialite.php">Politique de confidentialité</a></p>
-    </footer>
+    <!-- Footer (composant mutualisé siteFooter — cohérent avec l'accueil) -->
+    <?= siteFooter(true) ?>
     <?= pwaRegister() ?>
 </body>
 </html>

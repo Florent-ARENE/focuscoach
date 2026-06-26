@@ -210,3 +210,16 @@ function diag_spec_status(string $content, string $checkpoint): ?string
     $re = '/^\|\s*' . preg_quote($checkpoint, '/') . '\s*\|[^|]*\|\s*([^|]+?)\s*\|/m';
     return preg_match($re, $content, $m) ? trim($m[1]) : null;
 }
+
+/**
+ * Une page contient-elle un `<footer>` EN DUR (= footer maison) au lieu de
+ * passer par le composant mutualisé `siteFooter()` / `booking_footer()` ?
+ * Parsing PUR → sert le check « footer mutualisé » (AD-3). Les pages publiques
+ * ne doivent jamais déclarer `<footer …>` elles-mêmes (le markup vit dans
+ * siteFooter()). Garde-fou contre l'oubli d'une page (cf. dérive .legal-footer
+ * repérée à l'œil en 2.8.8).
+ */
+function diag_has_inline_footer(string $content): bool
+{
+    return stripos($content, '<footer') !== false;
+}
