@@ -270,7 +270,10 @@ const AdminApp = {
     showRescheduleForm(id) {
         const booking = this.state.bookings.find(b => b.id === id);
         if (!booking) return;
-        
+        // Le calcul des créneaux v3 est SERVICE-AWARE (durée + buffer) → on
+        // mémorise la prestation du RDV pour interroger booking-v3-slots.php.
+        this.state.rescheduleServiceId = booking.service_id;
+
         document.getElementById('modal-body').innerHTML = `
             <h3>Déplacer le rendez-vous</h3>
             <p class="reschedule-current">
@@ -322,7 +325,7 @@ const AdminApp = {
         slotSelect.disabled = true;
         
         try {
-            const response = await fetch(this.config.apiBase + `slots.php?date=${dateInput.value}`);
+            const response = await fetch(this.config.apiBase + `booking-v3-slots.php?service=${this.state.rescheduleServiceId}&date=${dateInput.value}`);
             const data = await response.json();
             
             if (data.slots && data.slots.length > 0) {
