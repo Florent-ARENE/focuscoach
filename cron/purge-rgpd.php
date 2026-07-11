@@ -152,6 +152,28 @@ try {
 }
 
 
+// --- ÉTAPE 4 : Anonymisation des achats de forfait (§7) après expiration ---
+// package_purchases porte client_name/client_email : on les anonymise la même
+// rétention (365 j) APRÈS expires_at. La ligne reste (jetons/stats), sans PII.
+// Idempotent : ne retouche pas une ligne déjà anonymisée (email vidé).
+$DELETE_PACKAGE_PII_AFTER_DAYS = $DELETE_BOOKING_AFTER_DAYS;
+try {
+    $stmt = $db->prepare("
+        UPDATE package_purchases
+           SET client_name = 'Anonymisé', client_email = ''
+         WHERE expires_at IS NOT NULL
+           AND expires_at < DATE_SUB(NOW(), INTERVAL :days DAY)
+           AND client_email <> ''
+    ");
+    $stmt->execute([':days' => $DELETE_PACKAGE_PII_AFTER_DAYS]);
+    $count = $stmt->rowCount();
+    $totalActions += $count;
+    purgeLog("Étape 4 — Forfaits anonymisés (expirés >{$DELETE_PACKAGE_PII_AFTER_DAYS}j) : $count");
+} catch (PDOException $e) {
+    purgeLog("ERREUR Étape 4 : " . $e->getMessage());
+}
+
+
 // --- ÉTAPE 4 : Nettoyage des demandes de suppression expirées ---
 try {
     $stmt = $db->prepare("

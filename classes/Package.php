@@ -122,9 +122,23 @@ class Package
             return null;
         }
         $row['credits_remaining'] = max(0, (int) $row['credits_total'] - (int) $row['credits_used']);
-        $notExpired = empty($row['expires_at']) || strtotime($row['expires_at']) > time();
-        $row['is_usable'] = ($row['status'] === 'active' && $row['credits_remaining'] > 0 && $notExpired);
+        $row['is_usable'] = self::isPurchaseUsable($row['status'], (int) $row['credits_remaining'], $row['expires_at']);
         return $row;
+    }
+
+    /**
+     * Un achat est-il UTILISABLE (peut poser une séance) ? Logique PURE — actif
+     * ET crédits restants ET non expiré. Extraite pour être testable hors BDD
+     * (corpus smoke, AD-9) et rester la SOURCE UNIQUE de la règle (AD-3).
+     * `$now` injectable pour les tests (défaut : maintenant).
+     */
+    public static function isPurchaseUsable(string $status, int $creditsRemaining, ?string $expiresAt, ?int $now = null): bool
+    {
+        if ($status !== 'active' || $creditsRemaining <= 0) {
+            return false;
+        }
+        $now = $now ?? time();
+        return empty($expiresAt) || strtotime($expiresAt) > $now;
     }
 
     /** Attache l'id de session Stripe à un achat (avant redirection Checkout). */

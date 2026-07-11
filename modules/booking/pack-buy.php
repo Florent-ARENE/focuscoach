@@ -16,6 +16,7 @@ require_once __DIR__ . '/_shell.php';
 use App\Package;
 use App\Helpers;
 use App\Icons;
+use App\Mailer;
 use App\StripeClient;
 
 $packageModel = new Package();
@@ -60,7 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } else {
-            // Bypass : forfait actif tout de suite → espace pack.
+            // Bypass : forfait actif tout de suite → email de confirmation
+            // (avec le lien de l'espace pack) puis redirection vers cet espace.
+            $created = $packageModel->getByToken($r['token']);
+            if ($created) {
+                Mailer::notifyPackagePurchase($created);
+            }
             header('Location: pack.php?token=' . $r['token']);
             exit;
         }

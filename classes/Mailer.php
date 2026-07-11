@@ -293,7 +293,47 @@ class Mailer
         
         self::send(self::getAdminEmail(), $subject, $message);
     }
-    
+
+    /**
+     * Confirmation d'ACHAT d'un forfait (§7) — au client, avec le lien de son
+     * espace forfait (pack.php?token=…) d'où il réservera ses séances.
+     */
+    public static function notifyPackagePurchase(array $purchase): void
+    {
+        $link = BASE_URL . 'modules/booking/pack.php?token=' . $purchase['manage_token'];
+        $subject = "🎟️ Votre forfait est actif - " . SITE_NAME;
+        $message  = "Bonjour {$purchase['client_name']},\n\n";
+        $message .= "Votre forfait « {$purchase['package_name']} » est actif : ";
+        $message .= "{$purchase['credits_total']} séances de « {$purchase['service_name']} ».\n\n";
+        $message .= "Réservez vos séances (une séance = un jeton) depuis votre espace forfait :\n";
+        $message .= "$link\n\n";
+        if (!empty($purchase['expires_at'])) {
+            $message .= "Valable jusqu'au " . Helpers::formatDateFr(substr($purchase['expires_at'], 0, 10)) . ".\n\n";
+        }
+        $message .= "À bientôt,\n" . self::getAdminName();
+        self::send($purchase['client_email'], $subject, $message);
+    }
+
+    /**
+     * Confirmation d'une SÉANCE réservée avec un jeton de forfait (§7).
+     */
+    public static function notifyPackageSession(array $purchase, array $booking): void
+    {
+        $slotDate  = Helpers::formatDateFr($booking['slot_date']);
+        $slotTime  = Helpers::formatTimeSlot($booking['slot_time_start'], $booking['slot_time_end']);
+        $link      = BASE_URL . 'modules/booking/pack.php?token=' . $purchase['manage_token'];
+        $remaining = max(0, (int) $purchase['credits_total'] - (int) $purchase['credits_used']);
+        $subject = "✅ Séance réservée - " . SITE_NAME;
+        $message  = "Bonjour {$purchase['client_name']},\n\n";
+        $message .= "Votre séance (forfait « {$purchase['package_name']} ») est réservée :\n\n";
+        $message .= "📅 Date : $slotDate\n";
+        $message .= "🕐 Horaire : $slotTime\n\n";
+        $message .= "Jetons restants : $remaining.\n";
+        $message .= "Votre espace forfait : $link\n\n";
+        $message .= "À bientôt,\n" . self::getAdminName();
+        self::send($purchase['client_email'], $subject, $message);
+    }
+
     /**
      * Construire l'email visiteur pour nouvelle réservation
      */

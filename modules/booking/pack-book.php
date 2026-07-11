@@ -17,6 +17,7 @@ use App\Booking;
 use App\Package;
 use App\Helpers;
 use App\Icons;
+use App\Mailer;
 
 $serviceId = isset($_GET['service']) ? (int) Helpers::sanitize($_GET['service']) : (int) ($_POST['service'] ?? 0);
 $date      = Helpers::sanitize((string) ($_GET['date']  ?? $_POST['date']  ?? ''));
@@ -73,6 +74,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = (new Booking())->createFromPackage($data, (int) $pack['id']);
 
         if ($result['success']) {
+            // Email de confirmation de séance (jetons restants à jour).
+            $updated = $packageModel->getByToken($token);
+            if ($updated) {
+                Mailer::notifyPackageSession($updated, [
+                    'slot_date'       => $date,
+                    'slot_time_start' => $start,
+                    'slot_time_end'   => $end,
+                ]);
+            }
             header('Location: pack.php?token=' . urlencode($token) . '&booked=1');
             exit;
         }

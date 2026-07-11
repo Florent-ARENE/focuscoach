@@ -429,6 +429,30 @@ it('En-tête vide → rejeté', function () use ($wpayload, $wsecret) {
 });
 
 // ============================================
+// LOT 10 — Forfaits (§7) : isPurchaseUsable (2 sens)
+// ============================================
+echo "\n🎟️ Lot 10 — Forfaits (isPurchaseUsable)\n";
+$pkgNow = strtotime('2026-06-26 12:00:00');
+it('actif + jetons + non expiré → utilisable', function () use ($pkgNow) {
+    expect_true(\App\Package::isPurchaseUsable('active', 3, '2026-12-31 00:00:00', $pkgNow));
+});
+it('actif sans expiration → utilisable', function () use ($pkgNow) {
+    expect_true(\App\Package::isPurchaseUsable('active', 1, null, $pkgNow));
+});
+it('0 jeton → NON utilisable', function () use ($pkgNow) {
+    expect_false(\App\Package::isPurchaseUsable('active', 0, '2026-12-31 00:00:00', $pkgNow));
+});
+it('statut exhausted → NON utilisable', function () use ($pkgNow) {
+    expect_false(\App\Package::isPurchaseUsable('exhausted', 0, '2026-12-31 00:00:00', $pkgNow));
+});
+it('expiré (date passée) → NON utilisable', function () use ($pkgNow) {
+    expect_false(\App\Package::isPurchaseUsable('active', 3, '2026-01-01 00:00:00', $pkgNow));
+});
+it('pending_payment → NON utilisable (pas encore payé)', function () use ($pkgNow) {
+    expect_false(\App\Package::isPurchaseUsable('pending_payment', 5, '2026-12-31 00:00:00', $pkgNow));
+});
+
+// ============================================
 // VERDICT
 // ============================================
 echo implode("\n", $cases) . "\n\n";
