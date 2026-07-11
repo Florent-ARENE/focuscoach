@@ -74,6 +74,10 @@ $statusMeta = [
     <main class="booking-main">
         <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
 
+        <?php if ($purchase): ?>
+        <p class="text-center bv3-help-note"><a href="espace.php?token=<?= Helpers::escape($purchase['manage_token']) ?>"><?= Icons::svg('arrow-left', 14, 'icon-inline') ?>Voir tout mon espace</a></p>
+        <?php endif; ?>
+
         <?php if (!empty($_GET['booked'])): ?>
         <div class="bv3-pack-banner"><?= Icons::svg('circle-check', 16, 'icon-inline') ?> Séance réservée ! Elle apparaît ci-dessous et 1 jeton a été consommé.</div>
         <?php endif; ?>

@@ -66,6 +66,10 @@ foreach (BOOKING_STATUS as $statusKey => $statusInfo) {
     <main class="booking-main">
         <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
 
+        <?php if ($booking): ?>
+        <p class="text-center bv3-help-note"><a href="espace.php?token=<?= Helpers::escape($token) ?>"><?= Icons::svg('arrow-left', 14, 'icon-inline') ?>Voir tout mon espace</a></p>
+        <?php endif; ?>
+
         <?php if ($error): ?>
             <div class="manage-container">
                 <div class="error-card">
