@@ -164,6 +164,52 @@ body.booking-page {
     text-align: center;
     border-bottom: 2px solid var(--orange);
 }
+
+/* Zones de l'étape 1 : « Séances à l'unité » / « Forfaits » (au-dessus des
+   3 tiers). Différencie clairement l'unité du forfait. Mobile-first. */
+.bv3-zone-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--navy-deep);
+    text-align: center;
+    margin: 2.5rem auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+}
+.bv3-zone-title--packs {
+    margin-top: 3rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--cream-dark);
+}
+.bv3-zone-sub {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+/* Carte forfait : liseré orange en tête pour la distinguer d'une séance. */
+.bv3-card--pack {
+    border-top: 3px solid var(--orange);
+}
+
+/* Espace pack (§7) — bandeau « jetons restants ». */
+.pack-credits {
+    text-align: center;
+    font-size: 1.05rem;
+    margin: 0 0 1.25rem;
+    color: var(--text-dark);
+}
+.pack-credits-num {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    color: var(--orange);
+    display: block;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
 .bv3-cards {
     list-style: none;
     padding: 0;

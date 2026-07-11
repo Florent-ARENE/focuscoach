@@ -40,6 +40,15 @@ $segmentLabels = [
     'particulier' => 'Particuliers',
 ];
 
+// Forfaits (jetons) — groupés par segment, affichés SOUS les séances à l'unité.
+$packages      = (new \App\Package())->getActivePackages();
+$packBySegment = ['sportif' => [], 'dirigeant' => [], 'particulier' => []];
+foreach ($packages as $p) {
+    if (isset($packBySegment[$p['segment']])) {
+        $packBySegment[$p['segment']][] = $p;
+    }
+}
+
 // Réinit du draft sur cette étape
 $_SESSION['booking_draft'] = [];
 ?>
@@ -67,20 +76,23 @@ $_SESSION['booking_draft'] = [];
         </ol>
 
         <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
-        <p class="page-subtitle text-center">Sélectionnez la prestation qui correspond à votre besoin. La durée du créneau s'adaptera automatiquement.</p>
+        <p class="page-subtitle text-center">Une <strong>séance à l'unité</strong> pour un besoin ponctuel, ou un <strong>forfait</strong> (plusieurs séances prépayées, à jetons) pour un accompagnement dans la durée.</p>
 
-        <?php if (empty($services)): ?>
+        <?php if (empty($services) && empty($packages)): ?>
             <p class="bv3-empty">Aucune prestation n'est actuellement proposée. Merci de revenir plus tard.</p>
-        <?php else: ?>
+        <?php endif; ?>
+
+        <?php if (!empty($services)): ?>
+            <h2 class="bv3-zone-title">Séances à l'unité <span class="bv3-zone-sub">— une séance, un créneau</span></h2>
             <div class="bv3-segments">
                 <?php foreach ($bySegment as $segKey => $list): if (empty($list)) continue; ?>
                 <section class="bv3-segment">
-                    <h2 class="bv3-segment-title"><?= Helpers::escape($segmentLabels[$segKey]) ?></h2>
+                    <h3 class="bv3-segment-title"><?= Helpers::escape($segmentLabels[$segKey]) ?></h3>
                     <ul class="bv3-cards">
                         <?php foreach ($list as $s): ?>
                             <li class="bv3-card">
                                 <div class="bv3-card-head">
-                                    <h3 class="bv3-card-name"><?= Helpers::escape($s['name']) ?></h3>
+                                    <h4 class="bv3-card-name"><?= Helpers::escape($s['name']) ?></h4>
                                     <span class="bv3-card-duration"><?= Helpers::escape((string) (int) $s['duration_min']) ?> min</span>
                                 </div>
                                 <?php if (!empty($s['description'])): ?>
@@ -97,6 +109,38 @@ $_SESSION['booking_draft'] = [];
                                     </span>
                                     <a class="btn btn-primary bv3-card-cta"
                                        href="date.php?service=<?= Helpers::escape((string) (int) $s['id']) ?>">
+                                        Choisir <?= Icons::svg('arrow-right', 16, 'icon-inline') ?>
+                                    </a>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($packages)): ?>
+            <h2 class="bv3-zone-title bv3-zone-title--packs">Forfaits <span class="bv3-zone-sub">— plusieurs séances prépayées, à jetons</span></h2>
+            <div class="bv3-segments">
+                <?php foreach ($packBySegment as $segKey => $list): if (empty($list)) continue; ?>
+                <section class="bv3-segment">
+                    <h3 class="bv3-segment-title"><?= Helpers::escape($segmentLabels[$segKey]) ?></h3>
+                    <ul class="bv3-cards">
+                        <?php foreach ($list as $p): ?>
+                            <li class="bv3-card bv3-card--pack">
+                                <div class="bv3-card-head">
+                                    <h4 class="bv3-card-name"><?= Helpers::escape($p['name']) ?></h4>
+                                    <span class="bv3-card-duration"><?= Helpers::escape((string) (int) $p['sessions_count']) ?> jetons</span>
+                                </div>
+                                <p class="bv3-card-desc">
+                                    <?= Helpers::escape((string) (int) $p['sessions_count']) ?> séances de « <?= Helpers::escape($p['service_name']) ?> »
+                                    (<?= Helpers::escape((string) (int) $p['duration_min']) ?> min) · valable <?= Helpers::escape((string) (int) $p['validity_days']) ?> jours.
+                                </p>
+                                <div class="bv3-card-foot">
+                                    <span class="bv3-card-price"><?= Helpers::escape(number_format((int) $p['price_cents'] / 100, 0, ',', ' ')) ?> €</span>
+                                    <a class="btn btn-primary bv3-card-cta"
+                                       href="pack-buy.php?package=<?= Helpers::escape((string) (int) $p['id']) ?>">
                                         Choisir <?= Icons::svg('arrow-right', 16, 'icon-inline') ?>
                                     </a>
                                 </div>
