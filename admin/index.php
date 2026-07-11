@@ -58,6 +58,18 @@ if ($isLoggedIn) {
 
 $pageTitle = 'Administration';
 $currentPage = $_GET['page'] ?? 'bookings';
+
+// Forfaits (§7) — chargés en server-rendered pour la page admin dédiée.
+$packagePurchases = [];
+if ($currentPage === 'packages') {
+    $packagePurchases = \App\Database::getInstance()->query(
+        "SELECT pp.*, p.name AS package_name, s.name AS service_name
+           FROM package_purchases pp
+           JOIN packages p ON p.id = pp.package_id
+           JOIN services s ON s.id = p.service_id
+          ORDER BY pp.purchased_at DESC"
+    )->fetchAll();
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -108,6 +120,10 @@ $currentPage = $_GET['page'] ?? 'bookings';
                     <span><?= Icons::svg('calendar', 18) ?></span>
                     Réservations
                     <span class="nav-badge" id="pending-count">0</span>
+                </a>
+                <a href="?page=packages" class="nav-item <?= Helpers::escape($currentPage === 'packages' ? 'active' : '') ?>">
+                    <span><?= Icons::svg('clipboard-list', 18) ?></span>
+                    Forfaits
                 </a>
                 <a href="?page=settings" class="nav-item <?= Helpers::escape($currentPage === 'settings' ? 'active' : '') ?>">
                     <span><?= Icons::svg('settings', 18) ?></span>
@@ -213,6 +229,57 @@ $currentPage = $_GET['page'] ?? 'bookings';
                 </table>
             </div>
             
+            <?php elseif ($currentPage === 'packages'): ?>
+            <!-- ============================================ -->
+            <!-- PAGE : FORFAITS (§7) — achats + jetons -->
+            <!-- ============================================ -->
+            <div class="admin-page-header">
+                <h1 class="page-title">Forfaits</h1>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Forfait</th>
+                            <th>Jetons</th>
+                            <th>Statut</th>
+                            <th>Expiration</th>
+                            <th>Acheté le</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($packagePurchases)): ?>
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <div class="empty-state-icon"><?= Icons::svg('inbox', 40) ?></div>
+                                <p>Aucun forfait acheté pour le moment.</p>
+                            </td>
+                        </tr>
+                        <?php else: foreach ($packagePurchases as $pp):
+                            $rem     = max(0, (int) $pp['credits_total'] - (int) $pp['credits_used']);
+                            $badgeCl = ['pending_payment' => 'pending', 'active' => 'confirmed',
+                                        'exhausted' => 'completed', 'expired' => 'cancelled'][$pp['status']] ?? 'pending';
+                        ?>
+                        <tr>
+                            <td>
+                                <?= Helpers::escape($pp['client_name']) ?>
+                                <br><small class="text-muted"><?= Helpers::escape($pp['client_email']) ?></small>
+                            </td>
+                            <td>
+                                <?= Helpers::escape($pp['package_name']) ?>
+                                <br><small class="text-muted"><?= Helpers::escape($pp['service_name']) ?></small>
+                            </td>
+                            <td><strong><?= $rem ?></strong> / <?= Helpers::escape((string) (int) $pp['credits_total']) ?></td>
+                            <td><span class="status-badge <?= Helpers::escape($badgeCl) ?>"><?= Helpers::escape($pp['status']) ?></span></td>
+                            <td><?= $pp['expires_at'] ? Helpers::escape(Helpers::formatDateFr(substr($pp['expires_at'], 0, 10))) : '—' ?></td>
+                            <td><?= Helpers::escape(Helpers::formatDateFr(substr($pp['purchased_at'], 0, 10))) ?></td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
             <?php elseif ($currentPage === 'settings'): ?>
             <!-- ============================================ -->
             <!-- PAGE : PARAMÈTRES -->

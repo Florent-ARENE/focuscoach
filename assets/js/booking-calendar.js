@@ -26,6 +26,8 @@
     var minMonth  = mount.getAttribute('data-min-month'); // "YYYY-MM"
     var maxMonth  = mount.getAttribute('data-max-month');
     var today     = mount.getAttribute('data-today');     // "YYYY-MM-DD" (serveur)
+    var pack      = mount.getAttribute('data-pack');      // token forfait (§7) ou vide
+    var packQs    = pack ? '&pack=' + encodeURIComponent(pack) : '';
     var fallback  = document.getElementById('bv3-dates-fallback');
 
     var DOW       = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -85,7 +87,7 @@
                 var lbl = dow + ' ' + d + ' ' + MONTHS[m - 1] + ' ' + y + ', '
                         + n + ' créneau' + (n > 1 ? 'x' : '') + ' disponible' + (n > 1 ? 's' : '');
                 html += '<a class="bv3-cal-day is-available' + todayCls + '" role="gridcell" '
-                      + 'href="slot.php?service=' + serviceId + '&date=' + dateStr + '" '
+                      + 'href="slot.php?service=' + serviceId + '&date=' + dateStr + packQs + '" '
                       + 'title="' + n + ' créneaux" aria-label="' + lbl + '">'
                       + '<span class="bv3-cal-num">' + d + '</span></a>';
             } else {

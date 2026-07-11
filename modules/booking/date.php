@@ -35,6 +35,11 @@ if (!$service) {
     exit;
 }
 
+// Contexte forfait (§7) : si on vient de l'espace pack avec un token valide
+// pour CE service, on le porte à travers l'étape créneau (→ pack-book.php).
+$pack   = pack_context(isset($_GET['pack']) ? Helpers::sanitize((string) $_GET['pack']) : '', $serviceId);
+$packQs = $pack ? '&amp;pack=' . Helpers::escape($pack['manage_token']) : '';
+
 // Mémoriser le choix dans le draft
 $_SESSION['booking_draft'] = [
     'service_id'       => (int) $service['id'],
@@ -62,7 +67,9 @@ $pageTitle = 'Choisir une date';
     <?= pwaHead() ?>
 </head>
 <body class="booking-page">
-    <?= booking_header('index.php', 'Changer de prestation') ?>
+    <?= $pack
+        ? booking_header('pack.php?token=' . Helpers::escape($pack['manage_token']), 'Retour à mon forfait')
+        : booking_header('index.php', 'Changer de prestation') ?>
 
     <main class="booking-main">
         <?= booking_steps(2, [1 => 'index.php']) ?>
@@ -72,6 +79,13 @@ $pageTitle = 'Choisir une date';
             <span class="bv3-summary-sep">·</span>
             <?= Helpers::escape((string) (int) $service['duration_min']) ?> min
         </div>
+
+        <?php if ($pack): ?>
+        <div class="bv3-pack-banner">
+            Réservation avec votre forfait « <?= Helpers::escape($pack['package_name']) ?> » —
+            <strong><?= (int) $pack['credits_remaining'] ?> jeton<?= (int) $pack['credits_remaining'] > 1 ? 's' : '' ?> restant<?= (int) $pack['credits_remaining'] > 1 ? 's' : '' ?></strong> · aucun paiement, une séance = un jeton.
+        </div>
+        <?php endif; ?>
 
         <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
         <p class="page-subtitle text-center">Choisissez le jour qui vous convient. Les créneaux précis apparaîtront ensuite.</p>
@@ -84,6 +98,7 @@ $pageTitle = 'Choisir une date';
              data-min-month="<?= Helpers::escape(date('Y-m')) ?>"
              data-max-month="<?= Helpers::escape(date('Y-m', strtotime('+' . (int) MAX_HORIZON_DAYS . ' days'))) ?>"
              data-today="<?= Helpers::escape(date('Y-m-d')) ?>"
+             data-pack="<?= $pack ? Helpers::escape($pack['manage_token']) : '' ?>"
              hidden></div>
 
         <div id="bv3-dates-fallback">
@@ -94,7 +109,7 @@ $pageTitle = 'Choisir une date';
                 <?php foreach ($dates as $d): ?>
                     <li class="bv3-date">
                         <a class="bv3-date-link"
-                           href="slot.php?service=<?= Helpers::escape((string) (int) $service['id']) ?>&amp;date=<?= Helpers::escape($d['date']) ?>">
+                           href="slot.php?service=<?= Helpers::escape((string) (int) $service['id']) ?>&amp;date=<?= Helpers::escape($d['date']) ?><?= $packQs ?>">
                             <span class="bv3-date-day"><?= Helpers::escape($d['day_name']) ?></span>
                             <span class="bv3-date-full"><?= Helpers::escape($d['formatted']) ?></span>
                             <span class="bv3-date-count"><?= Helpers::escape((string) (int) $d['slots_count']) ?> créneaux</span>

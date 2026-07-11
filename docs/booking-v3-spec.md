@@ -20,8 +20,8 @@ code, pas une cible théorique.
 | §5 | Tunnel de réservation (prestation → date → créneau) | **livré** (v2.5.2) |
 | §5b | Purge legacy (tunnel v2 + algo v2 + `service_type` ENUM) | **livré** (v2.6.0) |
 | §6 | Paiement Stripe Checkout + webhook idempotent | **livré** (v2.8.0) |
-| §7 | Forfaits & jetons (espace pack) | à venir |
-| §8 | Admin (CRUD services/availability/packages) | à venir |
+| §7 | Forfaits & jetons (espace pack) | **livré** (v2.9.0) — mode bypass ; webhook Stripe forfait à finir quand les `stripe_price_id` existeront |
+| §8 | Admin (CRUD services/availability/packages) | à venir — vue **lecture seule** des forfaits livrée en 2.9.0 (`?page=packages`) |
 | §9 | `health.php` (AD-8 runtime) — livré comme page du module diagnostic (`modules/diagnostic/health.php`) | **livré** (v2.7.0) |
 | §10 | Tests (smoke / integration / endpoints) | à venir |
 | livraison finale | bump 3.0.0, doc, mysqldump pré-prod | à venir |

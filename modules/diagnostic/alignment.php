@@ -108,6 +108,25 @@ $catBody .= diag_row(
         : 'écart : ' . implode(', ', array_merge($diffA, $diffB))
 );
 
+// Forfaits (§7) : chaque forfait actif doit référencer une prestation ACTIVE.
+if ($pdo) {
+    try {
+        $pkgActive = (int) $pdo->query("SELECT COUNT(*) FROM packages WHERE is_active = 1")->fetchColumn();
+        $pkgOrphan = (int) $pdo->query(
+            "SELECT COUNT(*) FROM packages p
+              LEFT JOIN services s ON s.id = p.service_id AND s.is_active = 1
+              WHERE p.is_active = 1 AND s.id IS NULL"
+        )->fetchColumn();
+        $pkgOk = $pkgOrphan === 0 ? 'ok' : 'fail';
+        $states[] = $pkgOk;
+        $catBody .= diag_row($pkgOk, 'Forfaits actifs → prestation active',
+            $pkgOrphan === 0 ? $pkgActive . ' forfait(s), 0 orphelin' : $pkgOrphan . ' sans prestation active');
+    } catch (\PDOException $e) {
+        $states[] = 'warn';
+        $catBody .= diag_row('warn', 'Forfaits', 'Non vérifiable');
+    }
+}
+
 // ── (d) Documentation & cadrage (anti-dérive doc — AD-2 / AD-7) ──
 // d1 — VERSION ↔ haut du changelog CANONIQUE (README_TECHNIQUE §ChangeLog).
 $rtTxt = (string) @file_get_contents(ROOT_PATH . 'README_TECHNIQUE.md');

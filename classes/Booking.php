@@ -83,6 +83,19 @@ class Booking
     }
 
     /**
+     * Crée une séance PAYÉE PAR JETON (issue d'un forfait — §7). Statut
+     * `confirmed` (déjà prépayé via le forfait), `payment_status='paid'`,
+     * `package_purchase_id` renseigné. Même garde anti-double-booking
+     * transactionnelle que create(). Le jeton est consommé PAR L'APPELANT
+     * AVANT cet appel, et remboursé (refundCredit) si ce create échoue.
+     */
+    public function createFromPackage(array $data, int $purchaseId): array
+    {
+        $data['package_purchase_id'] = $purchaseId;
+        return $this->insertWithIntegrity($data, 'confirmed', 'paid', 0);
+    }
+
+    /**
      * Insertion d'une réservation avec garde d'intégrité TRANSACTIONNELLE.
      *
      * L'`active_key UNIQUE` ne protège QUE contre le même `slot_time_start`.
@@ -160,14 +173,14 @@ class Booking
                     "INSERT INTO bookings (
                         visitor_name, visitor_email, visitor_phone, visitor_organization,
                         slot_date, slot_time_start, slot_time_end,
-                        service_id, duration_min, buffer_after_min,
+                        service_id, package_purchase_id, duration_min, buffer_after_min,
                         subject, message,
                         status, payment_status, payment_expires_at,
                         manage_token, ip_address, user_agent
                     ) VALUES (
                         :name, :email, :phone, :organization,
                         :date, :time_start, :time_end,
-                        :service_id, :duration_min, :buffer_after_min,
+                        :service_id, :pkg, :duration_min, :buffer_after_min,
                         :subject, :message,
                         :status, :pstatus, $expiresExpr,
                         :token, :ip, :ua
@@ -182,6 +195,7 @@ class Booking
                     ':time_start'       => $data['slot_time_start'],
                     ':time_end'         => $data['slot_time_end'],
                     ':service_id'       => (int) $data['service_id'],
+                    ':pkg'              => isset($data['package_purchase_id']) ? (int) $data['package_purchase_id'] : null,
                     ':duration_min'     => (int) ($data['duration_min']     ?? 0),
                     ':buffer_after_min' => (int) ($data['buffer_after_min'] ?? 0),
                     ':subject'          => $data['subject'] ?? null,
