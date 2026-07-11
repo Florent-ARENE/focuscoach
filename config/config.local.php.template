@@ -11,90 +11,111 @@
  * - Ce template, LUI, est versionné : il documente les clés attendues.
  * - NE JAMAIS committer de vraie valeur (mot de passe, clé Stripe, hash) ici.
  * - Dossier protégé par .htaccess (Require all denied) : aucun accès HTTP direct.
+ *
+ * ── DEUX ENVIRONNEMENTS PRÉVUS ──────────────────────────────────────
+ * La SECTION 1 ci-dessous contient deux blocs : (A) PRODUCTION et
+ * (B) TEST / VirtualBox. Sur CHAQUE serveur, garde actif le bloc qui le
+ * concerne et laisse l'autre en commentaire. PHP interdit deux `define()`
+ * sur la même constante → **un seul bloc actif à la fois**.
+ * Par défaut ici : (B) TEST actif, (A) PROD commenté.
  */
 
-// ──────────────────────────────────────────────
-//  Base de données (OVH mutualisé)
-// ──────────────────────────────────────────────
-define('DB_HOST',    'xxxxxxxx.mysql.db');   // serveur MySQL OVH
-define('DB_NAME',    'xxxxxxxx');
-define('DB_USER',    'xxxxxxxx');
-define('DB_PASS',    'xxxxxxxx');
-define('DB_CHARSET', 'utf8mb4');             // utf8mb4 obligatoire (accents, emojis)
+// ════════════════════════════════════════════════════════════════════
+//  SECTION 1 — ENVIRONNEMENT (garder UN SEUL bloc actif)
+//  Contient tout ce qui DIFFÈRE entre prod et test :
+//  URL canonique, base de données, clés Stripe (live vs test).
+// ════════════════════════════════════════════════════════════════════
+
+/* ──────────────────────────────────────────────────────────────────
+ *  (A) PRODUCTION — https://focuscoach.fr
+ *  Pour activer : retirer les marqueurs de commentaire de CE bloc
+ *  (la ligne au-dessus et la ligne « FIN (A) » en dessous), puis
+ *  commenter le bloc (B).
+ * ──────────────────────────────────────────────────────────────────
+// URL canonique (slash final OBLIGATOIRE — concaténée sans slash de tête).
+define('BASE_URL', 'https://focuscoach.fr/');
+
+// Base de données OVH — production.
+define('DB_HOST', 'xxxxxxxx.mysql.db');   // serveur MySQL OVH (prod)
+define('DB_NAME', 'xxxxxxxx');
+define('DB_USER', 'xxxxxxxx');
+define('DB_PASS', 'xxxxxxxx');
+
+// Stripe — clés LIVE en production.
+define('STRIPE_SECRET_KEY',      'sk_live_REPLACE');
+define('STRIPE_PUBLISHABLE_KEY', 'pk_live_REPLACE');
+define('STRIPE_WEBHOOK_SECRET',  'whsec_REPLACE');
+ * ─────────────────────────────────────────────── FIN (A) PRODUCTION */
+
+
+// ──────────────────────────────────────────────────────────────────
+//  (B) TEST / VirtualBox — https://virtualbox.net/focuscoach
+//  Bloc ACTIF par défaut (install de recette).
+//  Pour passer en prod : commenter ce bloc et activer (A).
+// ──────────────────────────────────────────────────────────────────
+// URL canonique (slash final OBLIGATOIRE — concaténée sans slash de tête).
+define('BASE_URL', 'https://virtualbox.net/focuscoach/');
+
+// Base de données OVH — recette (ex. base vue dans phpMyAdmin).
+define('DB_HOST', 'xxxxxxxx.mysql.db');   // serveur MySQL OVH (test)
+define('DB_NAME', 'xxxxxxxx');            // nom de ta base de recette
+define('DB_USER', 'xxxxxxxx');
+define('DB_PASS', 'xxxxxxxx');
+
+// Stripe — clés TEST en recette (tunnel bypass tant que les Price ne
+// sont pas créés : ces clés peuvent rester en placeholder pour l'instant).
+define('STRIPE_SECRET_KEY',      'sk_test_REPLACE');
+define('STRIPE_PUBLISHABLE_KEY', 'pk_test_REPLACE');
+define('STRIPE_WEBHOOK_SECRET',  'whsec_REPLACE');
+// ─────────────────────────────────────────── FIN (B) TEST / VirtualBox
+
+
+// ════════════════════════════════════════════════════════════════════
+//  SECTION 2 — COMMUN À TOUS LES ENVIRONNEMENTS
+//  Valeurs identiques (ou format identique) quel que soit le serveur.
+// ════════════════════════════════════════════════════════════════════
+
+// ── Base de données : réglages communs ──
+define('DB_CHARSET', 'utf8mb4');   // utf8mb4 obligatoire (accents, emojis)
 define('DB_PORT',    3306);
 
-// ──────────────────────────────────────────────
-//  Accès admin
-// ──────────────────────────────────────────────
+// ── Accès admin ──
 // Hash bcrypt généré UNE fois en local — ne jamais stocker le mot de passe en clair.
 // Générer le hash :
 //   php -r "echo password_hash('VOTRE_NOUVEAU_MDP', PASSWORD_DEFAULT), PHP_EOL;"
-// puis coller le résultat ci-dessous. Choisir un mot de passe NEUF
-// (ne pas réutiliser l'ancien mot de passe en clair, considéré comme compromis).
+// Astuce : tu peux mettre un mot de passe DIFFÉRENT en test et en prod
+// (il suffit d'un hash distinct dans chaque config.local.php).
 define('ADMIN_PASSWORD_HASH', '$2y$10$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
 
-// ──────────────────────────────────────────────
-//  Stripe — paiement des séances
-// ──────────────────────────────────────────────
-// Clés : dashboard.stripe.com > Développeurs > Clés API
-// Utiliser sk_test_ / pk_test_ en recette, sk_live_ / pk_live_ en production.
-// Format attendu : sk_live_... (prod) ou sk_test_... (recette) — coller la clé réelle.
-define('STRIPE_SECRET_KEY',      'REPLACE_WITH_STRIPE_SECRET_KEY');
-// Format attendu : pk_live_... (prod) ou pk_test_... (recette).
-define('STRIPE_PUBLISHABLE_KEY', 'REPLACE_WITH_STRIPE_PUBLISHABLE_KEY');
+// ── Rappel BASE_URL (définie plus haut, par environnement) ──
+// URL absolue avec slash final de la racine du site. Sert à Stripe
+// Checkout (success_url / cancel_url) et à tout endpoint produisant une
+// URL absolue de retour. REQUISE — si absente ou sans http(s):// en tête,
+// `config/config.php` répond 500 au démarrage (refus net plutôt que pages
+// à demi configurées). JAMAIS dérivée du header HTTP `Host` (risque XSS
+// Host-header ; absente en contexte webhook/cron). ASSETS_URL en dérive.
 
-// Secret de signature du endpoint webhook (Développeurs > Webhooks > votre endpoint).
-// Format attendu : whsec_... — sert à vérifier l'authenticité des événements Stripe.
-define('STRIPE_WEBHOOK_SECRET',  'REPLACE_WITH_STRIPE_WEBHOOK_SECRET');
+// ── Tarifs & identifiants Stripe par offre — vivent en BDD (AD-2) ──
+// La grille tarifaire (`price_cents`) et les `stripe_price_id` vivent dans
+// les tables `services` et `packages`, gérés via /admin. **Aucune valeur
+// de prix ici** : une seule source de vérité = la BDD.
+//
+// Geste opérationnel après création des produits Stripe :
+//   1. Dashboard Stripe → Catalogue → un Price (EUR) par prestation et
+//      par forfait. Format : `price_…`.
+//   2. /admin → Services / Forfaits → coller chaque `stripe_price_id`.
+//   3. health.php signale tout service/forfait actif avec price_cents > 0
+//      sans stripe_price_id — tant que c'est le cas, le tunnel refuse de
+//      démarrer pour ce service (refus explicite, pas un crash).
+// La séance Découverte (price_cents = 0) court-circuite Stripe même quand
+// les clés sont présentes (pas de session Checkout à 0 €).
 
-// ──────────────────────────────────────────────
-//  URL canonique de l'install
-// ──────────────────────────────────────────────
-// URL absolue (avec slash final) de la racine du site. Sert à Stripe
-// Checkout (success_url / cancel_url) et à tout endpoint qui doit
-// produire une URL absolue de retour.
-//
-// REQUISE — propre à chaque serveur. Depuis la 2.6.8, si BASE_URL est
-// absente ou ne commence pas par http(s)://, `config/config.php` répond
-// 500 au démarrage (refus net plutôt que pages à demi configurées).
-// JAMAIS dérivée du header HTTP `Host` (risque XSS Host-header ; absente
-// en contexte webhook/cron). Fixe par environnement : prod / staging / dev.
-//
-// Exemples :
-//   define('BASE_URL', 'https://focuscoach.fr/');
-//   define('BASE_URL', 'https://staging.focuscoach.fr/');
-//   define('BASE_URL', 'http://localhost:8000/');
-define('BASE_URL', 'https://focuscoach.fr/');
-
-// ──────────────────────────────────────────────
-//  Tarifs & identifiants Stripe par offre — vivent en BDD (AD-2)
-// ──────────────────────────────────────────────
-// La grille tarifaire (`price_cents`) et les identifiants
-// `stripe_price_id` vivent dans les tables `services` et `packages`,
-// gérés via /admin. **Aucune valeur de prix dans ce template** : une
-// seule source de vérité = la BDD.
-//
-// Geste opérationnel après import :
-//   1. Dashboard Stripe → Catalogue → créer un Price (EUR) par
-//      prestation et par forfait. Format : `price_…`.
-//   2. /admin → Services / Forfaits → coller chaque `stripe_price_id`
-//      en face de la prestation correspondante.
-//   3. health.php signalera tout service / forfait actif avec
-//      `price_cents > 0` mais sans `stripe_price_id` — tant que c'est
-//      le cas, le tunnel refuse de démarrer pour ce service (refus
-//      explicite, pas un crash).
-//
-// La séance Découverte (`price_cents = 0`) court-circuite Stripe
-// même quand les clés sont présentes (pas de session Checkout à 0 €).
-
-// ──────────────────────────────────────────────
-//  Clé des crons déclenchés par URL (optionnel)
-// ──────────────────────────────────────────────
+// ── Clé des crons déclenchés par URL (optionnel) ──
 // Jeton secret pour déclencher les crons via HTTP (ex.
 // cron/expire-holds.php?key=…) quand le cron CLI OVH n'est pas dispo.
 // En CLI, les crons s'exécutent toujours sans clé. En HTTP, SANS cette
 // constante définie, l'accès est REFUSÉ (jamais d'endpoint cron ouvert).
-// Générer une valeur aléatoire longue, ex :
+// Générer une valeur aléatoire longue :
 //   php -r "echo bin2hex(random_bytes(24)), PHP_EOL;"
 // define('CRON_SECRET', 'colle_ici_un_jeton_aleatoire_long');
 //
@@ -103,8 +124,6 @@ define('BASE_URL', 'https://focuscoach.fr/');
 // constante, l'accès HTTP est REFUSÉ (CLI toujours autorisé).
 // define('RGPD_CRON_SECRET', 'colle_ici_un_autre_jeton_aleatoire_long');
 
-// ──────────────────────────────────────────────
-//  Google Calendar (optionnel — si la sync est activée)
-// ──────────────────────────────────────────────
+// ── Google Calendar (optionnel — si la sync est activée) ──
 // Fichier de credentials du Service Account, hors webroot, protégé .htaccess.
 // define('GOOGLE_CREDENTIALS_PATH', __DIR__ . '/google-credentials.json');
