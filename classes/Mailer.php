@@ -106,12 +106,17 @@ class Mailer
         }
         
         error_log("[Mailer] addManageBlock: lien généré = $manageLink");
-        
+
+        // Lien vers l'espace client unifié (§7.b) : même token, espace.php
+        // résout l'email → agrège séances + forfaits + historique.
+        $espaceLink = BASE_URL . "modules/booking/espace.php?token=" . ($booking['manage_token'] ?? '');
+
         $message .= "\n---\n";
-        $message .= "Gérer votre rendez-vous :\n";
-        $message .= $manageLink . "\n";
-        $message .= "(Modifier, déplacer ou annuler)\n";
-        
+        $message .= "Gérer ce rendez-vous (modifier, déplacer ou annuler) :\n";
+        $message .= $manageLink . "\n\n";
+        $message .= "Voir tout mon espace (mes séances et forfaits) :\n";
+        $message .= $espaceLink . "\n";
+
         return $message;
     }
     
