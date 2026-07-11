@@ -40,7 +40,11 @@ INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
 ('legal_status',            'Entrepreneur individuel — profession libérale non réglementée'),
 ('admin_activity',          'Coach, accompagnateur de transformations, préparateur mental et formateur'),
 ('google_calendar_enabled', '0'),
-('google_calendar_id',      '');
+('google_calendar_id',      ''),
+-- Validation des RDV : '1' = confirmation automatique (défaut), '0' = mise
+-- en attente de validation admin. Piloté par Booking::initialStatus() et
+-- appliqué IDENTIQUEMENT à tous les chemins (séance simple ET forfait).
+('booking_auto_confirm',    '1');
 
 -- ── Fenêtres d'ouverture hebdomadaires par défaut (v3.0.0) ──
 -- Lundi(1) → Vendredi(5), matin 09:00-12:00 + après-midi 14:00-17:00.

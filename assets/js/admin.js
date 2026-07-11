@@ -90,6 +90,11 @@ const AdminApp = {
         document.getElementById('google_calendar_enabled')?.addEventListener('change', (e) => {
             document.getElementById('sync-status').textContent = e.target.checked ? 'Activée' : 'Désactivée';
         });
+
+        // Toggle validation des RDV
+        document.getElementById('booking_auto_confirm')?.addEventListener('change', (e) => {
+            document.getElementById('auto-confirm-status').textContent = e.target.checked ? 'Automatique' : 'En attente de validation';
+        });
         
         // Fermer la modal au clic sur l'overlay
         document.getElementById('detail-modal')?.addEventListener('click', (e) => {
@@ -161,7 +166,7 @@ const AdminApp = {
                     <strong>${this.escapeHtml(b.visitor_name)}</strong><br>
                     <small class="text-muted">${this.escapeHtml(b.visitor_email)}</small>
                 </td>
-                <td>${this.escapeHtml(b.service_name || '')}</td>
+                <td>${this.escapeHtml(b.service_name || '')}${b.package_purchase_id ? ` <small class="text-muted">(forfait ${parseInt(b.pkg_index, 10) || '?'}/${parseInt(b.pkg_total, 10) || '?'})</small>` : ''}</td>
                 <td>
                     <span class="status-badge ${b.status}">
                         ${this.statusIcon(b.status_info)} ${b.status_info?.label || b.status}
@@ -476,6 +481,7 @@ const AdminApp = {
      */
     async saveSettings() {
         const settings = {
+            booking_auto_confirm: document.getElementById('booking_auto_confirm')?.checked ? '1' : '0',
             google_calendar_enabled: document.getElementById('google_calendar_enabled')?.checked ? '1' : '0',
             google_calendar_id: document.getElementById('google_calendar_id')?.value || '',
             site_name: document.getElementById('site_name')?.value || '',
