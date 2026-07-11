@@ -210,6 +210,18 @@ body.booking-page {
     line-height: 1;
     margin-bottom: 0.25rem;
 }
+/* Bandeau « réservation par jeton » dans le tunnel (date/slot/pack-book). */
+.bv3-pack-banner {
+    max-width: 720px;
+    margin: 0 auto 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--orange-light);
+    border: 1px solid var(--orange);
+    border-radius: var(--radius-md);
+    text-align: center;
+    color: var(--navy-deep);
+    font-size: 0.9rem;
+}
 .bv3-cards {
     list-style: none;
     padding: 0;

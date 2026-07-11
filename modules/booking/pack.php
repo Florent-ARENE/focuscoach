@@ -74,6 +74,10 @@ $statusMeta = [
     <main class="booking-main">
         <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
 
+        <?php if (!empty($_GET['booked'])): ?>
+        <div class="bv3-pack-banner"><?= Icons::svg('circle-check', 16, 'icon-inline') ?> Séance réservée ! Elle apparaît ci-dessous et 1 jeton a été consommé.</div>
+        <?php endif; ?>
+
         <?php if (!$purchase): ?>
             <div class="bv3-empty">
                 Forfait introuvable ou lien invalide.

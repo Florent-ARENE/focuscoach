@@ -45,6 +45,10 @@ $_SESSION['booking_draft']['duration_min']     = (int) $service['duration_min'];
 $_SESSION['booking_draft']['buffer_after_min'] = (int) $service['buffer_after_min'];
 $_SESSION['booking_draft']['price_cents']      = (int) $service['price_cents'];
 
+// Contexte forfait (§7) : porté depuis date.php si réservation par jeton.
+$pack   = pack_context(isset($_GET['pack']) ? Helpers::sanitize((string) $_GET['pack']) : '', $serviceId);
+$packQs = $pack ? '&amp;pack=' . Helpers::escape($pack['manage_token']) : '';
+
 $pageTitle = 'Choisir un créneau';
 ?>
 <!DOCTYPE html>
@@ -60,12 +64,12 @@ $pageTitle = 'Choisir un créneau';
     <?= pwaHead() ?>
 </head>
 <body class="booking-page">
-    <?= booking_header('date.php?service=' . (int) $service['id'], 'Changer de date') ?>
+    <?= booking_header('date.php?service=' . (int) $service['id'] . $packQs, 'Changer de date') ?>
 
     <main class="booking-main">
         <?= booking_steps(3, [
             1 => 'index.php',
-            2 => 'date.php?service=' . (int) $service['id'],
+            2 => 'date.php?service=' . (int) $service['id'] . $packQs,
         ]) ?>
 
         <div class="bv3-summary">
@@ -73,6 +77,12 @@ $pageTitle = 'Choisir un créneau';
             <span class="bv3-summary-sep">·</span>
             <?= Helpers::escape(Helpers::formatDateFr($date)) ?>
         </div>
+
+        <?php if ($pack): ?>
+        <div class="bv3-pack-banner">
+            Forfait « <?= Helpers::escape($pack['package_name']) ?> » — <strong><?= (int) $pack['credits_remaining'] ?> jeton<?= (int) $pack['credits_remaining'] > 1 ? 's' : '' ?></strong> · le créneau choisi consommera 1 jeton.
+        </div>
+        <?php endif; ?>
 
         <h1 class="page-title text-center"><?= Helpers::escape($pageTitle) ?></h1>
 
@@ -83,7 +93,7 @@ $pageTitle = 'Choisir un créneau';
                 <?php foreach ($slots as $s): ?>
                     <li class="bv3-slot">
                         <a class="bv3-slot-link"
-                           href="confirm.php?service=<?= Helpers::escape((string) (int) $service['id']) ?>&amp;date=<?= Helpers::escape($date) ?>&amp;start=<?= Helpers::escape($s['time_start']) ?>&amp;end=<?= Helpers::escape($s['time_end']) ?>">
+                           href="<?= $pack ? 'pack-book.php' : 'confirm.php' ?>?service=<?= Helpers::escape((string) (int) $service['id']) ?>&amp;date=<?= Helpers::escape($date) ?>&amp;start=<?= Helpers::escape($s['time_start']) ?>&amp;end=<?= Helpers::escape($s['time_end']) ?><?= $packQs ?>">
                             <?= Helpers::escape($s['label']) ?>
                         </a>
                     </li>

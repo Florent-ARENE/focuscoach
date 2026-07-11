@@ -71,3 +71,21 @@ function booking_steps(int $current, array $hrefs = []): string
     }
     return $html . '</ol>';
 }
+
+/**
+ * Contexte FORFAIT du tunnel (§7). Valide le token de pack pour ce service :
+ * retourne l'achat s'il est UTILISABLE (actif, crédits restants, non expiré) ET
+ * qu'il porte bien ce `service_id` ; sinon null (le tunnel retombe alors sur le
+ * paiement à l'unité). Mutualisé — appelé par date.php / slot.php / pack-book.php.
+ */
+function pack_context(string $token, int $serviceId): ?array
+{
+    if ($token === '' || strlen($token) !== MANAGE_TOKEN_LENGTH) {
+        return null;
+    }
+    $purchase = (new \App\Package())->getByToken($token);
+    if (!$purchase || empty($purchase['is_usable']) || (int) $purchase['service_id'] !== $serviceId) {
+        return null;
+    }
+    return $purchase;
+}
