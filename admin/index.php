@@ -289,8 +289,42 @@ if ($currentPage === 'packages') {
             </div>
             
             <div class="settings-container">
-                <!-- Google Calendar -->
+                <!-- Validation des réservations -->
                 <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><?= Icons::svg('circle-check', 20, 'icon-inline') ?>Validation des rendez-vous</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="settings-description">
+                            Choisissez le traitement <strong>par défaut de tout nouveau RDV</strong> —
+                            <strong>identique pour une séance à l'unité et pour une séance de forfait</strong>.
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label">Confirmer automatiquement les rendez-vous</label>
+                            <div class="toggle-container">
+                                <label class="toggle">
+                                    <input type="checkbox" id="booking_auto_confirm"
+                                           <?= Helpers::escape(($currentSettings['booking_auto_confirm'] ?? '1') === '1' ? 'checked' : '') ?>>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label" id="auto-confirm-status">
+                                    <?= Helpers::escape(($currentSettings['booking_auto_confirm'] ?? '1') === '1' ? 'Automatique' : 'En attente de validation') ?>
+                                </span>
+                            </div>
+                            <small class="form-help">
+                                Activé : chaque RDV est confirmé d'office. Désactivé : chaque RDV
+                                arrive « en attente » et vous le validez ici (un jeton de forfait
+                                refusé est automatiquement rendu au client).
+                            </small>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="AdminApp.saveSettings()">
+                            Enregistrer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Google Calendar -->
+                <div class="card mt-2">
                     <div class="card-header">
                         <h3 class="card-title"><?= Icons::svg('calendar', 20, 'icon-inline') ?>Google Calendar (Miroir)</h3>
                     </div>

@@ -68,7 +68,22 @@ class Booking
      */
     public function create(array $data): array
     {
-        return $this->insertWithIntegrity($data, 'pending', 'none', 0);
+        return $this->insertWithIntegrity($data, $this->initialStatus(), 'none', 0);
+    }
+
+    /**
+     * Statut initial d'un RDV, piloté par le réglage admin `booking_auto_confirm`.
+     * SOURCE UNIQUE partagée par TOUS les chemins de création (séance simple,
+     * séance forfait) — garantit un comportement identique, zéro duplication.
+     *   '1' (défaut) → 'confirmed' (confirmation automatique)
+     *   '0'          → 'pending'   (validation admin requise)
+     * Cf. RÈGLE d'or 4 (paramétrage) : le coach choisit dans /admin → Paramètres.
+     */
+    public function initialStatus(): string
+    {
+        return (new Settings())->get('booking_auto_confirm', '1') === '0'
+            ? 'pending'
+            : 'confirmed';
     }
 
     /**
@@ -84,15 +99,17 @@ class Booking
 
     /**
      * Crée une séance PAYÉE PAR JETON (issue d'un forfait — §7). Statut
-     * `confirmed` (déjà prépayé via le forfait), `payment_status='paid'`,
-     * `package_purchase_id` renseigné. Même garde anti-double-booking
-     * transactionnelle que create(). Le jeton est consommé PAR L'APPELANT
-     * AVANT cet appel, et remboursé (refundCredit) si ce create échoue.
+     * `payment_status='paid'` (déjà prépayé via le forfait), statut initial
+     * décidé par la MÊME règle que la séance simple (`initialStatus()` →
+     * confirmation auto OU validation admin), `package_purchase_id` renseigné.
+     * Même garde anti-double-booking transactionnelle que create(). Le jeton est
+     * consommé PAR L'APPELANT AVANT cet appel, et remboursé (refundCredit) si ce
+     * create échoue — ou si l'admin refuse ensuite la séance (cf. api/admin.php).
      */
     public function createFromPackage(array $data, int $purchaseId): array
     {
         $data['package_purchase_id'] = $purchaseId;
-        return $this->insertWithIntegrity($data, 'confirmed', 'paid', 0);
+        return $this->insertWithIntegrity($data, $this->initialStatus(), 'paid', 0);
     }
 
     /**
@@ -644,9 +661,16 @@ class Booking
             $params[':date_to'] = $filters['date_to'];
         }
         
-        $sql = "SELECT b.*, s.name AS service_name, s.slug AS service_slug
+        // pkg_index / pkg_total : rang de la séance dans son forfait (N/total),
+        // affiché en admin (« forfait 1/5 »). NULL pour un RDV hors forfait.
+        $sql = "SELECT b.*, s.name AS service_name, s.slug AS service_slug,
+                       pp.credits_total AS pkg_total,
+                       (SELECT COUNT(*) FROM bookings b2
+                          WHERE b2.package_purchase_id = b.package_purchase_id
+                            AND b2.id <= b.id) AS pkg_index
                   FROM bookings b
-                  LEFT JOIN services s ON s.id = b.service_id";
+                  LEFT JOIN services s ON s.id = b.service_id
+                  LEFT JOIN package_purchases pp ON pp.id = b.package_purchase_id";
         if (!empty($where)) {
             $sql .= " WHERE " . implode(' AND ', $where);
         }

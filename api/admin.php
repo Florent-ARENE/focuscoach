@@ -159,9 +159,18 @@ switch ($action) {
         $result = $booking->updateStatus($id, $status, $adminNotes);
         
         if ($result['success']) {
+            // Refus/annulation admin d'une séance FORFAIT encore vivante →
+            // rendre le jeton au client (sinon il serait perdu sur un refus).
+            // Symétrique du refund déjà fait si le créneau est pris (pack-book).
+            if ($status === 'cancelled'
+                && in_array($oldStatus, ['pending', 'confirmed'], true)
+                && !empty($bookingData['package_purchase_id'])) {
+                (new \App\Package())->refundCredit((int) $bookingData['package_purchase_id']);
+            }
+
             // Récupérer les données mises à jour
             $bookingData = $booking->getById($id);
-            
+
             // Envoyer les notifications email
             if (EMAIL_ENABLED && $oldStatus !== $status) {
                 if ($status === 'confirmed') {
@@ -382,6 +391,7 @@ switch ($action) {
             }
             
             $allowedKeys = [
+                'booking_auto_confirm',
                 'google_calendar_enabled',
                 'google_calendar_id',
                 'admin_email',
