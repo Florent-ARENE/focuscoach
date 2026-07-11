@@ -9,7 +9,7 @@ Point d'entrée Claude Code — committé à la racine. Décrit **(1)** l'état 
 
 ---
 
-## 📦 État courant — v2.8.17
+## 📦 État courant — v2.9.0
 
 Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tout le changelog.
 
@@ -19,6 +19,7 @@ Projet stable, livré. Repère rapide pour reprendre le contexte sans relire tou
 - **Icônes** : zéro emoji décoratif. SVG Lucide inline via `App\Icons::svg($name, $size, $class)` (PHP) et `Icons.svg(name, size, class)` (JS). ~32 icônes embarquées, `stroke="currentColor"` (couleur héritée). Classes CSS `.lucide`, `.icon-inline`, `.icon-cta`.
 - **Header mobile** : seul le CTA « Prendre RDV » reste visible (`.nav-cta-item`), les autres liens réapparaissent à 768px+.
 - **Tunnel de réservation** : coquille mutualisée (`modules/booking/_shell.php` → `booking_header/footer/steps`), footer = **footer du site partagé** (`siteFooter()`, navy, variante allégée), **calendrier de date vanilla** (zéro lib, progressive enhancement sur l'API mois, « aujourd'hui » encadré orange) + **barre d'étapes navigable** (retour arrière). Mobile-first, A11y, sticky footer.
+- **Forfaits / jetons (§7)** : `classes/Package.php` (achats, `consumeCredit` atomique, `isPurchaseUsable` pur). Achat sur l'étape 1 (zone « Forfaits » sous les séances) → `pack-buy.php` → **espace pack** `pack.php?token=…` (dashboard jetons). Réserver une séance = tunnel taggé `pack=<token>` → `pack-book.php` (`Booking::createFromPackage`, consomme 1 jeton, refund si créneau pris). Emails (`Mailer::notifyPackagePurchase/Session`), purge RGPD étape 4, vue admin `?page=packages`, check `alignment` « forfaits → prestation active ». Mode **bypass** tant que les `stripe_price_id` des packages sont vides.
 - **Légales** : `mentions-legales.php` + `confidentialite.php` en pages PHP dédiées, grille de cartes responsive.
 - **PWA** : `manifest.json` + `sw.js` (network-first HTML/PHP, cache-first assets, exclusion `/api/`) + icônes 192/512 maskables + `theme-color`. Helpers `pwaHead()` / `pwaRegister()` dans `init.php`.
 - **DB** : source unique = `sql/schema.sql` (structure) + `sql/seed.sql` (défauts, idempotent). Migrations incrémentales jusqu'à `migration-2.4.8.sql` (à appliquer une par une sur bases déjà déployées). Anciennement `database.sql` (supprimé en v2.4.7).
