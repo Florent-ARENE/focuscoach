@@ -141,6 +141,29 @@ class Package
         return empty($expiresAt) || strtotime($expiresAt) > $now;
     }
 
+    /**
+     * Tous les forfaits d'un client (agrégation par email) — pour l'espace
+     * client unifié (§7.b). Enrichis de `credits_remaining` + `is_usable`.
+     */
+    public function getPurchasesByEmail(string $email): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT pp.*, p.name AS package_name, s.name AS service_name, s.duration_min
+               FROM package_purchases pp
+               JOIN packages p ON p.id = pp.package_id
+               JOIN services s ON s.id = p.service_id
+              WHERE pp.client_email = :email
+           ORDER BY pp.purchased_at DESC"
+        );
+        $stmt->execute([':email' => $email]);
+        $rows = $stmt->fetchAll();
+        foreach ($rows as &$row) {
+            $row['credits_remaining'] = max(0, (int) $row['credits_total'] - (int) $row['credits_used']);
+            $row['is_usable'] = self::isPurchaseUsable($row['status'], (int) $row['credits_remaining'], $row['expires_at']);
+        }
+        return $rows;
+    }
+
     /** Attache l'id de session Stripe à un achat (avant redirection Checkout). */
     public function attachStripeSession(int $purchaseId, string $sessionId): void
     {

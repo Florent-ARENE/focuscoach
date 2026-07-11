@@ -300,7 +300,7 @@ class Mailer
      */
     public static function notifyPackagePurchase(array $purchase): void
     {
-        $link = BASE_URL . 'modules/booking/pack.php?token=' . $purchase['manage_token'];
+        $link = BASE_URL . 'modules/booking/espace.php?token=' . $purchase['manage_token'];
         $subject = "🎟️ Votre forfait est actif - " . SITE_NAME;
         $message  = "Bonjour {$purchase['client_name']},\n\n";
         $message .= "Votre forfait « {$purchase['package_name']} » est actif : ";

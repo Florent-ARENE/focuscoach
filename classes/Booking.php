@@ -465,7 +465,24 @@ class Booking
 
         return $booking ?: null;
     }
-    
+
+    /**
+     * Toutes les réservations d'un client (agrégation par email) — pour l'espace
+     * client unifié. Inclut les séances à l'unité ET les séances issues de forfaits.
+     */
+    public function getByEmail(string $email): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT b.*, s.name AS service_name, s.slug AS service_slug
+               FROM bookings b
+               LEFT JOIN services s ON s.id = b.service_id
+              WHERE b.visitor_email = :email
+           ORDER BY b.slot_date DESC, b.slot_time_start DESC"
+        );
+        $stmt->execute([':email' => $email]);
+        return array_map([$this, 'enrichBooking'], $stmt->fetchAll());
+    }
+
     /**
      * Déplacement demandé par le client (remet en pending pour validation)
      */
